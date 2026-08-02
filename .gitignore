@@ -1,0 +1,41 @@
+# macOS
+.DS_Store
+
+# Claude Code local state. .claude/skills/ IS tracked (project skills like
+# verify), so these must be listed here rather than in .git/info/exclude —
+# that file is local-only and a fresh clone would start tracking them.
+.claude/settings.local.json
+.claude/scheduled_tasks.json
+.claude/scheduled_tasks.lock
+.claude/routines/.state/
+.claude/worktrees/
+.claude/checkpoints/
+.claude/mailbox/
+.claude/agent-registry.json
+.claude/agent-memory-local
+.claude/first-run
+.claude/assistant-daemon-state.json
+
+# Agent scratch output
+.superpowers/
+
+# Xcode user-specific state
+xcuserdata/
+*.xcuserstate
+
+# Xcode / Swift build artifacts
+DerivedData/
+.build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# codebase-memory-mcp local index (optional team artifact: .codebase-memory/graph.db.zst)
+.codebase-memory/
+.gstack/
+
+# Secrets — never commit. Templates live in .env.example (committed).
+.env
+.env.keys
+.env.local
+.env.*.local

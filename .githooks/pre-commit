@@ -1,0 +1,34 @@
+#!/bin/sh
+# Two checks that cannot be skipped by forgetting. See docs/workflow.md steps 5 and 7.
+# Install once with: git config core.hooksPath .githooks
+
+fail=0
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+
+# 1. An implementation and its test must not change assertions in the same commit.
+#    Step 7 forbids an agent editing a test to make it pass. This catches it.
+for test in $(echo "$staged" | grep -E '\.(test|spec)\.(ts|tsx|js|jsx)$'); do
+  impl=$(echo "$test" | sed -E 's/\.(test|spec)\./\./')
+  if echo "$staged" | grep -qx "$impl"; then
+    if git diff --cached -U0 -- "$test" | grep -qE '^[-+].*\b(expect|assert)\s*\('; then
+      echo "BLOCKED: $test changes assertions in the same commit as $impl"
+      echo "  Commit the test first and watch it fail (workflow step 6), then the fix."
+      echo "  If this is a deliberate test correction, commit it on its own."
+      fail=1
+    fi
+  fi
+done
+
+# 2. Banned weak-oracle assertion patterns. See AGENTS.md, Testing.
+for test in $(echo "$staged" | grep -E '\.(test|spec)\.(ts|tsx|js|jsx)$'); do
+  added=$(git diff --cached -U0 -- "$test" | grep '^+' | grep -v '^+++')
+  echo "$added" | grep -qE 'toMatch(Inline)?Snapshot\s*\(' && \
+    { echo "BLOCKED: $test adds a snapshot assertion"; fail=1; }
+  echo "$added" | grep -qE 'expect\([^)]*\)\.toBeDefined\s*\(\s*\)' && \
+    { echo "BLOCKED: $test adds a toBeDefined() check"; fail=1; }
+  echo "$added" | grep -qE 'expect\(\s*(true|false)\s*\)\.' && \
+    { echo "BLOCKED: $test adds a bare boolean assertion"; fail=1; }
+done
+
+[ $fail -eq 1 ] && echo "" && echo "Override with --no-verify only if you know why."
+exit $fail
