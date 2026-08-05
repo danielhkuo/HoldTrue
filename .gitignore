@@ -1,6 +1,16 @@
 # macOS
 .DS_Store
 
+# Node. package-lock.json IS tracked — it pins the exact Electron/Node toolchain
+# the FTS5 verification in AGENTS.md was measured against.
+node_modules/
+.vitest/
+coverage/
+.stryker-tmp/
+reports/
+dist/
+out/
+
 # Claude Code local state. .claude/skills/ IS tracked (project skills like
 # verify), so these must be listed here rather than in .git/info/exclude —
 # that file is local-only and a fresh clone would start tracking them.
