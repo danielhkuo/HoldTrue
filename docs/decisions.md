@@ -27,16 +27,50 @@ Decided 2026-08-03. Feature doc: [`features/feynman.md`](features/feynman.md).
 | Decision | Why | Rejected |
 |---|---|---|
 | **Voice in, not typing** | You do not type at a child sitting in front of you. The role-play is the product, and typing breaks it. That is the whole reason and it is enough. | Typing. Note this is **not** a claim that speech reveals more than writing — that is refuted in the evidence base (D'Mello et al. 2011, no learning difference) and may not appear in this product. The reason is fiction, not diagnosis. |
-| **The user corrects the transcript, and the child does the asking** | At 15–25% WER, an uncorrected transcript means the user reads words they did not say and is told they are theirs. Law 2's floor is *"a user reads their own words."* A child repeating back what it heard is in fiction, so the fix costs no immersion. | Trusting the ASR output. Also rejected: a second model reading audio for hesitation — refuted, see the feature doc. |
+| ~~**The user corrects the transcript, and the child does the asking**~~ **REVERSED 2026-08-05** | Original reasoning: at 15–25% WER an uncorrected transcript means the user reads words they did not say and is told they are theirs, and Law 2's floor is *"a user reads their own words."* Reversed because it is friction in the one place the session should feel like talking. The reasoning was never refuted — the cost is accepted, not argued away. See the session-shape section below. | Still rejected: a second model reading audio for hesitation — refuted, see the feature doc. |
 | **The child knows your source and nothing else** | Naivety is unbuildable: the model is not naive, and pretending it is invites exactly the world-knowledge speech invariant 3 bans. "Knows only your document" is a naivety you can actually build, and it is the only one whose confusion is quotable. | A genuinely naive persona. A persona drawing on world knowledge. |
 | **The child asks, never tells** | Link extraction runs ~0.5 F1. A wrong question costs one round trip; a wrong claim tells someone they failed to say what they said. This is an **engineering** rationale — the pedagogical one (*"a leading question beats a stated correction"*) is refuted and unavailable. | Stating the gap directly. |
 | **Two checks, in order: structure then truth** | Internal consistency needs no world knowledge, so its trigger is a property of the user's own words — which is what makes a live interrupt legal under invariant 3. It also needs no retrieval, so it is far cheaper than the source check. | One combined check. Folding coherence into Compare. |
 | **Clarity is a separate instrument** | Expression and understanding are orthogonal — the feature doc already says holding the mechanism and failing to say it is not a failure of understanding. Separation is also what makes a clarity number legal: invariant 7 bans a grade *beside a diagnosis*, and this one is not beside anything. Being isolated, a wrong count cannot corrupt a finding. | A combined score. Clarity feeding the understanding path. **A clarity eval** — "was this clear" has no ground truth, one labeller, and a model listener is not naive enough to serve as an oracle. `workflow.md` step 9 already forbids an LLM judge. |
 | **Clarity reports counts, never verdicts** | "Your sentences averaged 34 words" is a fact. "Your explanation was hard to follow" is an inference needing evidence nobody has. An instrument makes no claim, so it needs no eval. | Any holistic judgement of an explanation's quality. |
 
-**Still one model on the finding path.** Extract. Cohere, Compare and Clarity are all
-deterministic, so all three carry property tests and only Extract needs an eval. The model
-surface got smaller, not larger.
+**Was one model on the finding path.** Extract, with Cohere, Compare and Clarity all
+deterministic. **Superseded 2026-08-05:** the review phase added Contradict, Points and Cover,
+so the finding path now calls four models and needs four eval sets. See the next section. The
+live phase still calls exactly one.
+
+## Feynman session shape
+
+Decided 2026-08-05. The session splits into a **live phase** while you are talking and a
+**review phase** once you have stopped. This supersedes parts of the section above.
+
+| Decision | Why | Rejected |
+|---|---|---|
+| **Two phases: live, then review** | The structural check needs only the user's own words, so it is cheap and can interrupt. Everything needing the notes — retrieval, contradiction, omission, coverage — moves to a pass that runs after the user stops talking, where being slow costs nothing. This also resolves most of the latency worry: the expensive work no longer happens while someone waits. | One continuous loop with retrieval interleaved. |
+| **The child checks structure only** | It looks at whether your own chain closes: you named a thing and never said what it does. No notes, no world knowledge, nothing to be wrong about beyond the shape of what you said. Keeps the live phase fast and keeps invariant 3 trivially satisfied. | The child fact-checking live. |
+| **The review phase may be agentic** | Multi-step retrieval — search, read, search again — is strictly better than one shot, and after the user stops talking there is no latency budget to protect. The line is **agentic about what to look for, never about what to say**: authorship stays quoted. | Agentic authorship. An agentic live phase. |
+| **The notes are assumed correct** | The app never checks a claim against the world, only against the user's own material. If the notes are wrong the user is taught something wrong, and that is accepted. A future notes-improvement tool is the intended answer and is out of scope here. | Fact-checking against model knowledge. Flagging suspect notes. |
+| **Contradiction is a distinct finding from omission** | *Your notes say otherwise* and *your notes connect something you skipped* are different failures. Omission means the explanation was incomplete; contradiction means something is wrong in your head and you would keep believing it. Contradiction is checked first, because being told about a skipped step is strange if the surrounding explanation is mistaken. | Treating both as one comparison. |
+| **No upfront transcript correction** | Friction, in the one place the session should feel like talking. **Accepted cost:** thinking-aloud speech transcribes at 15–25% error, so the app will sometimes quote back words the user did not say — the failure this design is least able to absorb. Reverses the 2026-08-03 decision above, which reasoned from Law 2's floor rather than from how it would feel to use. | A full correction pass. **Unresolved:** whether a quote is editable inline at the moment it is shown, which would put the fix only where it bites. |
+| ~~**Coverage is reported, and a model decides it**~~ **REVERTED same day** | Amended invariant 7 to permit traceable point-coverage, on the reasoning that findings alone cannot answer *do I need to study this again* — an explanation can contradict nothing, omit nothing detectable, and still miss the mechanism. **Reverted after a four-way design panel:** all four advocates independently declined to use the permission, including the one whose sole assignment was answering that exact question. Nobody wanted what it bought. The question remains real and unanswered. | A holistic rating, still rejected on its own merits: a single global score is unstable run to run and cannot show its own reasoning. |
+
+**Why the revert, in full.** The panel ran four designs against four priorities — user
+experience, correctness, ambition, shippability — and each was attacked by a skeptic. The
+coverage permission was granted the same morning and was live in the docs the panel read. The
+correctness design narrowed it to bare counts; the UX design replaced it with two lists; the
+ambitious design added a *new* forbidden-table row banning progress rings over covered points;
+the shippable design cut the whole review phase. Four independent routes around a permission
+that had just been created for them.
+
+**What this does not settle.** *Do I need to study this again* is still a real question with no
+answer in the design. The panel's position is that the answer, if one exists, is the
+contradiction check rather than a coverage inventory — a contradiction is diagnostic by
+construction, where coverage of well-documented points is not.
+
+**Not settled by any of this.** Coverage tells you what your notes cover. Something you have
+wrong that your notes never mention will not surface, so an empty result means *nothing
+contradicted your notes*, not *you understand this*. How that is worded is unresolved, and
+getting it wrong rebuilds the overconfidence the feature exists to correct.
 
 ## Workflow
 

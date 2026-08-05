@@ -17,6 +17,13 @@ judging your own understanding is **.178**, a coin flip.
 **Coverage never proves understanding.** Recitation can fake a list of parts, so coverage
 alone never tops any scale and what we probe is always a connection.
 
+> **Two senses of "coverage", do not confuse them.** The sense forbidden here is *naming the
+> parts*: a list of components, which recitation fakes trivially. The sense the review phase
+> reports is *which points your source makes, connections included, that your explanation
+> addressed*. The second is legitimate precisely because the points being covered are
+> themselves connections. A reader who slides between the two senses will conclude the feature
+> contradicts its own law.
+
 **The comparison runs against the user's source material, never a second reading of their
 own words.**
 
@@ -39,27 +46,46 @@ Two techniques, neither optional:
 
 ## The session
 
+Two phases. The **live phase** runs while you are talking and touches nothing but your own
+words. The **review phase** runs once you have stopped and is where your notes come in.
+Revised 2026-08-05; reasoning in [`../decisions.md`](../decisions.md).
+
+### Live
+
 1. **Pick something from your material that works by a mechanism.**
 2. **Say it out loud from memory, nothing visible.** The illusion collapses on producing, not
    recognizing.
-3. **The child repeats back what it heard.** You fix the words it got wrong. Now the
-   transcript is yours, not the machine's guess at yours.
-4. **The child asks where your own chain breaks.** It knows no facts. It only knows you named
-   a thing and never said what it does.
-5. **See what your source connects that you did not.** A quoted passage, never a claim about
+3. **The child asks where your own chain breaks.** It knows no facts and consults no notes. It
+   only knows you named a thing and never said what it does. Cheap, so it can interrupt.
+
+No transcript-correction step: it is friction in the one place the session should feel like
+talking. The cost is real and accepted — at 15–25% word error the child will sometimes quote
+back words you did not say.
+
+### Review
+
+4. **Where your notes say otherwise.** The passage, and a question about which you meant.
+   Checked before omissions: being told about a skipped step is strange if the surrounding
+   explanation is wrong.
+5. **Where your notes connect something you did not.** A quoted passage, never a claim about
    you.
-6. **Answer one probe aimed at that omission.** Holding the mechanism and failing to say it
-   is not a failure of understanding.
+6. **Answer one probe aimed at the gap.** Holding the mechanism and failing to say it is not a
+   failure of understanding.
 7. **Receive the refutation.** Your claim first, then the omitted mechanism, from a named
    source, in a register that is not the child's.
-8. **Say it again with the step in.** Then one consolidation question, *after* the
-   correction, never instead of it.
+8. **Say it again with the step in.** Then one consolidation question, *after* the correction,
+   never instead of it.
+The review phase may be **agentic** — multi-step retrieval, search then read then search again.
+Nobody is waiting. The line is agentic about *what to look for*, never about *what to say*.
 
-No score. No stored verdict. No shareable result.
+**No score. No rating. No stored verdict. No shareable result.** A point-coverage readout was
+added on 2026-08-05 and removed the same day after a design panel declined it four ways out of
+four; see [`../decisions.md`](../decisions.md). *Do I need to study this again* remains
+unanswered, and the panel's view is that the contradiction check answers it better than an
+inventory would.
 
-**Two checks, in order.** The child checks whether your chain holds together. Your source
-checks whether it is right. The child goes first: no point being told what your book says
-until your own story closes.
+**An empty result means your notes contradicted nothing.** It does not mean you understand the
+topic. Something you have wrong that your notes never mention will not surface here.
 
 **Why voice.** You do not type at a child sitting in front of you. That is the whole reason,
 and it is enough. It is *not* a claim that speaking reveals more than writing — that claim is
@@ -79,7 +105,7 @@ to catch, and flashcards are better for it.
 | | Why |
 |---|---|
 | Ending a session on the finding | Core Law 1 |
-| Treating coverage as sufficient | Recitation passes coverage |
+| Treating a list of named parts as sufficient | Recitation fakes it. Not the same as the review phase's point coverage, which counts connections |
 | Delivering a refutation before the probe has tested the gap | Step 6 exists for this |
 | Comparing two extractions of the user's own words | The F1 numbers above |
 | Paraphrasing a source instead of quoting it | Paraphrase is authorship |
@@ -88,8 +114,11 @@ to catch, and flashcards are better for it.
 | Saying an explanation was unclear | No ground truth exists for that |
 | Letting a clarity count change an understanding finding | The two are orthogonal, and mixing them lies |
 | Reading hesitation as doubt | Refuted. Disfluency tracks the topic, not the speaker |
-| Trusting a transcript the user has not corrected | Then they are not their own words |
 | Confidence deltas as a stored metric | The effect is not topic-specific |
+| Any rating of how good an explanation was | Invariant 7 |
+| A progress ring or completion bar over covered points | A rating with quotes underneath. A mark beside a comment cancels the comment |
+| Fact-checking against anything but the user's own notes | The notes are the only authority, and are assumed correct |
+| Retrieval or notes in the live phase | That is what the review phase is for |
 
 ## The plan
 
@@ -106,18 +135,26 @@ corrected result.
 | **Extract** | The user's corrected explanation | The concepts named and the links asserted, with spans | **Model** |
 | **Cohere** | The extracted graph, alone | Where the chain does not close | Deterministic |
 | **Compare** | Extracted concepts plus retrieved passages | The link present in the source and absent from the explanation | Deterministic |
+| **Contradict** | Extracted claims plus retrieved passages | Where a passage asserts otherwise, with both spans | **Model** |
 | **Clarity** | The raw transcript, nothing else | Counts of measurable surface facts | Deterministic |
 
-Only Extract calls a model on the path that produces a finding. Its one job is to read prose
-and return concepts and links with their spans. It decides nothing, ranks nothing, writes
-nothing the user reads.
+**The model surface is two pieces: Extract and Contradict.** It briefly reached four on
+2026-08-05 when a point-coverage readout was added; that was reverted the same day and Points
+and Cover went with it. Contradict stays, and needs its own eval set — one more labelling effort
+on top of the one already scheduled.
 
-Transcribe calls a model too, but the user corrects its output before anything consumes it,
-so its errors are friction rather than a false finding. Nothing downstream trusts it.
+What did not change: **the live phase still calls exactly one model.** Extract reads your words
+and returns concepts and links with spans. Cohere is set arithmetic over that graph. So the
+part that can interrupt you mid-explanation stays as cheap and as certain as it ever was, and
+invariant 3 holds there trivially — nothing in the live phase consults a note.
 
-Cohere and Compare *sound* like a model's job, so folding them into Extract is the obvious
-design. But both are set arithmetic over a graph, so both can carry property tests. Kept
-outside, the gap shown to the user is certain even though the extraction feeding it is not.
+Transcribe calls a model too. With the correction step dropped, **nothing downstream verifies
+it any more**, so its errors now propagate into every finding rather than being caught by the
+user first. That is the accepted cost recorded in [`../decisions.md`](../decisions.md).
+
+Cohere and Compare *sound* like a model's job, so folding them into Extract remains the obvious
+mistake. Both are set arithmetic over a graph and both carry property tests. Kept outside, the
+omission shown to the user is certain even though the extraction feeding it is not.
 
 **Cohere reads the graph. Clarity reads the prose.** That is the whole line between them. One
 asks whether a concept has no incoming link; the other asks whether a pronoun has two
@@ -136,7 +173,24 @@ finding.
 3. **Retrieve.** Compare needs passages.
 4. **Extract.** Needs the three above to generate inputs for its evaluation set.
 5. **Cohere**, then **Compare**. Cohere needs only Extract; Compare needs both sides present.
-6. **Session**, then **Interface**. Last, always.
+6. **Contradict.** The review phase. Model-dependent, needs its own eval set, comes after the
+   deterministic pieces that generate its inputs.
+7. **Session**, then **Interface**. Last, always.
+
+**Before any of 4–7, run the cheap experiment.** Take the eval set already scheduled at step 2,
+run Extract over it, run Cohere's set arithmetic, and count how often Cohere flags a concept the
+gold graph shows *was* linked. No interface, no extra labelling. One study on record reached 95%
+precision at **9% recall**, and if roughly nine in ten real links are missing from the extracted
+graph then nearly every concept looks unlinked and the child's modal question lands on a step the
+user did explain. That is a false-question rate, not an edge case, and it can invalidate the live
+phase before anything is built on top of it.
+
+**A live-only first release is available; whether it is worth shipping is open.** Steps 1–5 give
+a working session with one model and one eval set. The panel's unrefuted objection: strip the
+fiction and the modal session is a prompt followed by rereading your own notes, which is on the
+do-not-build list, and the answerability gate selects the concepts you most likely already knew.
+The counter is to treat the live child as an internal instrument and ship Contradict first, since
+a contradiction is diagnostic by construction. Unresolved.
 
 **Clarity** and **Transcribe** sit outside this order. Clarity needs nothing but text and can
 be built first or last. Transcribe is needed before any real session runs.

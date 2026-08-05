@@ -42,7 +42,10 @@ Not style preferences: a violation is wrong even if it works.
 5. **Anything that asks the user a question supplies the answer.** No feature ends on a finding.
 6. **Findings are phrased at the task, never the person**: "You said X but not how Y", not "your
    explanation was shallow."
-7. **No grade, score, or rung is displayed beside a diagnosis.**
+7. **No grade, score, or rung is displayed beside a diagnosis.** Briefly amended 2026-08-05 to
+   permit traceable point-coverage, then reverted the same day: a four-way design panel
+   independently declined to use the permission, including the design whose sole job was
+   answering *do I need to study this again*. Reasoning in [`docs/decisions.md`](docs/decisions.md).
 8. **Extraction is per-sentence, never one-shot over a whole explanation.**
 9. **Never diff two extractions of the user's own words**; compare their explanation against their
    source material. (Both are ~0.5 F1, the difference noise; numbers in the feature doc.)
@@ -63,7 +66,7 @@ re-parsing must not reshuffle identity.
 
 | Use | Not | Why |
 |---|---|---|
-| `node:sqlite` | `better-sqlite3` | `loadExtension()` and FTS5 built in; no native rebuild on Electron bumps |
+| `node:sqlite` | `better-sqlite3` | `loadExtension()` and FTS5 built in; no native rebuild on Electron bumps. **Verified 2026-08-05 inside Electron 43.3.0 / Node 24.18.1 / SQLite 3.53.1**: `ENABLE_FTS5` present, `bm25()` works. Ignore the many Node 22/23-era reports that FTS5 is missing — it was, and no longer is. `loadExtension()` needs `new DatabaseSync(path, { allowExtension: true })`. **Node 24 is the floor**, not 22 |
 | Vectors as SQLite blobs + one flat matmul | any vector DB | 100k × 768 is 2.3 ms |
 | Hybrid BM25 + dense with RRF | dense only | Formulas, citations, proper nouns are exact-term queries |
 | PDFium | PyMuPDF, Marker | Character index *is* the citation offset |
