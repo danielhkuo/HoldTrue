@@ -3,8 +3,8 @@
 > **Status: built and closed, 2026-08-06.** First piece of the build order.
 > `src/index/anchor.ts`, 87 lines, 30 tests, mutation 52/52 at 100%.
 >
-> Written at [`workflow.md`](../workflow.md) step 4 and kept through steps 5 to 8 and the
-> step 10 review. Four review rounds found and fixed: an inverted boundary predicate, a
+> Built through the [`/holdtrue-workflow`](../../.claude/skills/holdtrue-workflow/SKILL.md)
+> piece loop, before the red-team step existed. Four review rounds found and fixed: an inverted boundary predicate, a
 > vacuous fixture, three untested guards, a totality regression introduced while fixing the
 > second of those, and a second vacuous fixture next door to the first. Nothing here is
 > outstanding — see "What is not closed" at the end for the two notes this piece hands on.
@@ -112,8 +112,8 @@ right about *this range, in this text, right now*, which exact-offset comparison
 **Rejected.** *Nearest occurrence* — survives edits, but buys durability Anchor does not need and
 introduces a tie-break rule for equidistant matches, i.e. a way to return the wrong span.
 *Stored context* — would widen `Anchor` past the five fields `AGENTS.md` fixes, needing an
-amendment, and the context can itself change. The workflow's mutation example implies a
-32-character context window exists; it does not, and that example is illustrative rather than
+amendment, and the context can itself change. No context window exists in this module; a worked
+mutation example in `docs/workflow.md` once implied one, and it was illustrative rather than
 normative.
 
 **The consequence to hold onto:** a file edited mid-session makes its anchors unresolvable, and

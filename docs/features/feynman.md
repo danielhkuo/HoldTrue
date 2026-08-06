@@ -122,9 +122,10 @@ to catch, and flashcards are better for it.
 
 ## The plan
 
-Produced by [`../workflow.md`](../workflow.md) steps 1 to 3, which shows the prompts, the raw
-responses, and the decomposition mistake worth catching. Steps 4 to 8 iterate over this
-corrected result.
+Produced by the feature entry in [`/holdtrue-workflow`](../../.claude/skills/holdtrue-workflow/SKILL.md).
+The decomposition mistake worth catching — `Analyse` doing two jobs, one of which was set
+arithmetic — is worked through in [`../workflow.md`](../workflow.md) under *Finding the seams*.
+The piece loop iterates over the corrected result below.
 
 | Piece | Takes | Returns | Kind |
 |---|---|---|---|

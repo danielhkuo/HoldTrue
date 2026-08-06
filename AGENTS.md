@@ -3,7 +3,7 @@
 HoldTrue is a local-first study application. Electron + TypeScript. macOS is the primary target;
 Windows and Linux must work for most features.
 
-**Status: Anchor is built** (`src/index/anchor.ts`, 30 tests, mutation score 100%). Everything else is docs, a pre-commit hook, and two vendored skills.
+**Status: Anchor is built** (`src/index/anchor.ts`, 30 tests, mutation score 100%). Everything else is docs, a pre-commit hook, and three skills in `.claude/skills/`.
 
 What is true and what to do. For why, see [`docs/philosophy.md`](docs/philosophy.md),
 [`docs/features/feynman.md`](docs/features/feynman.md) and [`docs/decisions.md`](docs/decisions.md);
@@ -168,7 +168,7 @@ git config core.hooksPath .githooks
 ```
 
 The first blocks a commit where a test file and its implementation both change and the test's
-assertions were modified: the step 7 failure, an agent editing a test to make it pass. Commit the
+assertions were modified: an agent editing a test to make it pass. Commit the
 test alone, watch it fail, then commit the fix. The second blocks the banned assertion patterns
 under Testing.
 
@@ -176,8 +176,18 @@ Only these are non-skippable; everything else is a rule an agent can forget.
 
 ## Skills
 
-Skills live in `~/.claude/skills/`: user level, shared machine-wide with every other project.
-**Do not edit a skill file to suit this repo.** These rules apply instead.
+Most skills live in `~/.claude/skills/`: user level, shared machine-wide with every other project.
+**Do not edit a user-level skill file to suit this repo.** These rules apply instead.
+
+### Start here
+
+**`/holdtrue-workflow`** is the front door for building anything. It locates the work from the
+build order, the feature docs and the map, then runs either the feature entry or the piece loop.
+Local to this repo, in `.claude/skills/`, and the only document with numbered steps — a citation
+to "step 4" means a step there. [`docs/workflow.md`](docs/workflow.md) is the argument behind it.
+
+**`/wayfinder`** charts a feature's open design questions as tickets. An agent cannot invoke it;
+`/holdtrue-workflow` prepares the invocation and the human types it.
 
 ### Do not use in this repo
 

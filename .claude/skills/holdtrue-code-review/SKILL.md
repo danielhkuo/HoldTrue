@@ -5,7 +5,7 @@ description: Review the changes since a fixed point (commit, branch, tag, or mer
 
 > Derived from `code-review` in Matt Pocock's skills collection (MIT, see
 > `../LICENSE-mattpocock`). Modified for this repo: standards sources point at `AGENTS.md`,
-> and a refutation stage runs before aggregation. See `docs/workflow.md` step 10.
+> and a refutation stage runs before aggregation. See *The daily review* in `docs/workflow.md`.
 
 Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 

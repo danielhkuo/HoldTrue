@@ -5,7 +5,7 @@ description: Diagnosis loop for hard bugs and performance regressions. Use when 
 
 > Derived from `diagnosing-bugs` in Matt Pocock's skills collection (MIT, see
 > `../LICENSE-mattpocock`). Modified for this repo: in Phase 5 the human writes the regression
-> assertion. Every other phase is unchanged. See `docs/workflow.md` step 5.
+> assertion. Every other phase is unchanged. See *The oracle* in `docs/workflow.md`.
 
 # Diagnosing Bugs
 
@@ -129,7 +129,7 @@ If a correct seam exists:
 4. Watch it pass.
 5. Re-run the Phase 1 feedback loop against the original (un-minimised) scenario.
 
-The reason is in `docs/workflow.md` step 5. A regression test written by whoever just diagnosed
+The reason is under *The oracle* in `docs/workflow.md`. A regression test written by whoever just diagnosed
 the bug tends to assert the behaviour they happen to have implemented, which is the failure
 mode the rule exists to prevent.
 
