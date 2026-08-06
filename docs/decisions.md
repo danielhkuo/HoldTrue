@@ -13,11 +13,11 @@ Technical decisions and their reasons. Philosophy: [`philosophy.md`](philosophy.
 | **Ollama, or bring your own API key** | No bundled inference: no signing, no notarization entitlements, no giant installer. Ollama 0.32.4 *is* `llama-server`; bundling llama.cpp buys nothing. | **MLX**, deferred: Apple-only, permanent second code path, Ollama already uses Metal. |
 | **Qwen3.5 4B or larger for extraction** | Apache-2.0 at all sizes. Causal extraction collapses below 3B, and 3B to 4B is untested, so 4B is the floor. The app never downloads, stores or bundles a model: Ollama owns that, read `/api/tags` and offer `/api/pull`. | Gemma 4: non-OSI license on weights. |
 | **An embedding model served by Ollama** | Embedding a library means sending the whole library, so the cloud path belongs behind the same explicit switch as web retrieval. | Cloud embedding on the default path. |
-| **SQLite via `node:sqlite`** | Vectors as blobs, FTS5 keyword half, one flat matmul: 100k × 768 at 2.3 ms. Hybrid keyword+dense, since study material is full of formulas and proper nouns embeddings fumble. | Any vector database. Not warranted at this scale. |
+| **SQLite via `node:sqlite`** | Vectors as blobs, FTS5 keyword half, a worker-sharded flat scan. Hybrid keyword+dense, since study material is full of formulas and proper nouns embeddings fumble. Measured timings live in the [`AGENTS.md`](../AGENTS.md) stack table; the "2.3 ms" once stated here was unsourced and wrong by ~20×. | Any vector database. Not warranted at this scale. |
 | **PDFium** | The character index *is* the citation offset, exactly what span anchoring needs. | PyMuPDF (AGPL). Not a conflict now that we are AGPL too, but PDFium fits better technically and doesn't entangle forks. |
 | **Tavily, off by default** | 1,000 requests/month free, no card, terms permit app integration. | Google CSE (closed to new customers), Brave (free tier killed Feb 2026). |
-| **LettuceDetect v2** ⚠ unresolved | 307M, MIT, returns *which spans* are unsupported, not a yes/no. **Two open problems.** It has no runtime here: Ollama does not serve a 307M encoder, and adding ONNX Runtime contradicts the no-bundled-inference decision. And it presupposes a generated statement, which invariant 1 forbids, so span anchoring may already cover it. Resolve before depending on it. | None. |
-| **Astryx** (`@astryxdesign/core`) | Not recorded. | None. |
+| ~~**LettuceDetect v2**~~ **REJECTED 2026-08-06** | Two independent reasons, either sufficient. No runtime: Ollama does not serve a 307M encoder, and ONNX Runtime contradicts no-bundled-inference. And redundant: it was hired to check a *generated* statement against its cited span, but invariant 1 forbids generated text reaching the user, and `src/index/anchor.ts` already rejects any quote that is not an exact slice. | Kept as an open question for three days with nothing depending on it. |
+| ~~**Astryx**~~ **DELETED 2026-08-06** | Never recorded a reason, never recorded a rejected alternative, and never appeared in `package.json` or the lockfile. A row with no reason is not a decision. Re-add it with one if it is wanted. | n/a |
 | **AGPL-3.0** | Not recorded. | PolyForm Noncommercial: not OSI, ambiguous for a study tool. |
 
 ## Feynman design
@@ -34,10 +34,10 @@ Decided 2026-08-03. Feature doc: [`features/feynman.md`](features/feynman.md).
 | **Clarity is a separate instrument** | Expression and understanding are orthogonal — the feature doc already says holding the mechanism and failing to say it is not a failure of understanding. Separation is also what makes a clarity number legal: invariant 7 bans a grade *beside a diagnosis*, and this one is not beside anything. Being isolated, a wrong count cannot corrupt a finding. | A combined score. Clarity feeding the understanding path. **A clarity eval** — "was this clear" has no ground truth, one labeller, and a model listener is not naive enough to serve as an oracle. `workflow.md` step 9 already forbids an LLM judge. |
 | **Clarity reports counts, never verdicts** | "Your sentences averaged 34 words" is a fact. "Your explanation was hard to follow" is an inference needing evidence nobody has. An instrument makes no claim, so it needs no eval. | Any holistic judgement of an explanation's quality. |
 
-**Was one model on the finding path.** Extract, with Cohere, Compare and Clarity all
-deterministic. **Superseded 2026-08-05:** the review phase added Contradict, Points and Cover,
-so the finding path now calls four models and needs four eval sets. See the next section. The
-live phase still calls exactly one.
+**Two models on the finding path: Extract and Contradict.** Cohere, Compare and Clarity are
+deterministic and carry property tests. It briefly reached four on 2026-08-05 when a
+point-coverage readout was added; that was reverted the same day and took Points and Cover with
+it. **The live phase calls exactly one.**
 
 ## Feynman session shape
 

@@ -165,32 +165,57 @@ no claim about them. It never says an explanation was unclear, because that need
 truth nobody has. It never touches the understanding path, so a wrong count cannot corrupt a
 finding.
 
-**Build order.**
+**Build order.** Corrected 2026-08-06; the previous version deferred the go/no-go behind the two
+most expensive deterministic pieces, for a reason that does not hold.
 
+0. **The falsification week.** Costs a day each and no code. See below.
 1. **Anchor.** Every other piece produces or consumes anchors, so changing the format later
-   touches all of them.
-2. **Index.** Retrieve and Extract need real chunks.
-3. **Retrieve.** Compare needs passages.
-4. **Extract.** Needs the three above to generate inputs for its evaluation set.
-5. **Cohere**, then **Compare**. Cohere needs only Extract; Compare needs both sides present.
-6. **Contradict.** The review phase. Model-dependent, needs its own eval set, comes after the
-   deterministic pieces that generate its inputs.
-7. **Session**, then **Interface**. Last, always.
+   touches all of them. *Done.*
+2. **Extract, with its eval set.** **Does not need Index or Retrieve.** Its gold labels are spans
+   into the *explanation text* — what the person said — and Anchor already resolves spans into
+   arbitrary text. Hand-label against pasted explanations. Putting this fourth was the repo's
+   most expensive error: it hid the one measurement that can end the project behind a month of
+   work that only matters if the measurement passes.
+3. **Index**, then **Retrieve with the abstain in front of it**. The abstain is twenty lines and
+   is the only thing standing between a growing corpus and a verbatim quote from the wrong note.
+   Build it before the retrieval it guards, not after.
+4. **Cohere**, then **Compare**. Cohere needs only Extract; Compare needs both sides present.
+5. **Contradict**, with its own eval set — whose collectability is itself unresolved, see below.
+6. **Session**, then **Interface**. Last, always.
 
-**Before any of 4–7, run the cheap experiment.** Take the eval set already scheduled at step 2,
-run Extract over it, run Cohere's set arithmetic, and count how often Cohere flags a concept the
-gold graph shows *was* linked. No interface, no extra labelling. One study on record reached 95%
-precision at **9% recall**, and if roughly nine in ten real links are missing from the extracted
-graph then nearly every concept looks unlinked and the child's modal question lands on a step the
-user did explain. That is a false-question rate, not an edge case, and it can invalidate the live
-phase before anything is built on top of it.
+This now agrees with the project-level order in [`../decisions.md`](../decisions.md), which is
+the single source for it. Where the two ever disagree again, that file wins.
 
-**A live-only first release is available; whether it is worth shipping is open.** Steps 1–5 give
-a working session with one model and one eval set. The panel's unrefuted objection: strip the
-fiction and the modal session is a prompt followed by rereading your own notes, which is on the
-do-not-build list, and the answerability gate selects the concepts you most likely already knew.
-The counter is to treat the live child as an internal instrument and ship Contradict first, since
-a contradiction is diagnostic by construction. Unresolved.
+### The falsification week, before step 2
+
+Three measurements, each about a day, none needing a model or a line of code. **Write the kill
+numbers down before running any of them** — a threshold chosen after seeing the result, by the
+person who wants the feature to exist, is not a gate.
+
+**Within-sentence rate.** Write out fifteen to twenty explanations from memory on real topics.
+Mark every causal link by hand. Count what fraction have cause, effect and relation inside a
+single sentence. Invariant 8 mandates per-sentence extraction, so that fraction is the ceiling on
+everything Extract can ever see — a fact about how you speak, not about the model. Causal
+extraction runs ~97% F1 within a sentence and roughly 5% across one, so "the pressure drops. so
+the valve opens" is structurally invisible. **Suggested kill number: below 60%, invariant 8 needs
+renegotiating rather than obeying.**
+
+**The false-question rate.** Run Extract over those same explanations, then Cohere's set
+arithmetic, and count how often Cohere flags a concept the gold labels show *was* linked. If
+extraction misses most real links, nearly every concept looks unlinked and the child's modal
+question lands on a step the user did explain.
+
+**Vault eligibility.** Done 2026-08-06 for one vault; result in
+[issue #26](https://github.com/danielhkuo/HoldTrue/issues/26). Roughly 13–16% of notes are causal
+mechanisms, and of those nearly all already carry a quotable causal sentence. Eligibility is
+**not** the binding constraint. Generalisability to other people's notes is open.
+
+**A live-only first release is available; whether it is worth shipping is open.** The unrefuted
+objection: strip the fiction and the modal session is a prompt followed by rereading your own
+notes, which is on the do-not-build list, and the answerability gate selects the concepts you
+most likely already knew. The counter is to treat the live child as an internal instrument and
+ship Contradict first, since a contradiction is diagnostic by construction — and to ship against
+typed text, since voice's only remaining justification is fiction. Unresolved.
 
 **Clarity** and **Transcribe** sit outside this order. Clarity needs nothing but text and can
 be built first or last. Transcribe is needed before any real session runs.

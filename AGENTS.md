@@ -3,7 +3,7 @@
 HoldTrue is a local-first study application. Electron + TypeScript. macOS is the primary target;
 Windows and Linux must work for most features.
 
-**Status: no application code exists yet.** Docs, a pre-commit hook, and two vendored skills.
+**Status: Anchor is built** (`src/index/anchor.ts`, 27 tests, mutation score 100%). Everything else is docs, a pre-commit hook, and two vendored skills.
 
 What is true and what to do. For why, see [`docs/philosophy.md`](docs/philosophy.md),
 [`docs/features/feynman.md`](docs/features/feynman.md) and [`docs/decisions.md`](docs/decisions.md);
@@ -67,7 +67,7 @@ re-parsing must not reshuffle identity.
 | Use | Not | Why |
 |---|---|---|
 | `node:sqlite` | `better-sqlite3` | `loadExtension()` and FTS5 built in; no native rebuild on Electron bumps. **Verified 2026-08-05 inside Electron 43.3.0 / Node 24.18.1 / SQLite 3.53.1**: `ENABLE_FTS5` present, `bm25()` works. Ignore the many Node 22/23-era reports that FTS5 is missing — it was, and no longer is. `loadExtension()` needs `new DatabaseSync(path, { allowExtension: true })`. **Node 24 is the floor**, not 22 |
-| Vectors as SQLite blobs + one flat matmul | any vector DB | 100k × 768 is 2.3 ms |
+| Vectors as SQLite blobs + a worker-sharded flat scan | any vector DB | **Measured 2026-08-06**, 100k × 768 float32 in Node on an M5 Max: **52 ms** single-threaded, 12 ms across 4 workers, 6.4 ms across 8. The previously stated "2.3 ms" was unsourced and wrong by ~20×; it implies 67 GFLOP/s, which is a BLAS figure, not a JavaScript one — V8 does not auto-vectorize. The decision survives, the implementation gains `worker_threads` over a `SharedArrayBuffer`, about 40 lines. Expect 150–250 ms single-threaded on a mid-range Windows laptop |
 | Hybrid BM25 + dense with RRF | dense only | Formulas, citations, proper nouns are exact-term queries |
 | PDFium | PyMuPDF, Marker | Character index *is* the citation offset |
 | Ollama over HTTP | bundling inference | Ollama already *is* `llama-server` |
@@ -75,19 +75,15 @@ re-parsing must not reshuffle identity.
 | Qwen3.5 4B or larger for extraction | anything under 4B | Causal extraction collapses below 3B and 3B to 4B is untested, so 4B is the floor. **The app never downloads, stores or bundles a model**; Ollama does. Read `/api/tags` for what is installed, offer `/api/pull` if none is suitable |
 | An embedding model served by Ollama | a cloud embedding API by default | Embedding a library sends the whole library: same explicit switch as web retrieval, never the default path |
 | `@parcel/watcher` | chokidar | `writeSnapshot()`/`getEventsSince()` handles cold start |
-| Astryx (`@astryxdesign/core`) | n/a | n/a |
 | Tavily, off by default | Google CSE, Brave | The others' free tiers are gone |
 
 ### Open questions in this table
 
-**LettuceDetect v2** (chosen to check a generated statement against its cited span) has no runtime
-here: a
-307M encoder, unserved by Ollama, and ONNX Runtime or transformers.js contradicts
-no-bundled-inference. Possibly redundant too: Law 2 means we quote rather than generate, and span
-anchoring already rejects non-substring quotes. Resolve before building on it.
+None. Both former entries were closed 2026-08-06 and moved to rejected rows in
+[`docs/decisions.md`](docs/decisions.md): **LettuceDetect** has no runtime *and* is redundant
+given invariant 1 plus the exact-slice rejection in `src/index/anchor.ts`; **Astryx** never had
+a recorded reason, a rejected alternative, or an entry in `package.json`.
 
-**Astryx** is in `docs/decisions.md` with no recorded reason and no rejected alternative: the only
-stack decision with nothing behind it.
 
 ## macOS rules
 
@@ -215,9 +211,6 @@ GitHub remote to exist and be reachable.
 
 ## Build order
 
-1. Index and anchor schema. Everything reads from it.
-2. Extraction harness plus 100 to 150 labelled explanations. If a small local model can't extract concepts
-   and asserted links, the Feynman feature is cloud-only or doesn't exist. Find out before there's a
-   UI on top.
-3. Feynman.
-4. Everything else.
+**Single source: [`docs/decisions.md`](docs/decisions.md).** It was written out here too, and the
+two drifted until a third copy in the feature doc contradicted both and deferred the project's
+one kill switch behind a month of work. Do not restate it again — link to it.
