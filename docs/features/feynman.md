@@ -132,12 +132,24 @@ The piece loop iterates over the corrected result below.
 | **Anchor** | A document and a character range | A reference that finds that range again after re-parsing | Deterministic |
 | **Index** | A folder of documents | Chunks with stable ids and offsets | Deterministic |
 | **Transcribe** | Spoken audio | Text the user then corrects by hand | **Model**, outside the gate |
-| **Retrieve** | A set of concepts | Ranked passages from the user's own library | Deterministic |
-| **Extract** | The user's corrected explanation | The concepts named and the links asserted, with spans | **Model** |
+| **Retrieve** | A set of concepts | Ranked passages from the user's folder | Deterministic |
+| **Extract** | The user's corrected explanation, **or a retrieved source passage** | The concepts named and the links asserted, with spans | **Model** |
 | **Cohere** | The extracted graph, alone | Where the chain does not close | Deterministic |
-| **Compare** | Extracted concepts plus retrieved passages | The link present in the source and absent from the explanation | Deterministic |
+| **Compare** | Links extracted from the explanation, plus links extracted from the retrieved passages | The link present in the source and absent from the explanation | Deterministic |
 | **Contradict** | Extracted claims plus retrieved passages | Where a passage asserts otherwise, with both spans | **Model** |
 | **Clarity** | The raw transcript, nothing else | Counts of measurable surface facts | Deterministic |
+
+**Compare is set arithmetic over two link sets, not over concepts and passages.** The table
+previously gave it `extracted concepts plus retrieved passages` in and a *link* out, and a passage
+is not a link — nothing upstream established that the source asserted anything.
+[#22](https://github.com/danielhkuo/HoldTrue/issues/22) closed that gap on 2026-08-06: Extract is
+one model step run on two kinds of input, so both sides of the comparison are link sets and Compare
+keeps its property test.
+
+**Picking scopes the topic; retrieval searches the folder.** Step 1 above and Retrieve's row are
+not in conflict — [#20](https://github.com/danielhkuo/HoldTrue/issues/20) settled that on
+2026-08-06. A pasted article is stored as a folder of one, so corpus scope is a parameter rather
+than a second code path.
 
 **The model surface is two pieces: Extract and Contradict.** It briefly reached four on
 2026-08-05 when a point-coverage readout was added; that was reverted the same day and Points

@@ -37,8 +37,10 @@ Four reads, in order. No questions until they are done — the answers are in fi
    does the test file exist, is there a red commit in the log, does the implementation exist.
    Correct the line rather than believing it.
 
-4. **The map.** `gh issue list --label wayfinder:map`, then its open children. Cross-check
-   against the spec's section 5, which may already have ruled some of them non-blocking.
+4. **The map.** `gh issue list --label wayfinder:map`, then its open children — **bodies and
+   comments both**. Wayfinder records a resolution as a comment, so a body alone is the question
+   without the answer. Cross-check against the spec's section 5, which may already have ruled
+   some of them non-blocking.
 
 Then say where you are and what is next, and stop if the answer is that nothing can start. Run
 against this repo on 2026-08-06 the four reads produce:
@@ -126,8 +128,20 @@ branch has sprawled.
 
 ### 2. Harvest the map — before research, not after
 
-This is the step that stops the same question being answered twice. Query the feature's map and
-sort every child:
+This is the step that stops the same question being answered twice.
+
+**Read every ticket's comments, not only its body.** Wayfinder posts a resolution as a comment
+and step 11 below writes back the same way, so the body is the question and the comments are
+where the thinking is. Found by running this skill on 2026-08-06: #22 and #25 each carried a
+substantive comment the body did not, and #22's had already argued one of its three candidate
+shapes out on the extraction arithmetic. A harvest that reads bodies only re-opens decisions that
+are already half made, which is precisely the duplication this step exists to prevent.
+
+An open ticket carrying a resolution comment is a **third state** — not decided, not untouched.
+Say what the comment already settled and what it left open, and scope any further work to the
+remainder.
+
+Query the feature's map and sort every child:
 
 - **Closed, and it bears on this piece.** Decided. Cite the ticket in the spec. Do not
   re-litigate it and do not re-research it.
