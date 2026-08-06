@@ -17,9 +17,10 @@ const makeDoc = (text: string): Doc => ({
 })
 
 // ===========================================================================
-// THE ORACLE — human-authored. The first three are lifted verbatim from
-// docs/workflow.md step 5; the fourth was written to settle exact-offset
-// resolution (docs/specs/anchor.md section 5B).
+// THE ORACLE — human-authored, but not all from one sitting. The first three are lifted
+// verbatim from docs/workflow.md step 5, where they appear as that document's own worked
+// example. The fourth was stated by the human on 2026-08-05 to settle exact-offset
+// resolution; it is recorded in docs/specs/anchor.md section 5B rather than in workflow.md.
 //
 //   "An anchor created from a span resolves back to exactly that span, in the
 //    same document, every time."
@@ -64,8 +65,10 @@ describe('the oracle', () => {
 })
 
 // ===========================================================================
-// THE THREE RULINGS — decided 2026-08-05, encoded by agent from the decisions
-// as stated. Recorded in docs/specs/anchor.md.
+// THE RULINGS — stated by the human, encoded by agent. The first three were decided
+// 2026-08-05; the last two on 2026-08-06, after a mutation run showed the original
+// half-a-character rule was backwards in both directions. All five are recorded in
+// docs/specs/anchor.md section 5.
 // ===========================================================================
 
 describe('what may not be anchored', () => {
@@ -108,6 +111,24 @@ describe('what may not be anchored', () => {
     const doc = makeDoc('a\uD83Db')
     expect(resolveAnchor(doc, createAnchor(doc, 2, 3)!)).toEqual({ start: 2, end: 3 })
   })
+
+  // Ruled 2026-08-06: the rule applies everywhere, not only where anchors are made.
+  // A hand-built anchor arriving from storage, from IPC, or from a model that emits
+  // spans reaches resolveAnchor without ever passing through createAnchor. On this
+  // ordinary, well-formed document createAnchor(5, 6) is refused above; resolving the
+  // same offsets must be refused too, or the two doors disagree and the broken half of
+  // a character reaches the screen as a verbatim quote.
+  test('refuses to resolve an anchor whose quote is not valid text on its own', () => {
+    const doc = makeDoc('wave 👋 here')
+    const handBuilt = {
+      doc_id: doc.doc_id,
+      unit_id: doc.unit_id,
+      char_start: 5,
+      char_end: 6,
+      quote: '\uD83D',
+    }
+    expect(resolveAnchor(doc, handBuilt)).toBeNull()
+  })
 })
 
 // ===========================================================================
@@ -142,9 +163,11 @@ describe('resolveAnchor rejects anchors that do not belong to the document', () 
   // doc_id implies the same text — so it is hand-built to exercise the guard directly.
   // A stored anchor could still be corrupt, or predate a format change.
   //
-  // The quote must be exactly what the coerced slice returns, or the quote comparison
-  // rejects the anchor before the offset guard is ever reached and the test pins
-  // nothing. 'short'.slice(4, 9) is 't'.
+  // The quote must be exactly what the coerced slice returns, or this test pins nothing.
+  // With a quote of 'quick' it still passed — but for a reason that did not depend on the
+  // guard: the guard rejected it, and so would the quote comparison if the guard were
+  // deleted, so the test could not tell the two apart. 'short'.slice(4, 9) is 't', which
+  // makes the guard the only thing standing between this anchor and a resolution.
   test('offsets past the end of the document, on a hand-built anchor', () => {
     const short = makeDoc('short')
     const corrupt = {
@@ -190,6 +213,27 @@ describe('resolveAnchor rejects anchors that do not belong to the document', () 
   // A hand-built anchor whose quote is longer than the range it claims.
   test('quote disagreeing with its own offsets', () => {
     expect(resolveAnchor(doc, { ...anchor, quote: 'quick brown' })).toBeNull()
+  })
+
+  // Ruled 2026-08-06. resolveAnchor is the gate for anchors arriving from storage, from
+  // IPC, or from a model — none of which are bound by the type system. A malformed one is
+  // a null, not an error. This is the case that had no coverage at all, and a regression
+  // slipped through it: asking a showability check of anchor.quote threw on every shape
+  // below until it was asked of the slice instead.
+  test('returns null for any malformed anchor, and never throws', () => {
+    const shapes: unknown[] = [null, undefined, 42, ['a'], { length: 1 }, Symbol('q')]
+    for (const quote of shapes) {
+      const malformed = { ...anchor, quote } as unknown as Parameters<typeof resolveAnchor>[1]
+      expect(resolveAnchor(doc, malformed)).toBeNull()
+    }
+    const { quote: _dropped, ...quoteless } = anchor
+    expect(resolveAnchor(doc, quoteless as unknown as Parameters<typeof resolveAnchor>[1])).toBeNull()
+  })
+
+  // With the offset comparisons gone, the emptiness half of the showability rule is the
+  // only thing stopping an inverted hand-built anchor resolving to a backwards Span.
+  test('an inverted hand-built anchor does not resolve', () => {
+    expect(resolveAnchor(doc, { ...anchor, char_start: 9, char_end: 4 })).toBeNull()
   })
 })
 
