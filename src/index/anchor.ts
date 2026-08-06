@@ -32,22 +32,6 @@ export type Anchor = {
   readonly quote: string
 }
 
-/**
- * True when `offset` does not fall inside a surrogate pair.
- *
- * JavaScript strings are UTF-16, so an astral-plane character such as an emoji
- * occupies two code units. An offset landing between them would slice out a lone
- * surrogate — valid UTF-16, but it renders as a replacement glyph, and quotes are
- * user-facing under Law 2. Splitting a combining sequence is deliberately *not*
- * checked here: both halves of `e` + U+0301 are real readable text.
- */
-const isCharacterBoundary = (text: string, offset: number): boolean => {
-  if (offset <= 0 || offset >= text.length) return true
-  const before = text.charCodeAt(offset - 1)
-  // A high surrogate immediately before the offset means the offset splits a pair.
-  return !(before >= 0xd800 && before <= 0xdbff)
-}
-
 const isUsableOffset = (value: number, length: number): boolean =>
   Number.isInteger(value) && value >= 0 && value <= length
 
@@ -61,15 +45,29 @@ export function createAnchor(doc: Doc, start: number, end: number): Anchor | nul
   // every document, so it would satisfy invariant 2 vacuously rather than actually.
   if (end <= start) return null
 
-  if (!isCharacterBoundary(text, start)) return null
-  if (!isCharacterBoundary(text, end)) return null
+  const quote = text.slice(start, end)
+
+  // Half a character is half a character, whether or not the other half is still in
+  // the document. JavaScript strings are UTF-16, so an astral-plane character such as
+  // an emoji occupies two code units; a span taking one of them yields a lone surrogate
+  // that renders as a replacement glyph, and quotes are user-facing under Law 2.
+  //
+  // Asking whether the *quote* is well-formed, rather than whether an offset sits
+  // between two particular code units, is what makes this agree with the ruling in
+  // both directions: it refuses a truncated character even at the end of a document,
+  // and it allows readable text that merely happens to sit beside a lone surrogate.
+  //
+  // Splitting a combining sequence is deliberately still allowed: both halves of
+  // `e` + U+0301 are real readable text, and refusing them would need full grapheme
+  // segmentation.
+  if (!quote.isWellFormed()) return null
 
   return {
     doc_id: doc.doc_id,
     unit_id: doc.unit_id,
     char_start: start,
     char_end: end,
-    quote: text.slice(start, end),
+    quote,
   }
 }
 
