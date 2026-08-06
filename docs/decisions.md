@@ -159,6 +159,46 @@ from them.
 3. **Incremental re-indexing.** An Obsidian vault is thousands of constantly changing files;
    a full re-index per save is unusable.
 
+### `doc_id` is the content hash
+
+Decided 2026-08-05, while building Anchor.
+
+`doc_id` is a hash of the document's text, so it identifies **a version of a document**, not a
+file on disk. A file that changes gets a new `doc_id`, and every anchor made from the old one
+stops resolving — because the existing `doc_id` comparison rejects it, before any text is
+compared.
+
+**Why, concretely.** Anchor originally verified a reference by asking *"is the stored text still
+at the stored position?"* That is a question about one spot in a file, and it cannot distinguish
+*nothing moved* from *something else identical slid into that slot*. This is not hypothetical: it
+was found by a test. An edit inserting exactly 19 characters ahead of an anchor at offset 19
+slid a **different** occurrence of `water` into precisely the bookmarked position. The stored
+text matched, resolution succeeded, and it returned the wrong occurrence with no error. Repeated
+words make it likelier, and study notes repeat their key terms constantly.
+
+Hashing asks a question with a real answer instead — *is this the same document I made the
+reference from?* — and the collision becomes unreachable, because a changed file never gets as
+far as comparing text at a position.
+
+**It costs nothing in Anchor.** No new field, no change to the five-field format, no new code in
+`resolveAnchor`. Identity does the work.
+
+**It fails in the safe direction.** A typo fixed elsewhere in the file invalidates anchors that
+were still fine. Since anchors are session-scoped and a session is minutes long, discarding a
+good reference costs nothing, where keeping a subtly wrong one puts a false quote on screen.
+
+| Rejected | Why |
+|---|---|
+| Comparing stored text at stored offsets alone | The collision above. Silent, and likelier the more a term repeats. |
+| Storing surrounding context to disambiguate | Widens the anchor format past five fields, and the context can itself change. Already rejected once for Anchor. |
+| Re-resolving by searching for the quote | Returns a confident wrong occurrence rather than nothing — the failure the whole product is built to avoid. |
+
+**Consequence to handle in Index, not here.** `doc_id` now answers *which version*, so something
+else must answer *which file* — the calendar and topic parser have to follow a document across
+edits. That is a separate stable identifier, and it belongs to Index. Two documents with
+byte-identical content will also share a `doc_id`; harmless for Anchor, since the text is the
+same either way, but Index must not assume `doc_id` is unique per path.
+
 Schedule retrieval practice and Feynman sessions **independently**: spacing is well evidenced
 for retrieval, but no evidence that repeating an explain-back loop on the same topic helps,
 and one finding suggests the effect is not topic-specific.

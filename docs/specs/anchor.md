@@ -101,6 +101,23 @@ normative.
 `null` is the correct answer. Under invariant 2 a quote that cannot be verified is not shown.
 Failing closed is the whole point.
 
+**C. `doc_id` is a content hash, and that is what actually invalidates a stale anchor.**
+
+Exact-offset comparison alone has a hole, found by a test rather than by reasoning: an edit that
+slides a *different but identical* piece of text into the bookmarked position resolves
+successfully and returns the wrong occurrence, silently. The likelier the more a term repeats,
+and study notes repeat their key terms constantly.
+
+So `doc_id` hashes the document's text, identifying **a version of a document** rather than a
+file. An edited file has a different `doc_id`, and the `doc_id` comparison at the top of
+`resolveAnchor` rejects every anchor made from the old version — before any text is compared, so
+the collision is unreachable.
+
+**Anchor needs no code for this.** It already compares `doc_id`. Computing the hash belongs to
+whatever constructs a `Doc`, which is Index. Anchor stays a comparison, not a hasher.
+
+Full reasoning and rejected alternatives in [`../decisions.md`](../decisions.md).
+
 ## 6. Hard cases the property test generator must produce
 
 Named here so the generator can be checked against a list rather than inspected by vibe:

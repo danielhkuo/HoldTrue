@@ -1,12 +1,17 @@
 import { describe, expect, test } from 'vitest'
+import { createHash } from 'node:crypto'
 import fc from 'fast-check'
 import { createAnchor, resolveAnchor, type Doc } from './anchor.js'
 
 // Fixture. Agent-written per AGENTS.md "Who writes what": setup, teardown and fixtures
 // are mine, assertions are not. unit_id is opaque here on purpose — see
 // docs/specs/anchor.md section 5A, and issue #21.
+//
+// doc_id is the content hash, so it identifies a *version* of a document rather than a
+// file. Edit the text and you get a different doc_id, which is what invalidates every
+// anchor made from the old version. Decided 2026-08-05, docs/decisions.md.
 const makeDoc = (text: string): Doc => ({
-  doc_id: 'doc-under-test',
+  doc_id: createHash('sha256').update(text, 'utf8').digest('hex').slice(0, 16),
   unit_id: 'unit-0',
   text,
 })
@@ -43,9 +48,13 @@ describe('the oracle', () => {
     expect(resolveAnchor(doc, createAnchor(doc, 19, 24)!)).toEqual({ start: 19, end: 24 })
   })
 
-  // The quote below still exists in the edited document, 18 characters further
-  // right, so an implementation that searches would find it and return a span.
-  // Returning null is what makes this exact-offsets rather than nearest-occurrence.
+  // This fixture is deliberately the adversarial one. The inserted prefix is exactly
+  // 19 characters, so in the edited document a *different* occurrence of "water" lands
+  // on precisely the bookmarked offsets 19-24. Comparing stored text at stored offsets
+  // therefore SUCCEEDS here and hands back the wrong occurrence, silently — which is
+  // how this hole was found. The content-hashed doc_id rejects the anchor on identity
+  // before any text is compared, so the collision is unreachable. Keep the coincidence:
+  // it is the case that text comparison alone gets wrong.
   test('returns null when the document has changed under the anchor', () => {
     const doc = makeDoc('water splits. then water recombines.')
     const anchor = createAnchor(doc, 19, 24)!
@@ -114,8 +123,19 @@ describe('resolveAnchor rejects anchors that do not belong to the document', () 
     expect(resolveAnchor({ ...doc, unit_id: 'unit-9' }, anchor)).toBeNull()
   })
 
-  test('offsets past the end of a shorter document', () => {
-    expect(resolveAnchor(makeDoc('short'), anchor)).toBeNull()
+  // Defensive. With content-hashed doc_ids this state cannot arise naturally — the same
+  // doc_id implies the same text — so it is hand-built to exercise the guard directly.
+  // A stored anchor could still be corrupt, or predate a format change.
+  test('offsets past the end of the document, on a hand-built anchor', () => {
+    const short = makeDoc('short')
+    const corrupt = {
+      doc_id: short.doc_id,
+      unit_id: short.unit_id,
+      char_start: 4,
+      char_end: 9,
+      quote: 'quick',
+    }
+    expect(resolveAnchor(short, corrupt)).toBeNull()
   })
 
   // A hand-built anchor whose quote is longer than the range it claims.
