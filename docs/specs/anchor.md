@@ -118,6 +118,30 @@ whatever constructs a `Doc`, which is Index. Anchor stays a comparison, not a ha
 
 Full reasoning and rejected alternatives in [`../decisions.md`](../decisions.md).
 
+**D. The half-a-character rule asks about the quote, not about the offset. Corrected 2026-08-06.**
+
+The first implementation asked whether an *offset* sat between two particular code units — was
+the code unit before it a high surrogate. A mutation run found that wrong in both directions:
+
+- It **accepted** a truncated character at the end of a document. On `'wave \uD83D'` it returned
+  a fully verified anchor whose quote was half an emoji — precisely what the rule forbids.
+- It **refused** readable text that merely sat beside a lone surrogate. In `'a\uD83Db'` the
+  letter `b` was unanchorable.
+
+Both are only reachable on malformed text, and reading a UTF-8 file cannot produce a lone
+surrogate — invalid bytes become U+FFFD. So the defect may be unreachable through the file path
+today and become reachable only through serialization or IPC. It was fixed anyway, because the
+correct rule is *less* code than the wrong one rather than a defensive addition to it.
+
+The rule now asks whether the **quote** is well-formed (`String.prototype.isWellFormed`), which
+is what the ruling says in the first place. Requires `ES2024`; the Node 24 floor covers it at
+runtime.
+
+**The lesson generalises.** The predicate was written from the mechanism (surrogate pairs
+occupy two code units) rather than from the rule (a quote must be valid text on its own).
+Encoding the mechanism happened to agree with the rule on well-formed input and diverge
+elsewhere. Where a rule can be stated directly, state it directly.
+
 ## 6. Hard cases the property test generator must produce
 
 Named here so the generator can be checked against a list rather than inspected by vibe:

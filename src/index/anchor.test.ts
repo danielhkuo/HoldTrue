@@ -93,6 +93,21 @@ describe('what may not be anchored', () => {
     const doc = makeDoc('café society')
     expect(resolveAnchor(doc, createAnchor(doc, 0, 4)!)).toEqual({ start: 0, end: 4 })
   })
+
+  // Half a character is half a character whether or not the other half is still in
+  // the document. This document ends mid-character, so the earlier boundary rule —
+  // which only inspected the code unit *before* an offset — accepted it.
+  test('refuses a span whose quote is not valid text on its own', () => {
+    const truncated = makeDoc('wave \uD83D')
+    expect(createAnchor(truncated, 5, 6)).toBeNull()
+  })
+
+  // The mirror of the above: a lone surrogate elsewhere in the document must not
+  // make readable text beside it unanchorable.
+  test('allows readable text that happens to follow a lone surrogate', () => {
+    const doc = makeDoc('a\uD83Db')
+    expect(resolveAnchor(doc, createAnchor(doc, 2, 3)!)).toEqual({ start: 2, end: 3 })
+  })
 })
 
 // ===========================================================================
@@ -126,6 +141,10 @@ describe('resolveAnchor rejects anchors that do not belong to the document', () 
   // Defensive. With content-hashed doc_ids this state cannot arise naturally — the same
   // doc_id implies the same text — so it is hand-built to exercise the guard directly.
   // A stored anchor could still be corrupt, or predate a format change.
+  //
+  // The quote must be exactly what the coerced slice returns, or the quote comparison
+  // rejects the anchor before the offset guard is ever reached and the test pins
+  // nothing. 'short'.slice(4, 9) is 't'.
   test('offsets past the end of the document, on a hand-built anchor', () => {
     const short = makeDoc('short')
     const corrupt = {
@@ -133,9 +152,39 @@ describe('resolveAnchor rejects anchors that do not belong to the document', () 
       unit_id: short.unit_id,
       char_start: 4,
       char_end: 9,
-      quote: 'quick',
+      quote: 't',
     }
     expect(resolveAnchor(short, corrupt)).toBeNull()
+  })
+
+  // String.prototype.slice is total and coerces a negative index to count from the end,
+  // so an anchor whose start is shifted down by exactly the document length slices back
+  // to its own quote and verifies. Without the offset guard this resolves and returns a
+  // negative start.
+  test('a negative start does not resolve, even when the slice reproduces the quote', () => {
+    const doc = makeDoc('the quick brown fox')
+    const corrupt = {
+      doc_id: doc.doc_id,
+      unit_id: doc.unit_id,
+      char_start: 4 - doc.text.length,
+      char_end: 9,
+      quote: 'quick',
+    }
+    expect(resolveAnchor(doc, corrupt)).toBeNull()
+  })
+
+  // The empty string is inside every document, so an empty quote verifies vacuously
+  // rather than actually — the same reason createAnchor refuses a zero-length span.
+  test('an empty quote does not resolve, wherever it claims to sit', () => {
+    const doc = makeDoc('the quick brown fox')
+    const corrupt = {
+      doc_id: doc.doc_id,
+      unit_id: doc.unit_id,
+      char_start: 7,
+      char_end: 7,
+      quote: '',
+    }
+    expect(resolveAnchor(doc, corrupt)).toBeNull()
   })
 
   // A hand-built anchor whose quote is longer than the range it claims.
