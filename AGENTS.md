@@ -3,7 +3,7 @@
 HoldTrue is a local-first study application. Electron + TypeScript. macOS is the primary target;
 Windows and Linux must work for most features.
 
-**Status: Anchor is built** (`src/index/anchor.ts`, 27 tests, mutation score 100%). Everything else is docs, a pre-commit hook, and two vendored skills.
+**Status: Anchor is built** (`src/index/anchor.ts`, 30 tests, mutation score 100%). Everything else is docs, a pre-commit hook, and two vendored skills.
 
 What is true and what to do. For why, see [`docs/philosophy.md`](docs/philosophy.md),
 [`docs/features/feynman.md`](docs/features/feynman.md) and [`docs/decisions.md`](docs/decisions.md);
@@ -119,9 +119,11 @@ implementation exists. Guards against tests written to confirm current behaviour
 that never touch real logic, bare boolean assertions. The documented weak-oracle patterns.
 
 **Coverage is not a target.** Controlling for suite size, its correlation with fault detection is
-near zero. Gap-finder only: low is signal, high is not. Mutation testing (Stryker,
-`--incremental`, nightly, deterministic core only) is the real check: surviving mutants are bug
-reports, the score is noise.
+near zero. Gap-finder only: low is signal, high is not. Mutation testing (Stryker, deterministic core only) is the real check: surviving mutants are bug
+reports, the score is noise. **Run `npm run mutate`, which is a full run.** `--incremental` is
+available as `npm run mutate:incremental` but is not the default: its baseline lives in
+gitignored `reports/`, so it is machine-local and goes stale silently — it was found reporting
+survivors that a fix had already killed.
 
 **Fixtures are language-agnostic, frameworks are not.** Golden inputs and outputs as JSON, loaded by
 a thin runner. Test public APIs, not internals. No Cucumber, no Pact: neither has the audience or

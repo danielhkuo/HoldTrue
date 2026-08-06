@@ -159,6 +159,13 @@ from them.
 3. **Incremental re-indexing.** An Obsidian vault is thousands of constantly changing files;
    a full re-index per save is unusable.
 
+Schedule retrieval practice and Feynman sessions **independently**: spacing is well evidenced
+for retrieval, but no evidence that repeating an explain-back loop on the same topic helps,
+and one finding suggests the effect is not topic-specific.
+
+Obsidian needs no plugin to *read*: a vault is a folder of markdown. A plugin is for writing
+back only, and belongs in its own repo.
+
 ### `doc_id` is the content hash
 
 Decided 2026-08-05, while building Anchor.
@@ -199,23 +206,27 @@ edits. That is a separate stable identifier, and it belongs to Index. Two docume
 byte-identical content will also share a `doc_id`; harmless for Anchor, since the text is the
 same either way, but Index must not assume `doc_id` is unique per path.
 
-Schedule retrieval practice and Feynman sessions **independently**: spacing is well evidenced
-for retrieval, but no evidence that repeating an explain-back loop on the same topic helps,
-and one finding suggests the effect is not topic-specific.
-
-Obsidian needs no plugin to *read*: a vault is a folder of markdown. A plugin is for writing
-back only, and belongs in its own repo.
-
 ## Build order
 
-1. **Index and anchor schema.** Everything depends on it.
+**This is the single source.** Corrected 2026-08-06: it previously put the index before the
+extraction harness, which contradicted the piece-level order in
+[`features/feynman.md`](features/feynman.md) on exactly the point that matters.
+
+0. **The falsification week.** Three measurements, about a day each, no code. The within-sentence
+   rate, the false-question rate, and vault eligibility. Kill numbers written down *before* any of
+   them run. Details in [`features/feynman.md`](features/feynman.md).
+1. **Anchor.** Everything produces or consumes anchors. *Done.*
 2. **Extraction harness plus ~100 labelled explanations.** No benchmark exists for the task
    (pulling named concepts and asserted causal links out of a learner's short explanation),
    and the 4B recommendation is extrapolated from adjacent work. If a small local model can't
    do it, the headline feature is cloud-only or doesn't exist: find out before there is a UI
    on top. Also the test suite for the hardest component.
-3. **Feynman.**
-4. Everything else.
+   **This does not need the index.** Its gold labels are spans into the *explanation text*, and
+   Anchor already resolves spans into arbitrary text, so it can be hand-labelled against pasted
+   explanations. Believing otherwise is what put it behind the index in the first place.
+3. **Index, then Retrieve with the abstain in front of it.**
+4. **Feynman.** Cohere, Compare, Contradict, then Session and Interface.
+5. Everything else.
 
 ## Open
 

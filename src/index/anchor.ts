@@ -65,9 +65,10 @@ export function createAnchor(doc: Doc, start: number, end: number): Anchor | nul
  * Null unless the stored quote is exactly the text at its own offsets, in this document
  * version, and could be shown.
  *
- * Total by construction: every check runs on the slice, never on `anchor.quote`, so an
- * anchor from storage or IPC with a missing or non-string quote is rejected rather than
- * thrown on.
+ * Total by construction: no method is ever called on `anchor.quote`. It is only compared
+ * with `!==`, which never coerces, so an anchor from storage or IPC carrying a missing or
+ * non-string quote is rejected rather than thrown on. Calling a method on it instead was a
+ * real regression on 2026-08-06 — keep every check on `found`.
  */
 export function resolveAnchor(doc: Doc, anchor: Anchor): Span | null {
   if (doc.doc_id !== anchor.doc_id) return null
