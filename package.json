@@ -14,7 +14,8 @@
     "test:red": "vitest run --reporter=verbose",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run test",
-    "mutate": "stryker run --incremental"
+    "mutate": "stryker run",
+    "mutate:incremental": "stryker run --incremental"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^9.2.0",

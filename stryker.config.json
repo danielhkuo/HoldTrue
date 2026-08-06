@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "packageManager": "npm",
+  "testRunner": "vitest",
+  "reporters": ["clear-text", "html", "progress"],
+  "coverageAnalysis": "perTest",
+  "mutate": ["src/**/*.ts", "!src/**/*.test.ts"],
+  "htmlReporter": { "fileName": "reports/mutation/mutation.html" },
+  "thresholds": { "high": 100, "low": 0, "break": null },
+  "_comment": [
+    "No testRunner declared meant Stryker fell back to the command runner, so the",
+    "@stryker-mutator/vitest-runner dependency was never used and the per-test coverage",
+    "analysis it reports was fiction. Found by an audit, 2026-08-06.",
+    "",
+    "break is null deliberately. AGENTS.md: mutation score is noise, surviving mutants are",
+    "bug reports. A score threshold would turn the instrument into a target, which is the",
+    "thing coverage was rejected for."
+  ]
+}
