@@ -78,24 +78,28 @@ round-trip property holds for any opaque stable string, so Anchor treats `unit_i
 carries and compares, never one it interprets. If that is wrong, it needs saying now, because it
 is the one assumption baked into the signatures.
 
-**B. Resolution strategy is not settled by the signatures, and the oracle will pin it.** After a
-re-parse, offsets may have shifted. `resolveAnchor` has to decide *which* occurrence of the
-quote is the right one, and the honest options are:
+**B. Resolution strategy — DECIDED 2026-08-05: exact offsets only.**
 
-1. **Exact offsets only.** Check `text.slice(char_start, char_end) === quote`, else `null`.
-   Simplest, and any edit earlier in the document breaks every later anchor.
-2. **Offsets, then nearest occurrence.** Try exact; on failure, search for the quote and take
-   the occurrence nearest the original offsets. Survives edits, and needs a tie-break rule for a
-   quote appearing twice equidistant.
-3. **Offsets, then stored context.** Store N characters either side and use them to disambiguate.
-   Most robust, and makes `Anchor` wider than the format `AGENTS.md` fixes — which would need
-   amending, so it is not free.
+`resolveAnchor` checks `text.slice(char_start, char_end) === quote`. Anything else is `null`.
+No searching, no nearest-occurrence fallback, no stored context.
 
-The workflow's own worked example implies (3) exists — its mutation report mutates a
-`text.slice(start - 32, start)` context window. But `AGENTS.md` pins the anchor to five fields
-with no context field. **That contradiction should be resolved by the oracle**, since "the same
-quote appears twice and must resolve to the occurrence it came from" is exactly the kind of case
-the human is meant to encode by hand.
+**Why this is safe despite the roadmap demanding durability.** The roadmap requires that
+re-parsing a document not reshuffle identity, *"or the calendar silently breaks months later."*
+That durability lives in the **IDs** being content-addressed — Index's job — not in character
+offsets surviving an edit. Anchors are **session-scoped**: created and resolved inside one
+session, against text that is not being edited underneath them. So Anchor only ever has to be
+right about *this range, in this text, right now*, which exact-offset comparison answers exactly.
+
+**Rejected.** *Nearest occurrence* — survives edits, but buys durability Anchor does not need and
+introduces a tie-break rule for equidistant matches, i.e. a way to return the wrong span.
+*Stored context* — would widen `Anchor` past the five fields `AGENTS.md` fixes, needing an
+amendment, and the context can itself change. The workflow's mutation example implies a
+32-character context window exists; it does not, and that example is illustrative rather than
+normative.
+
+**The consequence to hold onto:** a file edited mid-session makes its anchors unresolvable, and
+`null` is the correct answer. Under invariant 2 a quote that cannot be verified is not shown.
+Failing closed is the whole point.
 
 ## 6. Hard cases the property test generator must produce
 
