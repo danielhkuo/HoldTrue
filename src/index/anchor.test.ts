@@ -231,9 +231,11 @@ describe('resolveAnchor rejects anchors that do not belong to the document', () 
   })
 
   // With the offset comparisons gone, the emptiness half of the showability rule is the
-  // only thing stopping an inverted hand-built anchor resolving to a backwards Span.
+  // only thing stopping an inverted hand-built anchor resolving to a backwards Span. The
+  // quote must be '' to pin that: any other quote is rejected by the comparison instead,
+  // whatever the emptiness rule does, and the test would pass without testing it.
   test('an inverted hand-built anchor does not resolve', () => {
-    expect(resolveAnchor(doc, { ...anchor, char_start: 9, char_end: 4 })).toBeNull()
+    expect(resolveAnchor(doc, { ...anchor, char_start: 9, char_end: 4, quote: '' })).toBeNull()
   })
 })
 
@@ -248,6 +250,7 @@ const hardFragments = fc.oneof(
   fc.constantFrom(
     '👋', '🧬', '👨‍👩‍👧‍👦', // astral plane, and a ZWJ sequence 11 code units long
     'é', 'à́', // precomposed, and a letter plus combining marks
+    'e\u0301', // decomposed — NFC-unstable, so a stray .normalize() becomes detectable
     'water', 'water', // repeated substrings, so occurrence identity is exercised
     '\r\n', '\n', '  ', '\t',
     'β', 'Ω', '漢字',

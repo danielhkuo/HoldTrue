@@ -1,7 +1,13 @@
 # Spec: Anchor
 
-> [`workflow.md`](../workflow.md) **step 4**, first piece of the Feynman build order. Step 5,
-> the oracle, is the human's and is not written here. Read the signatures, not the prose.
+> **Status: built and closed, 2026-08-06.** First piece of the build order.
+> `src/index/anchor.ts`, 87 lines, 30 tests, mutation 52/52 at 100%.
+>
+> Written at [`workflow.md`](../workflow.md) step 4 and kept through steps 5 to 8 and the
+> step 10 review. Four review rounds found and fixed: an inverted boundary predicate, a
+> vacuous fixture, three untested guards, a totality regression introduced while fixing the
+> second of those, and a second vacuous fixture next door to the first. Nothing here is
+> outstanding — see "What is not closed" at the end for the two notes this piece hands on.
 
 ## 1. What it does
 
@@ -82,14 +88,14 @@ bug here is the most direct route to text on screen that is not the user's or th
 
 ## 5. Rulings and open questions
 
-(Named "two things to rule on before the oracle" when there were two. A and the numbered
-rulings were settled 2026-08-05, B through E over the following day.)
+(Named "two things to rule on before the oracle" when there were two. A, B, C and the three
+numbered rulings were settled 2026-08-05; D and E the following day, both off mutation runs.)
 
-**A. `unit_id` is specified by an open ticket.** [What a unit is](https://github.com/danielhkuo/HoldTrue/issues/21)
-is unresolved, so what a `unit_id` identifies is undecided. **This does not block Anchor**: the
-round-trip property holds for any opaque stable string, so Anchor treats `unit_id` as a value it
-carries and compares, never one it interprets. If that is wrong, it needs saying now, because it
-is the one assumption baked into the signatures.
+**A. `unit_id` is opaque here, and stays opaque. CLOSED.**
+[What a unit is](https://github.com/danielhkuo/HoldTrue/issues/21) is open, but it does not block
+this piece and never did: the round-trip property holds for any stable string, so Anchor carries
+and compares `unit_id` without ever interpreting it. Whatever #21 decides, no change is needed
+here — the decision lands in Index, which mints them.
 
 **B. Resolution strategy — DECIDED 2026-08-05: exact offsets only.**
 
@@ -207,3 +213,19 @@ Named here so the generator can be checked against a list rather than inspected 
 - **Repeated substrings**, so occurrence identity is actually tested.
 - **Spans at position 0 and at `text.length`**, and the empty span where `start === end`.
 - **CRLF**, which changes offsets between platforms if any layer normalises line endings.
+
+## 7. What is not closed
+
+Nothing in Anchor. Two notes it hands on:
+
+**To Index.** `doc_id` must be the hash of the `text` in the same `Doc`, computed from the bytes
+just read. A `(size, mtime)` pre-filter is fine for deciding *whether* to re-index; it is not fine
+for constructing a `Doc`. Pair a cached hash with freshly read text and the silent-collision hole
+in C reopens. Index also owns durable file identity, which `doc_id` deliberately is not — see
+[issue #25](https://github.com/danielhkuo/HoldTrue/issues/25).
+
+**To whoever next trusts a mutation score here.** Extracting `isShowableQuote` means Stryker can
+no longer express *"the rule was applied at one door and not the other"* — any mutation of the
+predicate dies at the `createAnchor` call site before reaching the resolve door. The tests still
+catch it semantically; the instrument cannot. 100% on this module is worth slightly less than it
+reads.
