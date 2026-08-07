@@ -27,11 +27,26 @@ alone never tops any scale and what we probe is always a connection.
 **The comparison runs against the user's source material, never a second reading of their
 own words.**
 
-The obvious design diffs a graph extracted from the explanation against the true graph. But
-graph extraction from prose scores **~0.535 F1 for the best frontier model measured** and
-**~0.30 at 8B**, and one study reached 95% precision at **9% recall**. A diff at that accuracy
-is noise that tells someone they failed to say what they did say: the exact failure the
+The obvious design diffs a graph extracted from the explanation against the true graph. The
+figures that actually exist say that diff would be noise. Open information extraction — read
+arbitrary prose, emit relation tuples — tops out at **53.5 F1 on the CaRB benchmark**, and that
+is IMoJIE (arXiv:2005.08178), a **2020 BERT-based seq2seq system**, not a frontier model.
+General-purpose models land lower and swing by benchmark: **LLaMA-2-13B scores 36.2 on CaRB and
+25.7 on ReOIE, GPT-3.5 zero-shot 39.1 and 25.9**. A diff between two artefacts built at that
+accuracy is noise that tells someone they failed to say what they did say: the exact failure the
 constitution prevents.
+
+**This argument now stands less firmly than the version it replaces, and that is worth saying
+plainly.** Until 2026-08-07 the paragraph above credited 53.5 to *"the best frontier model
+measured"*, quoted *~0.30 at 8B*, and cited *one study reaching 95% precision at 9% recall*. The
+first was a misattribution, the second had no source behind the 8B figure specifically, and the
+third could not be found at all. What survives is a written-prose benchmark ceiling around 0.5 F1
+across every system that has been measured — enough to make the diff a bad bet, not enough to
+close the question, because **no frontier-model open-IE score was found either way**. The
+corrected numbers point the same direction; they no longer make the case overwhelming. If someone
+produces a frontier-model number far above 53.5, this is the paragraph to reopen — and the
+rejected alternative, diffing the explanation against a "true" graph, is rejected on this
+evidence rather than on principle.
 
 So authority comes from a quoted document. Extract the concepts the user named, which **is**
 reliable; retrieve the passages linking them in their material; surface the link the source
@@ -90,6 +105,36 @@ topic. Something you have wrong that your notes never mention will not surface h
 **Why voice.** You do not type at a child sitting in front of you. That is the whole reason,
 and it is enough. It is *not* a claim that speaking reveals more than writing — that claim is
 refuted in the evidence base and may not appear in this product.
+
+**The roleplay is the product.** Decided by the owner 2026-08-07, and recorded here in the
+section it governs. It is the same form of argument [`../decisions.md`](../decisions.md) already
+accepted for voice: a **fiction** argument, not a pedagogical one. It therefore does not face the
+evidence gate, which governs claims about how people learn, and this claims nothing about that.
+What it buys is a settled answer to a question that kept resurfacing — the child is not decoration
+over a diagnostic, so design effort spent making it read as a child is spent on the product rather
+than taken from it. The rejected alternative is the reading this replaces: the persona as a
+delivery wrapper, defensible only while it improved the finding.
+
+Two consequences, and both have to be stated rather than assumed.
+
+**Nobody may defend a chattier child pedagogically.** The evidence base holds no row saying a
+conversational partner teaches better, and two rows pointing the other way: audience-directed
+explanation produced **87% knowledge-telling episodes against 60%** for self-explanation to text
+(Roscoe & Chi), and opening with *"walk me through it step by step"* **shrinks** the diagnostic
+yield (Alter, Oppenheimer & Zemla 2010). A fiction argument survives having no pedagogical
+support. It does not survive being dressed as one, and an argument that the child should say more
+because saying more helps the learner is refused on this evidence.
+
+**The fiction does not suspend Law 1 or invariant 5.** Every question the child asks still has to
+supply its answer, and the answer still has to come from the user's own notes. Those two carry
+their own evidence and bound what the child may ask no matter how central the roleplay becomes: a
+question the fiction makes irresistible and the notes cannot answer is still forbidden, and the
+tempting *"which comes first?"* is the clearest case, since feedback loops are correct mechanism
+and the eligible domain is full of them.
+
+The open question this creates is named here, not answered: how much design budget the roleplay
+may claim against the diagnostic, and what that implies for the live-only release discussed below,
+is undecided. **This pass records the pivot; it does not redesign the session around it.**
 
 ## Boundary: a hard eligibility rule
 
@@ -207,16 +252,52 @@ person who wants the feature to exist, is not a gate.
 
 **Within-sentence rate.** Write out fifteen to twenty explanations from memory on real topics.
 Mark every causal link by hand. Count what fraction have cause, effect and relation inside a
-single sentence. Invariant 8 mandates per-sentence extraction, so that fraction is the ceiling on
-everything Extract can ever see — a fact about how you speak, not about the model. Causal
-extraction runs ~97% F1 within a sentence and roughly 5% across one, so "the pressure drops. so
-the valve opens" is structurally invisible. **Suggested kill number: below 60%, invariant 8 needs
-renegotiating rather than obeying.**
+single sentence. Invariant 8 mandates per-sentence extraction, so a link whose halves straddle a
+full stop — *"the pressure drops. So the valve opens"* — is structurally invisible, and that
+fraction is therefore the ceiling on everything Extract can ever see. A fact about how you speak,
+not about the model. **Suggested kill number: below 60%, invariant 8 needs renegotiating rather
+than obeying.**
 
-**The false-question rate.** Run Extract over those same explanations, then Cohere's set
-arithmetic, and count how often Cohere flags a concept the gold labels show *was* linked. If
-extraction misses most real links, nearly every concept looks unlinked and the child's modal
-question lands on a step the user did explain.
+Until 2026-08-07 this paragraph borrowed a justification — *"causal extraction runs ~97% F1
+within a sentence and roughly 5% across one"* — and that borrowing does not hold. The pair is
+Table 7 of **PubMedCausal** (Kunle-John et al., arXiv:2605.28363): intra-sentential F1 **0.9743**
+against inter-sentential **0.0500**, DeepSeek-R1-32B few-shot, scored by **relaxed cosine
+matching at a 0.75 threshold** rather than exact extraction, over **PubMed abstracts**, with the
+5% computed on **202 instances — 3.1% of that corpus's 6,491 cause–effect pairs**. The corpus
+was keyword-filtered for *"causality"* and is 96.9% intra-sentential by construction, so its
+cross-sentence relations are the residue the filter missed: the hardest slice, not a
+representative sample. In news the statistic nearly inverts — **EventStoryLine holds 3,885
+inter-sentence causal pairs against 1,770 intra, roughly 31% intra-sentential.** The
+intra-sentential share swings threefold between two *written* genres, so **no published number
+covers spoken, from-memory explanation by a learner, which is this product's only genre.** That
+is a better reason to run the measurement than the one it replaces, not a worse one: this week is
+now the only evidence there is, rather than a confirmation of somebody else's corpus.
+
+The kill number stays at 60% and has not been moved. What changed is that it is now a line
+someone drew rather than one the literature implied, since a share that swings 31%–97% by genre
+implies nothing about this one. If it is to be revised, it must be revised **now, before any
+explanation is written, and recorded as a premise falsification** — which is a different act from
+adjusting a threshold after seeing a result, and the second remains forbidden.
+
+**Two extra columns, free.** For every cross-sentence link you mark, record two more facts: was
+there a causal connective opening the effect sentence, and was the cause in the immediately
+preceding sentence or further back. Neither costs a minute of extra collection, and between them
+they replace every borrowed corpus statistic above with the only distribution that matters. The
+first bounds how far a closed-class connective table could get; the second says whether a
+one-sentence lookback window recovers most of what a per-sentence extractor loses or almost none
+of it. Both are worth knowing before anyone argues about invariant 8 again. The procedure and the
+file format for all of this live in
+[`measurements/within-sentence/README.md`](../../measurements/within-sentence/README.md), which
+is the operative document; this section states why the week exists, not how to run it.
+
+**The false-question rate, per predicate.** Run Extract over those same explanations, then
+Cohere's set arithmetic, and count how often Cohere flags a concept the gold labels show *was*
+linked. If extraction misses most real links, nearly every concept looks unlinked and the child's
+modal question lands on a step the user did explain. **Report this per predicate, not as one
+number.** An aggregate hides the shape of the failure: a clean *"you named X and never said what
+it does"* branch sitting beside a noisy one is a branch to retire, not a feature to kill, and a
+single rate cannot tell those two situations apart. Each predicate's kill number gets written
+down before the run, like every other number here.
 
 **Vault eligibility.** Done 2026-08-06 for one vault; result in
 [issue #26](https://github.com/danielhkuo/HoldTrue/issues/26). Roughly 13–16% of notes are causal
@@ -228,7 +309,11 @@ objection: strip the fiction and the modal session is a prompt followed by rerea
 notes, which is on the do-not-build list, and the answerability gate selects the concepts you
 most likely already knew. The counter is to treat the live child as an internal instrument and
 ship Contradict first, since a contradiction is diagnostic by construction — and to ship against
-typed text, since voice's only remaining justification is fiction. Unresolved.
+typed text, since voice's only remaining justification is fiction. Unresolved, and the
+2026-08-07 pivot recorded above sharpens rather than settles it: once the roleplay *is* the
+product, "ship against typed text" stops being a cheap simplification and starts being a proposal
+to ship without the thing being sold. That is a real cost to weigh, not a refutation of the
+counter, and nobody has weighed it yet.
 
 **Clarity** and **Transcribe** sit outside this order. Clarity needs nothing but text and can
 be built first or last. Transcribe is needed before any real session runs.
@@ -247,9 +332,11 @@ be built first or last. Transcribe is needed before any real session runs.
   either way, because the child never consults your library.
 - **What Clarity counts.** Sentence length, pronouns with two antecedents, terms used before
   they are introduced, speech rate. Each has to be something you could count by hand.
-- **Whether Cohere's finding survives bad extraction.** Link extraction runs about 0.5 F1, so
-  Cohere will sometimes see a hole that is not there. This is why the child *asks* instead of
-  telling: a wrong question costs one round trip, a wrong claim costs everything.
+- **Whether Cohere's finding survives bad extraction.** The best open-IE score anyone has
+  published is 53.5 F1 on CaRB, a written-prose benchmark, and nobody has measured spoken learner
+  explanation at all — so Cohere will sometimes see a hole that is not there, by an unknown
+  margin. This is why the child *asks* instead of telling: a wrong question costs one round trip,
+  a wrong claim costs everything.
 
 **Settled here, recorded in `decisions.md`:** voice-first input, the child as a listener that
 knows only your source, the two checks in order, and Clarity as a separate instrument.

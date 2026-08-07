@@ -29,19 +29,76 @@ Decided 2026-08-03. Feature doc: [`features/feynman.md`](features/feynman.md).
 | **Voice in, not typing** | You do not type at a child sitting in front of you. The role-play is the product, and typing breaks it. That is the whole reason and it is enough. | Typing. Note this is **not** a claim that speech reveals more than writing — that is refuted in the evidence base (D'Mello et al. 2011, no learning difference) and may not appear in this product. The reason is fiction, not diagnosis. |
 | ~~**The user corrects the transcript, and the child does the asking**~~ **REVERSED 2026-08-05** | Original reasoning: at 15–25% WER an uncorrected transcript means the user reads words they did not say and is told they are theirs, and Law 2's floor is *"a user reads their own words."* Reversed because it is friction in the one place the session should feel like talking. The reasoning was never refuted — the cost is accepted, not argued away. See the session-shape section below. | Still rejected: a second model reading audio for hesitation — refuted, see the feature doc. |
 | **The child knows your source and nothing else** | Naivety is unbuildable: the model is not naive, and pretending it is invites exactly the world-knowledge speech invariant 3 bans. "Knows only your document" is a naivety you can actually build, and it is the only one whose confusion is quotable. | A genuinely naive persona. A persona drawing on world knowledge. |
-| **The child asks, never tells** | Link extraction runs ~0.5 F1. A wrong question costs one round trip; a wrong claim tells someone they failed to say what they said. This is an **engineering** rationale — the pedagogical one (*"a leading question beats a stated correction"*) is refuted and unavailable. | Stating the gap directly. |
+| **The child asks, never tells** | Causal link extraction is wrong often enough that being wrong is the normal case rather than the edge case. Corrected 2026-08-07: the "~0.5 F1" this row used to cite came from an Open IE benchmark on written text, not from causal extraction at all. The nearest real figures are worse, so the argument survives with more room than it had — supervised systems on EventStoryLine (news, document-level causal pairs) reach 0.52–0.66 F1 within a sentence and 0.33–0.48 across one, and zero-shot GPT-4 manages 11.5 F1 within a sentence on Causal-TimeBank. Nothing is published for spoken learner explanation, so read all of those as a ceiling. A wrong question costs one round trip; a wrong claim tells someone they failed to say what they said. This is an **engineering** rationale — the pedagogical one (*"a leading question beats a stated correction"*) is refuted and unavailable. | Stating the gap directly. |
 | **Two checks, in order: structure then truth** | Internal consistency needs no world knowledge, so its trigger is a property of the user's own words — which is what makes a live interrupt legal under invariant 3. It also needs no retrieval, so it is far cheaper than the source check. | One combined check. Folding coherence into Compare. |
 | **Clarity is a separate instrument** | Expression and understanding are orthogonal — the feature doc already says holding the mechanism and failing to say it is not a failure of understanding. Separation is also what makes a clarity number legal: invariant 7 bans a grade *beside a diagnosis*, and this one is not beside anything. Being isolated, a wrong count cannot corrupt a finding. | A combined score. Clarity feeding the understanding path. **A clarity eval** — "was this clear" has no ground truth, one labeller, and a model listener is not naive enough to serve as an oracle. `AGENTS.md` already forbids an LLM judge. |
 | **Clarity reports counts, never verdicts** | "Your sentences averaged 34 words" is a fact. "Your explanation was hard to follow" is an inference needing evidence nobody has. An instrument makes no claim, so it needs no eval. | Any holistic judgement of an explanation's quality. |
 | **The corpus is a folder, and a pasted document is a folder of one** — [#20](https://github.com/danielhkuo/HoldTrue/issues/20), decided 2026-08-06 | Picking scopes the *topic*; retrieval searches the folder. That resolves the apparent contradiction between the session's step 1 and Retrieve's row without changing either. Storing a pasted article as a single-note corpus makes scope a **parameter**, not an architecture, so the v1 default stays a cheap product choice. It also keeps the retrieval abstain testable against a real multi-document corpus, which the feature doc calls *"the only thing standing between a growing corpus and a verbatim quote from the wrong note."* | **Single-document v1 with a folder mode later.** It buys a shippable Feynman before Index and sidesteps #25 — but it validates the abstain against the one input where it is not needed, and every threshold tuned there fails to transfer. **Whole-library with no paste path.** Costs the zero-setup first run for an adoption filter that #26's census measured at 13–16% and found non-binding. |
-| **The source's causal link comes from Extract, run at session time over retrieved passages** — [#22](https://github.com/danielhkuo/HoldTrue/issues/22), decided 2026-08-06 | One model step on two kinds of input, so Compare becomes set arithmetic over two **link sets** and keeps its property test. Invariant 9 is untouched: it forbids diffing two extractions of the user's *own words*, and the source is not the user's words. | **An index-time link store.** Its distinctive capability is composing A→X in one note with X→B in another, and that dies on its own arithmetic — two hops at ~0.30 F1 is ~0.09. Strip composition and it is a cache that a content-hash `doc_id` invalidates wholesale on any edit, against a vault of constantly changing files. **Co-occurrence as a link proxy.** Cheapest and fully deterministic, but it is systematically worst on the 69% of notes that are declarative stubs and definition sheets — a glossary co-locates every term by construction — and a false hit fires a probe with no answer behind it, which is a Law 1 failure. |
+| **The source's causal link comes from Extract, run at session time over retrieved passages** — [#22](https://github.com/danielhkuo/HoldTrue/issues/22), decided 2026-08-06 | One model step on two kinds of input, so Compare becomes set arithmetic over two **link sets** and keeps its property test. Invariant 9 is untouched: it forbids diffing two extractions of the user's *own words*, and the source is not the user's words. | **An index-time link store.** Its distinctive capability is composing A→X in one note with X→B in another, and that dies on its own arithmetic. The arithmetic was re-checked on 2026-08-07 against corrected figures and the kill holds at every one of them, because composition multiplies whatever the single-hop rate is. The most generous published number anywhere near this task is **0.535** — IMoJIE's optimal F1 on the CaRB Open IE benchmark, arXiv:2005.08178, a 2020 BERT-based seq2seq system on written benchmark sentences, and not the "best frontier model" it was once quoted as — which composes to **~0.29** over two hops. Small models sit lower, in the high-20s to mid-30s on CaRB and ReOIE (LLaMA-2-13B 36.2 and 25.7, GPT-3.5 zero-shot 39.1 and 25.9), composing to **0.07–0.13**. The "~0.30 at 8B" originally cited here has no source for 8B specifically and is only directionally plausible; it is not needed, since the conclusion does not turn on which figure in that band is right. Strip composition and it is a cache that a content-hash `doc_id` invalidates wholesale on any edit, against a vault of constantly changing files. **Co-occurrence as a link proxy.** Cheapest and fully deterministic, but it is systematically worst on the 69% of notes that are declarative stubs and definition sheets — a glossary co-locates every term by construction — and a false hit fires a probe with no answer behind it, which is a Law 1 failure. |
+| **The roleplay is the product** — decided 2026-08-07 | The owner's call, and the same form of argument the voice row above already accepted: you do not type at a child sitting in front of you, that was the whole reason, and it was enough. It is a **fiction** argument, not a pedagogical one, so it does not pass through the evidence gate, which governs claims about how people learn. What it justifies is spending design effort on the child being a convincing child, and treating a change that makes the fiction thinner as a real cost rather than a free simplification. | **Defending it pedagogically**, which is available to nobody. The evidence base holds no row saying a conversational partner teaches better, and two pointing the other way: Roscoe & Chi's **87% knowledge-telling episodes for audience-directed explanation against 60%** for self-explanation to text, and Alter, Oppenheimer & Zemla 2010, where opening with *"walk me through it step by step"* shrinks our own diagnostic yield. **Reading it as a licence over the constitution.** It suspends neither Law 1 nor invariant 5: those carry their own evidence and bound what the child may ask however central the roleplay becomes. |
+| **The connective table is a mute, never a joiner** — decided 2026-08-07 | A closed-class list of sentence-initial causal connectives earns a place only by *suppressing* output. If sentence N opens with one and Extract returned no cause for N, Cohere must not flag N's subject as an unlinked concept. That produces nothing, asserts nothing and needs no span, which is exactly what invariant 3 permits — knowledge may suppress output, never produce it — and exactly what invariant 4 means by `confidence`, a reason to stay quiet. | **The same table used as a joiner**, reading the connective and attaching the previous sentence as the cause. It recovers only ~10–17% of the links per-sentence extraction loses — the council's 2026-08-07 estimate, not a measurement, and the falsification week's connective column measures it directly for the cost of one extra column. Worse, **it fails silently**: the previous-sentence span it attaches is a genuine substring of the transcript, so a wrong-but-literal link passes invariant 2 and reaches the user looking validated. A mute that misfires costs a question nobody asks; a joiner that misfires puts a false link on screen with a quote under it. |
+| **Invariant 8 keeps its constraint and loses its warrant** — decided 2026-08-07 | *"Extraction is per-sentence, never one-shot over a whole explanation"* entered in `5477081`, the initial commit, as a bare line with no argument. The 97/5 figure arrived four days later in `c3822d4` — the commit whose stated purpose was giving every fact a source. Constraint first, justification after, and the justification does not survive tracing; see the paragraphs below this table. **Unwarranted is not wrong.** The invariant stays in force, because nothing has been shown against it and the schema, the anchors and Compare's set arithmetic all rest on per-sentence emission — but it is now held on no published evidence, and it may not be defended by citing 97/5 again. The measurement in [`measurements/within-sentence/`](../measurements/within-sentence/) is what settles it. | **Silent repeal** and **silent retention**, both. Dropping the invariant because its stated reason failed would treat unwarranted as refuted, which it is not; keeping it while leaving the dead figure in place is worse still, since the next reader inherits the number as settled fact. **The soliloquy** — extract over the whole uninterrupted stretch of speech between two child interventions — is not adopted as drawn. It is **circular in the live phase**: a soliloquy is defined by the interventions, and the live phase's job is deciding when to intervene, so it would segment on the thing it is computing. Its boundaries would also derive from interaction history rather than content, contradicting the content-addressed rule in the anchor format. |
 
-**Do not carry the ~0.30 F1 figure into an argument about Extract's source side.** It measures
-*graph extraction from prose* — read arbitrary text, produce a graph — which is the right number
+**Do not carry the composition figures into an argument about Extract's source side.** They
+measure *graph extraction from prose* — read arbitrary text, produce a graph — the right shape
 for killing composition and the wrong one for relation classification with the argument pair
-already supplied. The feature doc's own within-sentence figure is ~97% F1, against roughly 5%
-across a sentence boundary, and #26's census found that nearly all eligible notes already state
-the mechanism inside one sentence.
+already supplied. The squaring in that row inherits the same limit: it assumes the two hops fail
+independently, and it prices a written Open IE benchmark rather than causal links in study notes.
+It stands because composition cannot beat its own single-hop rate however that rate is measured,
+not because 0.29 is a number anyone should go on to quote.
+
+**The general rule, and the worked example this file supplied itself.** A number measured on one
+task may not be carried into an argument about a different one. The paragraph above used to cite
+*"the feature doc's own within-sentence figure is ~97% F1, against roughly 5% across a sentence
+boundary"* as its authority, which commits precisely the error the sentence before it forbids.
+Traced 2026-08-07: that pair is Table 7 of PubMedCausal (Kunle-John et al., arXiv:2605.28363),
+intra-sentential 0.9743 against inter-sentential 0.0500, DeepSeek-R1-32B few-shot. It is measured
+on **PubMed abstracts**, by **relaxed cosine matching at a 0.75 threshold** rather than exact
+extraction, over **202 inter-sentential instances — 3.1% of a corpus that is 96.9%
+intra-sentential by construction**, the corpus having been keyword-filtered for "causality". The
+5% is the residue that filter missed: the hardest slice, not a representative sample. Carried
+into an argument about a learner explaining from memory out loud, it is the same category error
+as pricing relation classification with CaRB, and a wider one — the intra-sentential share of
+causal links is itself genre-dependent, 96.9% in that biomedical corpus against 31% in news
+(EventStoryLine: 3,885 inter-sentence causal pairs against 1,770 intra). A threefold swing
+between two *written* genres, before speech is considered at all.
+
+**No published figure covers spoken, from-memory explanation by a learner.** Say that plainly
+rather than substituting the nearest adjacent number. What the field does report, for anyone
+tempted: supervised systems on EventStoryLine run 0.52–0.66 F1 within a sentence against
+0.33–0.48 across one, a ratio of roughly 1.3–1.6× rather than 19×, and the dominant axis is not
+intra-versus-inter at all but **explicit-versus-implicit** — PubMedCausal's own table shows 0.8803
+explicit against 0.3920 implicit on the same sentences, a 49-point gap. **How many causal
+relations carry an explicit connective at all is itself unsettled** — a "28–34% of edited prose"
+figure circulated during the 2026-08-07 council and could not be verified, and PubMedCausal's own
+corpus measures 63.1%, roughly double it. Do not cite either; see
+[`research/extraction-benchmarks.md`](research/extraction-benchmarks.md). What does still bear on Extract's
+source side is repo-internal and untouched by any of this: #26's census of one vault found 13–16%
+of notes are causal mechanisms, and nearly all of those already carry a quotable causal sentence.
+That is a measurement of this project's actual input rather than a transplanted benchmark, and
+its generalisability to other people's notes is open.
+
+**The open option for invariant 8: widen what the model reads, keep what it emits.** Three of the
+five voices in the 2026-08-07 council converged on this independently, from different assigned
+dispositions — hand the model a window of surrounding sentences as context while it still emits
+one link set per sentence, so the schema, the anchors and Compare's set arithmetic are all
+unchanged and everything downstream of invariant 8 survives untouched. It is **an option, not a
+decision.** The one thing the whole council agreed on is that this gets settled by running the
+measurement rather than by argument, and the measurement has not run. It is recorded so nobody
+re-derives it from scratch, and so nobody builds it before there is data.
+
+That measurement's kill number is a related casualty. The 60% line in
+[`measurements/within-sentence/`](../measurements/within-sentence/) was written down before any
+data, which is procedurally right, but it was written when 97/5 looked like a general property of
+the task rather than a property of PubMed abstracts. Moving it now would be correcting a
+falsified premise before collection starts, which is a different act from adjusting a threshold
+after seeing a result — and that file owns which of the two it does.
+
+**The pivot is recorded, not designed around.** This pass wrote the decision down and stopped
+there. Where it opens a question — most visibly whether a first release could ship against typed
+text, since voice's remaining justification is the fiction the pivot just made central — the
+question is named in [`features/feynman.md`](features/feynman.md) and left open. Nothing in the
+design has been re-cut to suit the roleplay, and nothing should be until someone decides to.
 
 **Two models on the finding path: Extract and Contradict.** Cohere, Compare and Clarity are
 deterministic and carry property tests. It briefly reached four on 2026-08-05 when a
@@ -243,5 +300,9 @@ extraction harness, which contradicted the piece-level order in
   thinking-aloud speech and by the absence of published fairness data on every local option.
 - **When the child interrupts.** After the explanation, or mid-sentence. Mid-sentence needs a
   streaming pipeline and is a much bigger build.
+- **What warrants invariant 8, now that its stated warrant is gone.** The invariant still holds;
+  the reason for it does not. The live option is widening the model's reading window while
+  keeping per-sentence emission, and the within-sentence measurement decides it. Reasoning under
+  the Feynman design table above.
 - TTS. Unresearched. The child may not need a voice.
 - Repo name and the public push. `origin` was repointed to `danielhkuo/HoldTrue`.

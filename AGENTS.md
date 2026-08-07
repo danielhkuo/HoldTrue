@@ -46,9 +46,20 @@ Not style preferences: a violation is wrong even if it works.
    permit traceable point-coverage, then reverted the same day: a four-way design panel
    independently declined to use the permission, including the design whose sole job was
    answering *do I need to study this again*. Reasoning in [`docs/decisions.md`](docs/decisions.md).
-8. **Extraction is per-sentence, never one-shot over a whole explanation.**
+8. **Extraction is per-sentence, never one-shot over a whole explanation.** **Unwarranted pending
+   measurement, 2026-08-07.** It still governs — write per-sentence extraction, and do not widen
+   what Extract reads on your own authority — but the published figure quoted as its warrant was
+   traced to a keyword-filtered corpus of biomedical abstracts that cannot carry it, and the
+   invariant was written four days before that citation arrived, so it was never derived from it
+   either. Do not argue it either way from a published number. What settles it is the measurement
+   in [`measurements/within-sentence/README.md`](measurements/within-sentence/README.md); why the
+   warrant fell is in [`docs/decisions.md`](docs/decisions.md). Until that measurement runs, a
+   design resting on this invariant being settled is resting on nothing.
 9. **Never diff two extractions of the user's own words**; compare their explanation against their
-   source material. (Both are ~0.5 F1, the difference noise; numbers in the feature doc.)
+   source material. (Both extractions carry enough error that their difference is mostly extractor
+   noise. The figures are in the feature doc; one of them was quoted as a frontier-model score
+   until 2026-08-07, when it was traced to a 2020 system, so do not carry that reading of it
+   anywhere.)
 
 ## Anchor format
 
@@ -185,6 +196,16 @@ Most skills live in `~/.claude/skills/`: user level, shared machine-wide with ev
 build order, the feature docs and the map, then runs either the feature entry or the piece loop.
 Local to this repo, in `.claude/skills/`, and the only document with numbered steps — a citation
 to "step 4" means a step there. [`docs/workflow.md`](docs/workflow.md) is the argument behind it.
+
+**The evidence gate does not reach the roleplay.** That skill's checklist requires a claim about
+how people learn to already be in the evidence base, which still holds everywhere it always did.
+It does not cover the conversational child: as of 2026-08-07 the roleplay is the product, and it is
+justified as **fiction**, the same argument the repo already accepted for voice-in. So do not go
+looking for an evidence row behind it, and do not write one. Defending it pedagogically stays
+forbidden — the evidence base has no row saying the child teaches better, and two pointing the
+other way — and the fiction argument suspends neither Law 1 nor invariant 5, which bound what the
+child may ask however central the roleplay becomes. Reasoning in
+[`docs/decisions.md`](docs/decisions.md).
 
 **`/wayfinder`** charts a feature's open design questions as tickets. An agent cannot invoke it;
 `/holdtrue-workflow` prepares the invocation and the human types it.
