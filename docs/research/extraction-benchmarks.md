@@ -148,7 +148,10 @@ Same source, same table (arXiv:2506.05675). Zero-shot, existence identification:
 **GPT-4 scores 11.5 F1 intra-sentence on Causal-TimeBank** — six points *below* the worst supervised
 inter-sentential number in section 2, and on the easy side of the split. The shape of the failure is
 the part worth keeping: 97.4 recall against 6.1 precision. The model says yes to almost everything.
-That is the failure mode Law 2 is built to survive, and it is measured, not hypothesised.
+That was the failure mode Law 2 was built to survive — and Law 2 was repealed on 2026-08-07, so
+nothing structural survives it now. Read this figure as the live risk the model-knowledge pivot
+accepts rather than as a retired argument: a model that says yes to almost everything produces
+findings, and precision is the axis Law 1 charges for. It is measured, not hypothesised.
 
 Sample size context: Causal-TimeBank is **184 documents, 7,608 annotated relations, of which only
 318 are causal**, per the survey table in arXiv:2411.10371 (<https://arxiv.org/html/2411.10371v5>);

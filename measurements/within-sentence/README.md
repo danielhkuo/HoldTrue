@@ -3,6 +3,11 @@
 Build order step 0, first of the three falsification measurements. About a day, no application
 code. Reasoning in [`docs/features/feynman.md`](../../docs/features/feynman.md).
 
+> **This measurement survives the model-knowledge pivot of 2026-08-07 and still has to be run.**
+> Extract still reads the user's own explanation, and invariant 8 still says it reads it one
+> sentence at a time, so the question this file asks is unchanged. Three things around it moved:
+> what the ceiling bounds, the model floor, and where the labels go. Each is marked below.
+
 ## What this measures and why it can end the project
 
 Invariant 8 mandates that extraction runs per sentence, never one-shot over a whole explanation.
@@ -11,14 +16,31 @@ everything Extract can ever see**. A link split across a sentence boundary — *
 So the valve opens"* — is structurally invisible to a per-sentence extractor, and no better model
 fixes that.
 
+**What that ceiling bounds, corrected 2026-08-07.** It still bounds Extract, for the reason just
+given, and that part needs no revision. What this file used to be able to add is that the ceiling
+bounded the *finding* as well, because a finding was made by comparing the links Extract pulled
+out of your explanation against the links in your own notes: a link Extract could not see was a
+comparison that could not happen. The model-knowledge pivot removed the notes from the default
+path. The counterpart now comes from the model's own knowledge, and Compare — the piece that did
+that comparison — has no subject there. So the ceiling is a ceiling on the extracted link set,
+and **what that link set is for on the default path is open**, owned by
+[`docs/features/feynman.md`](../../docs/features/feynman.md) and not answered here. The count is
+the same count either way, which is why it still runs first.
+
 **Nobody has published this number for spoken, from-memory explanation by a learner.** What is
 published is written text, and it does not agree with itself. The share of annotated causal links
-that sit inside one sentence is **31%** in news — EventStoryLine marks 1,770 within-sentence causal
-pairs against 3,885 across — and **97%** in PubMedCausal (arXiv:2605.28363), 6,491 pairs drawn from
-PubMed abstracts that were keyword-filtered for causality, which makes the corpus 96.9%
+that sit inside one sentence is about **32%** in news — EventStoryLine, 258 documents, 1,751
+within-sentence causal pairs against 3,727 across — and **96.9%** in PubMedCausal, whose 6,491
+adjudicated pairs come from PubMed abstracts keyword-filtered for causality, which makes the corpus
 intra-sentential by construction. A threefold swing between two genres of edited writing, and
 speech is neither of them. So the literature is clear that you have to measure this and silent on
 what you will find.
+
+Both figures, their metrics and their sample sizes live once in
+[`docs/research/extraction-benchmarks.md`](../../docs/research/extraction-benchmarks.md); this
+paragraph cites, it does not hold the provenance. Corrected there on 2026-08-07: the widely
+circulated EventStoryLine counts of 1,770 against 3,885, which this file used to quote, are
+second-hand and give the same ratio as the verified 1,751 against 3,727.
 
 This is a fact about how you explain things, not about the model. That is why it is measured
 before anything is built on top of it, and why an agent cannot produce the data.
@@ -41,8 +63,11 @@ line only asked how much of your explanation you were willing to lose. Cross-sen
 is not hopeless, only worse. On EventStoryLine — news text, causal relation extraction — the five
 published systems that score between 52.1 and 66.2 F1 on links inside a sentence still score
 between 32.6 and 48.3 on links across one, a gap of roughly a third rather than the collapse the
-old figure described. Obeying invariant 8 therefore gives up links a wider read would have caught,
-which is a higher cost than 60% was priced against.
+old figure described. (Sources and sample sizes in
+[`docs/research/extraction-benchmarks.md`](../../docs/research/extraction-benchmarks.md), which
+also records that reproductions of those baselines vary by about ±5 F1. They are supervised
+BERT-class systems on news; nothing here was measured on speech.) Obeying invariant 8 therefore
+gives up links a wider read would have caught, which is a higher cost than 60% was priced against.
 
 **No defensible replacement number follows from that correction, so the choice is the owner's, and
 it has to be made before the first file lands in `explanations/`.** Three options, none free:
@@ -58,7 +83,35 @@ it has to be made before the first file lands in `explanations/`.** Three option
    stays either way, as the thing that sizes that ceiling.
 
 `rate.mjs` still reports against 60% and says on every run that the line is under review. The
-moment an explanation exists the number is frozen, whichever one it is.
+moment an explanation exists the number is frozen, whichever one it is. **The pivot of 2026-08-07
+does not reopen this and does not settle it.** It is the owner's open decision from earlier the
+same day, and it stays open.
+
+## The model floor moved, and the ceiling did not
+
+Also on 2026-08-07: the extraction model is no longer a 4B one. The stack table's *Qwen3.5 4B or
+larger* row is superseded, and the floor is now the best model the owner's machine will run —
+roughly a 27–32B-class model at 4-bit, about 20 GB resident, sharing 36 GB with a speech sidecar
+and Electron. That envelope is the owner's statement of what fits, not a measurement, and
+`AGENTS.md` holds it with that caveat; nothing below rests on the exact figure. Three things
+follow for reading this file.
+
+**The ceiling is untouched.** It is structural, not a question of capability: a per-sentence
+extractor cannot see a link whose cause and effect are in different sentences, however good the
+model is. That sentence was written against a 4B extractor and is exactly as true against a 32B
+one. This is the reason the measurement did not move with the model.
+
+**Any expectation of extraction *quality* on this page is now stale in both directions.** The
+figures quoted above are supervised systems on edited news, and the model that will actually run
+here is roughly an order of magnitude larger than the one the old floor named — so those figures
+were never the right genre and are now not the right model size either. Do not read them as a
+forecast of what your explanations will yield. They are here to show that cross-sentence
+extraction degrades rather than collapses, and that is all they are here for.
+
+**The reason the old floor gave has gone with it.** *"Causal extraction collapses below 3B"* was
+uncited when it was written and is uncited now. It is simply moot: nothing anywhere near 3B is on
+the table any more, so the claim no longer decides anything. Recording that so nobody goes looking
+for the citation later.
 
 ## What you do
 
@@ -129,9 +182,20 @@ on the split ones — so write whatever shorthand reads clearly to you later.
 
 These explanations are not throwaway. They become the first 15–20 items of the learner-prose
 stratum of Extract's evaluation set, and the links you marked here are most of the labelling that
-stratum needs. `AGENTS.md` sizes the full set at 100–150 items, of which **30 must be labelled
-completely cold** — no agent, no suggestions on screen — as the control that tells you whether
-agent-proposed labels can be trusted for the rest. Treat these as part of that 30.
+stratum needs. `AGENTS.md` sizes the full set at 100–150 items; the cold-labelling control —
+**30 items labelled with no agent and no suggestions on screen**, as the check on whether
+agent-proposed labels can be trusted for the rest — is in
+[`/holdtrue-workflow`](../../.claude/skills/holdtrue-workflow/SKILL.md) under *the model-dependent
+piece*, not in `AGENTS.md`, which this file said until 2026-08-07. Treat these as part of that 30.
+
+**What the pivot did and did not do to that.** The labels you produce here are spans into your own
+explanation, so they still have a ground truth, and so does Extract's eval set: *did the extractor
+find the causal link that is sitting in this sentence* is answered by the text in front of you,
+and no source material was ever needed to answer it. What lost its ground truth on 2026-08-07 is
+the step after extraction — whether a finding names a real gap in someone's understanding — which
+the user's notes used to authorise and which now has no authority short of a subject expert per
+case. That is open, it is not this measurement's to answer, and it is not a reason to stop
+labelling.
 
 ## Candidate mechanisms
 

@@ -81,8 +81,10 @@ describe('what may not be anchored', () => {
   })
 
   // The emoji occupies slots 5 and 6. Taking one slot yields half a character,
-  // which renders as a replacement glyph. A quote is user-facing under Law 2, so
-  // a span that can only ever put nonsense on screen is refused at creation.
+  // which renders as a replacement glyph. A quote is shown to the user, and the
+  // quote-validation invariant governs what may be shown, so a span that can only
+  // ever put nonsense on screen is refused at creation. (Cited Law 2 until
+  // 2026-08-07; that law was repealed and this rule stands without it.)
   test('refuses a span that cuts a character in half', () => {
     const doc = makeDoc('wave 👋 here')
     expect(createAnchor(doc, 5, 6)).toBeNull()
