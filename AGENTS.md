@@ -46,16 +46,24 @@ Nothing else about your work is limited.
 Not style preferences: a violation is wrong even if it works.
 
 **Numbers are permanent addresses, not positions in a list.** The 2026-08-07 pivot repealed two of
-these and split a third, and nothing was renumbered. Five documents cite invariants by number —
-`docs/workflow.md`, `docs/decisions.md`, `docs/specs/anchor.md`, `docs/features/feynman.md`,
-`measurements/within-sentence/README.md` — as do `src/index/anchor.ts`, its test file, and the
-wayfinder archive; `/holdtrue-workflow` requires a piece to cite the invariants that apply **by
-number and quoted in full**, because a number tells you where a rule lives and not whether it is
-still in force, and `/holdtrue-code-review` requires every finding to cite one. Renumbering would silently
-redirect all of that to a different rule, which is a worse failure than a list with holes in it,
-because nothing would break loudly. So a repealed invariant keeps its number and its strikethrough
-permanently: an agent who remembers "invariant 1" from a previous session finds the repeal where the
-rule used to be.
+these and split a third, and nothing was renumbered. Seven documents cite invariants by number —
+`docs/specs/supply.md`, far the heaviest and the one that quotes every invariant it cites in full;
+`docs/decisions.md`; `docs/features/feynman.md`; `docs/philosophy.md`; `docs/specs/anchor.md`;
+`measurements/within-sentence/README.md`; `docs/workflow.md` — as do `src/index/anchor.ts`, its test
+file, `measurements/within-sentence/rate.mjs` (invariant 8 is its kill number),
+`.claude/skills/holdtrue-workflow/SKILL.md` and the wayfinder archive.
+
+**That roster is the instrument, so keep it complete.** It exists so that whoever repeals, narrows
+or renumbers a rule can walk every citation of it and leave none stale — the failure mode is silent,
+so a missing entry costs more than it looks like it should. Re-derive rather than trust it,
+`grep -rIn -E "[Ii]nvariants? [0-9]" . --exclude-dir=.git`, and write back whatever the grep finds
+that this list does not name. `/holdtrue-workflow` requires a piece to cite the invariants that
+apply **by number and quoted in full**, because a number tells you where a rule lives and not
+whether it is still in force, and `/holdtrue-code-review` requires every finding to cite one.
+Renumbering would silently redirect all of that to a different rule, which is a worse failure than a
+list with holes in it, because nothing would break loudly. So a repealed invariant keeps its number
+and its strikethrough permanently: an agent who remembers "invariant 1" from a previous session
+finds the repeal where the rule used to be.
 
 1. ~~**No user-facing text originates from the model.**~~ **REPEALED 2026-08-07.** It was Law 2
    restated — the old Law 2, repealed entire the same day. It said: a user reads their own words, a
@@ -160,7 +168,9 @@ transcript that Extract still produces, which invariants 8 and 9 both presuppose
 is built, correct and untouched by the pivot — 30 tests, mutation score 100% — and it is still the
 right module the first time a quote is shown to anyone, which is the case the format exists for.
 **Open:** whether a finding with no source carries an anchor at all, and if not, what identifies it
-for the eval and for the UI. Not answered here.
+for the UI, and for the narrow measurements a sourceless finding can still be scored by — the
+quality eval of the finding itself is skipped by decision and is not what makes this urgent. Not
+answered here.
 
 ## Stack: use these, not the obvious alternative
 
@@ -265,17 +275,36 @@ hard-fails; invariants hard-fail as properties (every span resolves, no dangling
 pass/fail; regression is measured **paired** against the previous prompt on the same fixed set.
 100–150 labelled items. No LLM judge: set comparison against gold.
 
-**That harness still describes extraction. As of 2026-08-07 it does not describe a finding.** The
-four layers were designed when the authority for the *measurement* was the same text as the authority
-for the user: gold labels were spans into real material, and Compare was deterministic set arithmetic
-over two link sets. Extraction over the user's own explanation keeps all of it — the spans are still
-there, the schema still validates, the properties still hold, the paired protocol still works over a
-fixed set of real transcripts. What has lost its ground truth is the question the product actually
-asks: *did the model find a real gap in this person's understanding.* There is no gold label for that
-short of a subject expert per case, and the falsification week in
-[`docs/decisions.md`](docs/decisions.md), the 100–150 labelled items and the paired regression
-protocol all assumed a text to compare against. **Open, and not answered here. Do
-not improvise a replacement protocol in the middle of a piece**, and do not reach for the thing the
+**That harness still describes extraction. As of 2026-08-07 it does not describe a finding.** Two
+different measurements were designed together in it, and the pivot separated them. Keep them apart;
+conflating them is how a piece with a working eval gets treated as if it had none.
+
+**Extract's eval survives the pivot intact.** Its labels are spans into the text Extract reads, and
+that text is the user's own explanation — never the notes — so nothing about the notes leaving the
+default path reaches it. *Did the extractor find the causal link in this sentence* is answered by
+the text in front of you. The spans are still there, the schema still validates, the properties
+still hold, the 100–150 labelled items are still labellable, and the paired protocol still works
+over a fixed set of real transcripts. The falsification week supplies the first items of that set —
+fifteen to twenty explanations with every causal link hand-marked — and its protocol lives in
+[`docs/features/feynman.md`](docs/features/feynman.md) and
+[`measurements/within-sentence/README.md`](measurements/within-sentence/README.md), which is the
+operative document, not in `docs/decisions.md`. Build Extract against the four layers as written.
+
+**What lost its ground truth is the eval of the *finding*, and that one is skipped by decision.**
+The question the product actually asks — *did the model find a real gap in this person's
+understanding* — was authorised by the user's own material, which Compare then differenced as
+deterministic set arithmetic over two link sets. There is no source on the default path, so there is
+no second set and no gold label short of a subject expert per case. The owner ruled that eval
+skipped rather than left as an absence, with the alternative he declined recorded beside it;
+[`docs/decisions.md`](docs/decisions.md) carries the ruling and its costs. Carry the consequence
+into a piece loop: such a piece ships **unmeasured by decision**, which is not the same as blocked.
+Do not halt a build waiting on a protocol that was decided against, and **do not improvise a
+replacement one in the middle of a piece.**
+
+**Unmeasured is not the same as unmeasurable.** Whether a finding names a link the hand marks show
+the user *did* state is answerable off those same falsification-week explanations for the cost of
+one more column, and [`docs/specs/supply.md`](docs/specs/supply.md) owns that. What has no cheap
+instrument is precision on gaps that are genuinely real. Either way, do not reach for the thing the
 gap makes tempting: **no LLM judge** is unchanged, and the fact that the pressure to break it just
 went up is the reason it is worth restating.
 

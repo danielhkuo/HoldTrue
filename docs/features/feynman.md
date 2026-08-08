@@ -262,8 +262,10 @@ The decomposition mistake worth catching — `Analyse` doing two jobs, one of wh
 arithmetic — is worked through in [`../workflow.md`](../workflow.md) under *Finding the seams*.
 The piece loop iterates over the corrected result below.
 
-**This table describes the retrieval path.** Marked 2026-08-07, not rewritten. **Index** and
-**Retrieve** take the user's folder as their subject and **Compare** takes what Retrieve returns;
+**This table describes the retrieval path, except for the Supply row.** Marked 2026-08-07 and not
+rewritten since; Supply was added on 2026-08-08 and is the only default-path line in it, marked as
+drafted for the reason two paragraphs down. **Index** and **Retrieve** take the user's folder as
+their subject and **Compare** takes what Retrieve returns;
 on the default path there is no folder, so all three have no subject. They are not wrong and they
 are not deleted — they are what the optional retrieval hook needs, and the reasoning that produced
 them stays valid there. **Contradict** is the row that comes closest to surviving the move, since
@@ -273,11 +275,23 @@ its two-span output both assume a document, and nothing here decides what they b
 own words; Extract's second listed input, a retrieved source passage, is retrieval-path work like
 everything else that touches a folder.
 
-**What the default path decomposes into is undecided.** It needs something that produces the
-mechanism's missing link from the model rather than from a corpus, and this pass deliberately does
-not name that piece, give it a signature, or place it in the build order. A decision taken in the
-evening does not get its architecture the same evening, and this repo's own rule is that a row
-with no reason behind it is not a decision.
+**The default path's missing piece has a name now. Its contract is still undecided.** It needs
+something that produces the mechanism's missing link from the model rather than from a corpus, and
+on 2026-08-07 that step was named **Supply** and given a draft spec at
+[`../specs/supply.md`](../specs/supply.md). It has a row below, and that row is the one line of
+this table that is not retrieval-path work. What the spec does not yet have is a settled contract:
+**every one of its rulings is open**, each of them would change a signature, and
+[`/holdtrue-workflow`](../../.claude/skills/holdtrue-workflow/SKILL.md)'s gate holds the oracle
+step until they are answered. So what the row records is that the piece has been named and
+drafted, not that anyone has agreed what it does. Read the spec for the contract; this page does
+not restate it. The build order is still [`../decisions.md`](../decisions.md)'s to write, and
+Supply has no entry in it.
+
+This page said until 2026-08-08 that the pass *"deliberately does not name that piece, give it a
+signature, or place it in the build order"*, on the reasoning that a decision taken in the evening
+does not get its architecture the same evening. The spec was written that same evening anyway. What
+survives of that reasoning is the rule underneath it — a row with no reason behind it is not a
+decision — which is why the row below is marked drafted rather than filled in.
 
 | Piece | Takes | Returns | Kind |
 |---|---|---|---|
@@ -288,8 +302,18 @@ with no reason behind it is not a decision.
 | **Extract** | The user's corrected explanation, **or a retrieved source passage** | The concepts named and the links asserted, with spans | **Model** |
 | **Cohere** | The extracted graph, alone | Where the chain does not close | Deterministic |
 | **Compare** | Links extracted from the explanation, plus links extracted from the retrieved passages | The link present in the source and absent from the explanation | Deterministic |
+| **Supply** | *Drafted, not settled — see [`../specs/supply.md`](../specs/supply.md)* | *Drafted, not settled — see the spec* | **Model** |
 | **Contradict** | Extracted claims plus retrieved passages | Where a passage asserts otherwise, with both spans | **Model** |
 | **Clarity** | The raw transcript, nothing else | Counts of measurable surface facts | Deterministic |
+
+**Supply's two middle cells are left unfilled deliberately.** The spec draws a signature, but four
+of its open rulings move exactly those cells — whether the call takes the transcript, whether the
+probe it returns is minted here or by Session, whether there is a confidence field, and what an
+empty result is — and a fifth asks whether Supply and Contradict are one piece at all, which would
+fold this row into another one. Copying a draft signature into a table turns a proposal into a
+decision by transcription, and the table is where people look when they want the answer without
+the argument. The spec holds both, including what each ruling rejected. The name is the spec's to
+give and the spec's to change; if it moves, this row moves with it.
 
 **Compare is set arithmetic over two link sets, not over concepts and passages.** The table
 previously gave it `extracted concepts plus retrieved passages` in and a *link* out, and a passage
@@ -311,10 +335,14 @@ asking.
 
 **The model surface used to be two pieces: Extract and Contradict.** It briefly reached four on
 2026-08-05 when a point-coverage readout was added; that was reverted the same day and Points and
-Cover went with it. As of 2026-08-07 the count is wrong in the other direction, and honestly so:
-the default-path finding is itself model output, produced by a step that has no row in the table
-above because nobody has designed it. So the model surface is Extract, Contradict, and at least one
-unnamed piece that carries the whole authority of the feature. Contradict still needs its own eval
+Cover went with it. On 2026-08-07 it went up again, because the default-path finding is itself
+model output and the step producing it had no row in the table above. So the model surface is
+Extract, Contradict and **Supply**. Until 2026-08-08 that third one read *"at least one unnamed
+piece that carries the whole authority of the feature"*, which is the sentence
+[`../specs/supply.md`](../specs/supply.md) was written to answer. Naming it changed the count and
+nothing else: the authority it carries is what it was, and so is the decision that it ships with
+no eval of its finding, which [`../decisions.md`](../decisions.md) records as a choice with its
+cost rather than as an absence. Contradict still needs its own eval
 set — one more labelling effort on top of the one already scheduled, and see below for what has
 happened to the ground truth those labels were going to come from.
 
@@ -346,7 +374,8 @@ finding.
 **Build order.** Corrected 2026-08-06; the previous version deferred the go/no-go behind the two
 most expensive deterministic pieces, for a reason that does not hold.
 
-0. **The falsification week.** Costs a day each and no code. See below.
+0. **The falsification week.** One of the three is done, one can be run today, and one cannot run
+   until Extract does. See below.
 1. **Anchor.** Every other piece produces or consumes anchors, so changing the format later
    touches all of them. *Done — 30 tests, mutation score 100%.* Its standing changed on 2026-08-07
    without its quality changing at all: it is no longer the foundation everything reads from,
@@ -367,19 +396,49 @@ most expensive deterministic pieces, for a reason that does not hold.
 6. **Session**, then **Interface**. Last, always.
 
 **Step 3 and Compare inside step 4 are retrieval-path work as of 2026-08-07.** Whether they are
-built at all, and when, hangs on a default-path decomposition nobody has written. Step 5's
-Contradict is in the same position with its inputs unsettled. Cohere still needs only Extract and
-keeps its place, and step 2 is untouched and still the measurement that can end the project. The
-order is not re-cut here; it is marked as resting on a question that is open.
+built at all, and when, hangs on a default-path decomposition that is now half-written rather than
+absent: Supply is named and drafted with every ruling in its spec open, and this list still has no
+entry for it. Step 5's Contradict is in the same position with its inputs unsettled — and one of
+Supply's open rulings asks whether the two are one piece, which would change what step 5 even is.
+Cohere still needs only Extract and keeps its place, and step 2 is untouched and still the
+measurement that can end the project. The order is not re-cut here; it is marked as resting on a
+question that is open.
 
 This now agrees with the project-level order in [`../decisions.md`](../decisions.md), which is
 the single source for it. Where the two ever disagree again, that file wins.
 
 ### The falsification week, before step 2
 
-Three measurements, each about a day, none needing a model or a line of code. **Write the kill
-numbers down before running any of them** — a threshold chosen after seeing the result, by the
-person who wants the feature to exist, is not a gate.
+**Three measurements. One is done, one can be run today, and one cannot run until Extract does.**
+**Write the kill numbers down before running any of them** — a threshold chosen after seeing the
+result, by the person who wants the feature to exist, is not a gate.
+
+This paragraph read *"three measurements, each about a day, none needing a model or a line of
+code"* until 2026-08-08, and that was never true of all three: the false-question rate below runs
+Extract and then Cohere by this section's own description of it. That claim and the description
+that refutes it entered the repo in the same commit — `c3822d4`, 2026-08-06, found with
+`git log -S` — a day before the pivot, so this is an old drafting error rather than something the
+pivot broke. Where the three actually stand:
+
+- **Vault eligibility — done.** 2026-08-06, one vault, result in
+  [issue #26](https://github.com/danielhkuo/HoldTrue/issues/26). Detail below.
+- **The within-sentence rate — runnable today, not yet run.** It needs no model and no application
+  code: you write the explanations from memory and mark the links by hand, and the tally script
+  already exists at
+  [`measurements/within-sentence/rate.mjs`](../../measurements/within-sentence/rate.mjs). Its
+  `explanations/` directory is empty, so not a word of it has been collected.
+- **The false-question rate — waiting on Extract.** It needs a *runnable* extractor and Cohere's
+  set arithmetic over what that extractor returns, and it needs the hand-marked explanations from
+  the measurement above to run over. Anchor is the only piece this repo has built. What it does
+  **not** need is Extract's finished eval set — a working extractor is enough — but a working
+  extractor is a great deal more than a day of marking links with a pen.
+
+**A consequence worth naming here and answering elsewhere.** If the false-question rate cannot run
+before Extract runs, it is not a week-zero measurement, and this section's own heading — *before
+step 2* — is true of two thirds of the week rather than all of it. Whether that changes what the
+week gates, and whether the answer is to split the week or to move the measurement behind Extract,
+is the build order's question. The build order is [`../decisions.md`](../decisions.md)'s, it is
+marked proposed and not decided there, and it is not re-cut here.
 
 **All three survive the pivot, and the measurement that does not survive is not in this list.**
 The within-sentence rate and the false-question rate both score the user's own explanation against
@@ -387,9 +446,15 @@ hand marks on that same explanation, so neither ever depended on the notes; vaul
 already done. What collapsed on 2026-08-07 is the evaluation of the *finding*. Compare's gold
 labels were spans into real text and there is no real text on the default path, so *did the model
 name a gap that is really a gap in this person's understanding* now has no gold standard short of a
-subject expert per case. The 100–150 labelled items and the paired regression protocol were both
-written assuming a document to compare against. This page has no replacement to offer and does not
-invent one.
+subject expert per case. **The 100–150 labelled items and the paired regression protocol are not in
+that wreckage.** That set is Extract's, and its labels are spans into the explanation text: *did
+the extractor find the causal link sitting in this sentence* is answered by the sentence in front
+of you, and no source material was ever needed to answer it. The paired protocol re-runs a fixed
+set of the user's own transcripts and is the instrument it always was. This page said the opposite
+until 2026-08-08 — that both were written assuming a document to compare against — and
+[`measurements/within-sentence/README.md`](../../measurements/within-sentence/README.md) and
+[`../decisions.md`](../decisions.md) had it right first. What has no replacement is the evaluation
+of the *finding*, and this page does not invent one.
 
 **Within-sentence rate.** Write out fifteen to twenty explanations from memory on real topics.
 Mark every causal link by hand. Count what fraction have cause, effect and relation inside a
@@ -407,15 +472,18 @@ matching at a 0.75 threshold** rather than exact extraction, over **PubMed abstr
 5% computed on **202 instances — 3.1% of that corpus's 6,491 cause–effect pairs**. The corpus
 was keyword-filtered for *"causality"* and is 96.9% intra-sentential by construction, so its
 cross-sentence relations are the residue the filter missed: the hardest slice, not a
-representative sample. In news the statistic nearly inverts — **EventStoryLine holds 3,885
-inter-sentence causal pairs against 1,770 intra, roughly 31% intra-sentential.** The
+representative sample. In news the statistic nearly inverts — **EventStoryLine runs about 32%
+intra-sentential: 1,751 within-sentence causal pairs against 3,727 across, over 258 documents.**
+That pair, the preprocessing behind it and the second-hand counts it displaces belong to
+[`../research/extraction-benchmarks.md`](../research/extraction-benchmarks.md), which verified them
+against the paper; this page cites the number and does not restate its provenance. The
 intra-sentential share swings threefold between two *written* genres, so **no published number
 covers spoken, from-memory explanation by a learner, which is this product's only genre.** That
 is a better reason to run the measurement than the one it replaces, not a worse one: this week is
 now the only evidence there is, rather than a confirmation of somebody else's corpus.
 
 The kill number stays at 60% and has not been moved. What changed is that it is now a line
-someone drew rather than one the literature implied, since a share that swings 31%–97% by genre
+someone drew rather than one the literature implied, since a share that swings 32%–97% by genre
 implies nothing about this one. If it is to be revised, it must be revised **now, before any
 explanation is written, and recorded as a premise falsification** — which is a different act from
 adjusting a threshold after seeing a result, and the second remains forbidden.

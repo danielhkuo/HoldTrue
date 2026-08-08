@@ -32,7 +32,7 @@ Four reads, in order. No questions until they are done — the answers are in fi
    |---|---|---|
    | A measurement | *the falsification week* | Not this skill. Say so, name where the protocol lives, stop |
    | A deterministic piece | *Anchor* | The piece loop |
-   | A model-dependent piece | *the extraction harness* | The piece loop, with the eval branch at step 5 |
+   | A model-dependent piece | *the extraction harness* | The piece loop. [The eval branch](#the-model-dependent-piece) covers the model call; the ordinary steps still cover the deterministic code around it |
    | A bundle naming a feature | *Feynman. Cohere, Compare…* | Open `docs/features/<name>.md`, take the first piece in its order that is unbuilt |
 
    A feature named in the build order with no `docs/features/<name>.md` goes to feature entry.
@@ -246,7 +246,8 @@ every property test green and the mutation score at 100%.
 **Banned assertions**, per `AGENTS.md`: snapshot-only, `toBeDefined()` alone, mock-only tests that
 never touch real logic, bare boolean assertions.
 
-*A model-dependent piece takes [the eval branch](#the-model-dependent-piece) instead.*
+*On a model-dependent piece, [the eval branch](#the-model-dependent-piece) replaces this step for the
+model call only. The deterministic code around the call still gets an oracle, written here.*
 
 ### 6. Red-team the oracle — before implementation, not after
 
@@ -343,8 +344,22 @@ specs.
 
 ## The model-dependent piece
 
-At most one per feature. It replaces steps 5, 6 and 9 — there is no oracle to attack, so the red
-team does not apply.
+At most one per feature, and **model-dependent does not mean all model**. The eval branch replaces
+steps 5, 6 and 9 **for the model call itself, and for nothing else**: there is no oracle over what a
+model returns, so the red team has nothing to attack there and mutation has no code to mutate.
+
+**Everything around the call is ordinary deterministic code, and the ordinary steps still apply to
+it.** Assembling a model's output into the shape the piece returns, dropping entries that fail a
+stated condition, copying identifiers through by identity, mapping a failed or absent model onto a
+defined result — none of that is a model, all of it is testable without one, and `AGENTS.md` scopes
+mutation to precisely this, the deterministic core. `docs/specs/supply.md` is the worked case: read
+its public API and see how little of a model piece is the model.
+
+So split the piece at the model call. Take the eval branch for the call, and run steps 5, 6 and 9
+unchanged over the remainder — write the oracle for the deterministic half, red-team it, and run
+`npm run mutate` before the piece is called done. A builder who skips all three because the piece is
+labelled model-dependent has thrown away the two instruments that found the real defect in Anchor,
+on the half of the piece they still work on.
 
 **The harness itself is specified in `AGENTS.md` under Testing** — its four layers, the size of the
 labelled set, and the ban on an LLM judge. Read it there. It is deliberately not copied here; a
@@ -357,15 +372,32 @@ original 30 and compare** — if it agrees, the rest of the set is trustworthy; 
 hand. Skipping that check is how you get an evaluation set that agrees with the model rather than
 with reality. Never compare a fresh number against a remembered one.
 
-**Open since 2026-08-07: not every piece still has a gold standard.** The harness assumes gold
-labels exist. For Extract they do, and the pivot did not touch them — its labels are spans into the
-user's *own explanation*, so the falsification week's explanations are still the first items of its
-set. For the judgement downstream of extraction — *did this finding name a real gap in this
-person's understanding* — they do not. The user's own source material was what authorised that
-judgement, it is off the default path now, and nobody has decided what replaces it. So **if the
-piece in front of you needs that judgement scored, it is blocked on a decision rather than on
-labelling.** Say so and stop. Do not invent a gold standard inside a piece loop, and do not let a
-model grade itself in place of one.
+**Ruled 2026-08-07: not every piece has a gold standard, and the missing one was ruled on rather
+than left open.** The harness assumes gold labels exist. For Extract they do, and the
+pivot did not touch them — its labels are spans into the user's *own explanation*, so the
+falsification week's explanations are still the first items of its set. For the judgement downstream
+of extraction — *did this finding name a real gap in this person's understanding* — they do not, and
+the owner ruled that its eval is skipped, recording the skip as a decision rather than leaving it an
+absence. That ruling, what it costs, what it does not touch, and the falsification-scale
+alternative that was offered and declined are in `docs/decisions.md` under *The source of the
+finding*. Read the row; do not re-derive it here and do not re-open it inside a piece loop.
+
+**So a piece needing that judgement scored is not blocked. It ships unmeasured, by decision**, and
+the piece loop runs to the end. What it owes in exchange is honesty in the spec: say plainly what
+nothing measures, cite the ruling rather than presenting the hole as an oversight, and record any
+cheap partial instrument that does exist rather than writing measurement off wholesale.
+
+**Tell that apart from blocked, because the failure in each direction is expensive.** *Unmeasured by
+decision* means someone weighed the measurement and declined to build it — there is a row, it carries
+a date, and you proceed and write down what you cannot know. *Blocked on a decision* means a question
+whose answer would change a signature has no answer yet — there is no row, and you stop, per the gate
+at step 4. Building something that should have waited and halting on something already settled are
+both costly, and the only way to know which you are in is to go and look for the ruling. Absence of a
+row is not a ruling.
+
+Neither state licenses inventing a gold standard inside a piece loop, and neither licenses letting a
+model grade itself in place of one. The skip raises the pressure to do the second; it does not
+loosen `AGENTS.md`'s ban on it.
 
 ---
 

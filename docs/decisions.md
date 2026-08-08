@@ -18,7 +18,7 @@ along the way.
 | **Model knowledge is the default source of the finding** | The owner's call, and his reason is that confining the finding to the user's own notes was seriously constraining: a gap the notes never mention could not be found at all, which is most of what a person actually has wrong. HoldTrue is an open-source tool, so which model runs is the user's choice and, in his words, *"it's the user's failure to not use an appropriate model."* That is a coherent position for a tool nobody is selling, and it moves the guard against a confident falsehood from the architecture to model capability plus the person who picked the model. It obliges the app to be honest about which model it is running and what that model was calibrated against. **What this does not touch.** Law 1 entire — anything that asks supplies the answer, and it binds harder now, not less. Local-first: nothing leaves the device unless you turn something on. The evidence gate, still scoped to claims about learning. Invariants 5, 6 and 7. Invariant 2 survives with a narrower scope rather than being deleted: wherever something is quoted, it is still validated as a literal substring, there is simply far less quoting. | **A cloud or bring-your-own-key frontier model as the floor.** Declined because local-first survives the pivot on its own reasoning — it was never part of what Law 2 was doing, so repealing Law 2 gives no reason to spend it. **Notes-only retained**, which is the status quo being repealed rather than refuted, so its cost is stated and not argued away: what the project gives up is a *structural* guarantee. If every sentence is the user's own words, a verbatim quote from their material, or a string in the codebase, then a confident falsehood has no route to the screen, and hallucination stops being a judgement call and becomes a validation failure that span anchoring catches mechanically. Nothing enforces that now. The replacement is a bet on the model, and the bet is the user's to lose. |
 | **The local floor is the best model the machine can run** | The calibration target is a development machine that is an M5 Max with 36 GB, so the floor is roughly a **27–32B-class model at 4-bit, about 20 GB resident**, sharing those 36 GB with a `whisper-server` sidecar and Electron. The class and the memory budget are the decision. No model is named here and no accuracy figure is quoted, because nothing has been run at that size for this task. The owner's reasoning for calibrating at the floor is that a cloud model will be stronger and so will pass any eval this setup passes. **Recorded with its correction, because the reasoning holds on one axis and not the other.** It holds for **recall** — a stronger model finds at least what a weaker one finds. It does not automatically hold for **precision**, because larger models are frequently more fluent and more confidently wrong, and precision is the axis Law 1 charges for: a wrong repair does not cost a round trip, it teaches a falsehood. Calibrating against the weakest supported configuration is sound. Treating a stronger model as a free pass on the same eval is not. | **Naming a specific model, or writing down a benchmarked figure.** Neither exists yet, and three fabricated figures were traced and corrected in this repo on 2026-08-07 already. **Calibrating against the strongest configuration** and letting the weak end fail quietly, which inverts the direction the error is asymmetric in. **Making cloud the floor**, which is the same rejection as the row above. |
 | **RAG is an optional hook, never the default path** | In the owner's words: *"Its hypothetical. Like if someone has that kind of setup, i want them to be able to hook it up. But by default its model knowledge only."* So the default path has no corpus, no retrieval step and no source document, and the finding comes from the model. The retrieval design already decided in this file is not deleted — it is scoped to the optional path, where a quote can still be validated against a real source and invariant 2 still means something. | **Requiring RAG on the default path.** It puts a setup step in front of the first run and makes the headline feature depend on a corpus most people will not have, which is a milder version of the constraint just repealed. **Dropping the RAG path entirely.** It throws away reasoning that is still correct wherever retrieval runs — see the two rows below marked *scoped to the RAG path* — and forecloses the one configuration in which a citation can be mechanically checked. |
-| **The eval for the model-knowledge finding is skipped, and the skip is recorded as a decision rather than left as an absence** — decided 2026-08-07 | The owner's call, and his reasoning in his words: building one is what *"full benchmark suites are for"*, he does not want to spend that effort, and *"its not like we can do anything if the current models are insufficient."* **The cost, recorded beside it and not argued away.** The piece that carries the entire authority of the feature will ship with no way to tell whether it works, and there is no number to point at when a finding feels wrong. Law 2 obliges the app to state what the model was calibrated against; for this piece the honest answer is now permanently *nothing*, so `philosophy.md`'s open item on calibration having no procedure is closed for the default-path finding by this row rather than answered by it. **What the skip does not touch.** All three falsification-week measurements survive and are still scheduled — they score the user's own explanation against hand marks on that same explanation, so none of them ever depended on the notes. Extract's own eval survives unchanged: spans into the explanation text, schema validation, the properties, the paired protocol over a fixed set. What is skipped is the measurement of the *finding*, which is the one that never had a gold standard short of a subject expert per case. | **A falsification-scale version, offered and declined: the owner marking real-gap / not-a-gap on findings drawn from his own explanations**, on the ground that he is the subject expert on his own understanding — which is precisely the expert-per-case the full protocol could not afford, available for the length of the falsification week rather than a benchmark suite. Record it as the thing a future reader will most want to know was weighed rather than overlooked. It is **declined, not refuted**: nobody showed it would not work, and it can be picked up later by anyone willing to spend the week. **Leaving the eval as an absence**, which is what a row exists to prevent — a hole in the docs reads as an oversight, and this one is a choice. **An LLM judge**, not reopened and given no fresh consideration here; `AGENTS.md` bans it, and the only thing that changed is that the pressure to reach for it went up. |
+| **The eval for the model-knowledge finding is skipped, and the skip is recorded as a decision rather than left as an absence** — decided 2026-08-07 | The owner's call, and his reasoning in his words: building one is what *"full benchmark suites are for"*, he does not want to spend that effort, and *"its not like we can do anything if the current models are insufficient."* **The cost, recorded beside it and not argued away.** The piece that carries the entire authority of the feature will ship with no way to tell whether it works, and there is no number to point at when a finding feels wrong. The **new** Law 2 in [`philosophy.md`](philosophy.md) — *"Nothing is asserted anonymously"*, the replacement written on 2026-08-07, and not the repealed law that every other row in this file means when it says Law 2 — obliges the app to state what the model was calibrated against. For this piece the honest answer is *nothing*. It stays nothing for as long as this row stands, which is not the same as forever: the alternative in the third column of this row is declined and not refuted, and anyone who takes it up turns *nothing* into a number. So `philosophy.md`'s open item on calibration having no procedure is closed for the default-path finding by this row rather than answered by it. **What the skip does not touch.** The falsification week survives whole, but not for one shared reason, and this row's first draft got that wrong. Two of the three — the within-sentence rate and the false-question rate — score the user's own explanation against hand marks on that same explanation, so neither ever depended on the notes. The third, vault eligibility, is a census of notes with no explanation and no hand marks anywhere in it, and it is **done**, run on 2026-08-06 over one vault and reported in [#26](https://github.com/danielhkuo/HoldTrue/issues/26), rather than scheduled. It survives the pivot because it was already finished, not because of anything about hand marks. Extract's own eval survives unchanged: spans into the explanation text, schema validation, the properties, the paired protocol over a fixed set. What is skipped is the measurement of the *finding*, which is the one that never had a gold standard short of a subject expert per case. **One narrower thing stays measurable, and it is not what this row skips.** Whether a finding names a link the user *did* state — the piece mistaking an extraction miss for a gap — asks nothing about anybody's understanding, so it needs no subject expert: the week's hand marks already record which links were stated. That check belongs to [`specs/supply.md`](specs/supply.md) and is recorded there, not here. What has no cheap instrument, and what this row therefore gives up, is precision on the gaps that are genuinely gaps. | **A falsification-scale version, offered and declined: the owner marking real-gap / not-a-gap on findings drawn from his own explanations**, on the ground that he is the subject expert on his own understanding — which is precisely the expert-per-case the full protocol could not afford, available for the length of the falsification week rather than a benchmark suite. Record it as the thing a future reader will most want to know was weighed rather than overlooked. It is **declined, not refuted**: nobody showed it would not work. **What picking it up later actually requires**, because the obvious reading of that phrase is wrong and would waste the week. It is not available to anyone willing to spend seven days. The entire warrant is that the marker is the subject expert on **his own** understanding, so the person doing the marking has to be the person who gave the explanations, marking findings drawn from those same explanations. Hand it to a second reader and it measures whether a finding looks plausible to a stranger, which is a different quantity and one nobody has asked for. That is what makes it cheap for the owner and unavailable to anybody else — it is not work sitting on a shelf for the next contributor, it is work only one person can do, and it stays available for as long as he is willing to write out explanations and mark them. **And what it would have produced**, which is the one place the cost of this skip is genuinely softened by knowing what was on the table: a **precision** figure — of the findings shown, what fraction named a real gap — on **spoken, from-memory explanation by a learner**, which is the one genre this product actually has and the genre no published benchmark covers at all. Precision is also the axis this piece is expected to fail on and the axis the local floor gives no free pass on, per the row two above. The sample would be small and partial: one labeller, his own material, the findings drawn from the week's fifteen to twenty explanations. Too thin to calibrate against and not offered as calibration — and still the only measured statement anybody would have been in a position to make about the piece. **Leaving the eval as an absence**, which is what a row exists to prevent — a hole in the docs reads as an oversight, and this one is a choice. **An LLM judge**, not reopened and given no fresh consideration here; `AGENTS.md` bans it, and the only thing that changed is that the pressure to reach for it went up. |
 
 ## Stack
 
@@ -90,9 +90,11 @@ intra-sentential by construction**, the corpus having been keyword-filtered for 
 5% is the residue that filter missed: the hardest slice, not a representative sample. Carried
 into an argument about a learner explaining from memory out loud, it is the same category error
 as pricing relation classification with CaRB, and a wider one — the intra-sentential share of
-causal links is itself genre-dependent, 96.9% in that biomedical corpus against 31% in news
-(EventStoryLine: 3,885 inter-sentence causal pairs against 1,770 intra). A threefold swing
-between two *written* genres, before speech is considered at all.
+causal links is itself genre-dependent, 96.9% in that biomedical corpus against about 32% in news
+(EventStoryLine: 1,751 intra-sentence causal pairs against 3,727 inter, the verified pair owned by
+[`research/extraction-benchmarks.md`](research/extraction-benchmarks.md), which also records the
+second-hand counts that circulate for the same corpus and why they change nothing). A threefold
+swing between two *written* genres, before speech is considered at all.
 
 **No published figure covers spoken, from-memory explanation by a learner.** Say that plainly
 rather than substituting the nearest adjacent number. What the field does report, for anyone
@@ -370,25 +372,60 @@ resolved quietly inside it.
 1. **Anchor.** *Done.* Nothing waits on it any more, since the default path reads no documents, but
    Extract's spans into the user's own transcript still resolve through it, so it stays here rather
    than moving into the retrieval phase at the bottom.
-2. **Extract, with its harness and ~100 labelled explanations.** Every default-path piece below
-   consumes its link set and it consumes nothing but the user's own words, so it is both the first
-   thing buildable and the last thing that could be deferred; the ~100 stays ~100 and narrows to
-   explanation-side extraction only, since the source-passage half of Extract's input goes with
-   entry 7, and the week's fifteen to twenty hand-marked explanations are its first labelled items
-   rather than a separate effort.
-3. **Cohere, and the false-question rate it unblocks.** Cohere needs only Extract and is
-   deterministic set arithmetic, so it is cheap; the false-question rate needs Cohere's flags scored
-   against the week's hand marks, and a measurement carrying a kill number belongs in front of
-   anything expensive — the same reasoning that moved Extract ahead of Index on 2026-08-06.
-4. **The step that produces the finding from model knowledge.** Being specced in
-   [`specs/`](specs/) as this is written and deliberately not named here: it consumes the link set
-   Extract produces, so it cannot precede entry 2, and since the eval skip leaves it with no
-   measurement it should sit as early as that dependency allows, because the owner reading its
-   output by hand is now the only signal there is that it works.
+2. **Extract — proposed here as two entries rather than one, 2a and 2b.** Every default-path piece
+   below consumes its link set and it consumes nothing but the user's own words, so it is both the
+   first thing buildable and the last thing that could be deferred. The split runs between the half
+   that other entries consume and the half that only Extract's own eval consumes:
+   - **2a. Extract, runnable.** The prompt, the schema, per-sentence emission under invariant 8,
+     spans resolving through Anchor — enough to run over a written-out explanation and emit a link
+     set something downstream can do arithmetic over. Nothing in 2a needs a label.
+   - **2b. The harness and the ~100 labelled explanations.** Extract's own eval: gold spans, schema
+     validation, the properties, the paired protocol over a fixed set. The ~100 stays ~100 and
+     narrows to explanation-side extraction only, since the source-passage half of Extract's input
+     goes with entry 7, and the week's fifteen to twenty hand-marked explanations are its first
+     labelled items rather than a separate effort.
+
+   **Why the split is proposed, and it is only proposed.** Entry 3's false-question rate carries a
+   kill number, and as the entry stands unsplit that measurement sits behind the labelling. It does
+   not need the labelling: its gold labels are the hand marks on the week's fifteen to twenty
+   explanations, not the ~100. Checked against [`features/feynman.md`](features/feynman.md), which
+   owns the protocol, what the rate does need is a runnable Extract **and** Cohere's set arithmetic
+   — it counts how often Cohere flags a concept the hand marks show *was* linked, so Cohere is a
+   third precondition rather than a detail. The shorter version of this argument that has been put,
+   that the rate belongs between a runnable Extract and its eval set, is wrong on exactly that
+   point: Cohere sits in between, and the rate cannot run before it. The split survives the
+   correction, because Cohere needs only 2a — so entry 3 follows 2a, and 2b runs alongside it or
+   after it. Leaving it unsplit is what puts a kill number behind a month of labelling, which is
+   the failure the build-order note in [`AGENTS.md`](../AGENTS.md) records this repo paying for
+   once, when a third copy of the order deferred the project's one kill switch behind a month of
+   work.
+3. **Cohere, and the false-question rate it unblocks.** Cohere needs only a runnable Extract — 2a,
+   not 2b — and is deterministic set arithmetic, so it is cheap; the false-question rate needs
+   Cohere's flags scored against the week's hand marks, and a measurement carrying a kill number
+   belongs in front of anything expensive — the same reasoning that moved Extract ahead of Index on
+   2026-08-06. Under the split above, this entry stops waiting on the labelling; without the split
+   it does not.
+4. **Supply, the step that produces the finding from model knowledge.** It has a name now, and the
+   name is the spec's: [`specs/supply.md`](specs/supply.md). It consumes the link set Extract
+   produces, so it cannot precede 2a — but **Extract is not the binding constraint, and citing
+   Extract here read as though it were.** The spec carries a block of **open rulings** — ten as
+   this entry is written, and the spec owns that count rather than this list — every one of
+   which would change a signature in its section 2, and under `/holdtrue-workflow`'s gate that
+   means the oracle step cannot start until they are answered. Ruling 7 says it in as many words:
+   *"Do not build either until this is ruled."* So this entry's position is set by a ruling and not
+   by a queue, which makes it the same kind of entry as 7 rather than the same kind as 3. Where it
+   belongs *once ruled* is as early as the Extract dependency allows, since the eval skip leaves it
+   with no measurement and the owner reading its output by hand is the only signal there is that it
+   works — which is also the argument for ruling on the nine sooner rather than later, because
+   nothing else in this list is waiting on the owner in that way.
 5. **Contradict.** Its second input and the source half of its two-span output both assume a
    document, so it cannot be built until it has the same default-path contract entry 4 is being
    given — which puts it behind entry 4 rather than beside it, even though at runtime the
-   contradiction is checked first.
+   contradiction is checked first. **It is under the same ruling as entry 4, and this line used to
+   omit that.** [`specs/supply.md`](specs/supply.md)'s ruling 7 asks whether Supply and Contradict
+   are one piece or two, calls itself the least settled of the nine and the one that changes the
+   return type, and its *"Do not build either until this is ruled"* names **both** of them. If it
+   comes back *one piece*, this entry stops being an entry.
 6. **Session, then Interface.** Last, always: both compose the pieces above them, and neither can be
    specified before the findings they present exist.
 7. **The optional retrieval phase, gated on a decision rather than on the entries above finishing.**
@@ -427,12 +464,19 @@ code-free, since it runs Extract and then Cohere by its own description.
   not; that is a reason about readiness, not about which finding matters more.
 - **Whether the retrieval phase gets a date or stays gated on a ruling.** Entry 7 proposes the
   ruling; the argument against is in the paragraph above it.
-- **The name of entry 4.** Not invented here. It is the spec's to give, and this entry should be
-  rewritten to use it once it has one.
+- **Whether entry 2 splits into 2a and 2b.** Proposed above, with the dependency check behind it.
+  This is the one edit in the proposal that changes what gets built first rather than only what is
+  written down, and it is worth ruling on separately from the rest of the re-cut: the rest can
+  wait, and a kill number sitting behind a month of labelling is the thing that cannot.
+- ~~**The name of entry 4.**~~ **Given, 2026-08-07.** The spec named the piece **Supply** and the
+  entry now uses that name. Whether it is the right name is open too, but it is open *there* and
+  not here — it is ruling 10 in [`specs/supply.md`](specs/supply.md). If the spec renames the
+  piece, this entry follows it rather than arguing with it.
 - **One knock-on edit this pass did not make.** Moving the false-question rate out of entry 0
   contradicts [`features/feynman.md`](features/feynman.md), which describes the week as three
-  measurements *"none needing a model or a line of code."* That file was not touched by this pass.
-  If the re-cut is accepted, that sentence needs correcting there — this file is the single source
+  measurements *"none needing a model or a line of code."* That file was not touched by the pass
+  that drafted this proposal; the 2026-08-08 correction pass took it up. If the re-cut is accepted
+  and that sentence is still standing there, it is the stale copy — this file is the single source
   where the two disagree, and a silent disagreement is how the three copies drifted the first time.
 
 ## Open
@@ -461,9 +505,15 @@ reason.
   and *did the model find a real gap in this person's understanding* has no gold standard short of a
   subject expert per case. **What this bullet got wrong, and a reader should not inherit.** It swept
   the falsification week and the 100–150 labelled items in with the rest, and neither belongs there.
-  The week's measurements score the user's own explanation against hand marks on that same
-  explanation; the 100–150 labels are spans into explanation text. Both are untouched by the pivot,
-  as `AGENTS.md` and [`features/feynman.md`](features/feynman.md) each say in their own words.
+  Two of the week's three measurements score the user's own explanation against hand marks on that
+  same explanation, and the third, vault eligibility, is a census of notes that was finished on
+  2026-08-06; the 100–150 labels are spans into explanation text. Both are untouched by the pivot.
+  Read that as a correction rather than as a chorus: `AGENTS.md` and
+  [`features/feynman.md`](features/feynman.md) both carried the opposite claim — that the labelled
+  set and the paired protocol assumed a text to compare against — until the 2026-08-08 correction
+  pass went through them, and this file is among the sources they were corrected against, with
+  [`measurements/within-sentence/README.md`](../measurements/within-sentence/README.md). If either
+  still reads the old way, it is stale rather than a second opinion.
   **What is still open** is the eval for **Contradict**, which is a separate labelling effort with
   its own unresolved collectability and is not covered by the skip either way, and what *"calibrated
   against"* can mean for a piece nobody is measuring.

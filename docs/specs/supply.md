@@ -1,18 +1,26 @@
 # Spec: Supply
 
 > **Status: draft, nothing built, 2026-08-07.** Written the same evening the model-knowledge pivot
-> landed, to fill the hole [`../features/feynman.md`](../features/feynman.md) names when it says the
-> model surface is *"Extract, Contradict, and at least one unnamed piece that carries the whole
-> authority of the feature."* This is that piece, named.
+> landed, to fill the hole [`../features/feynman.md`](../features/feynman.md) had left when its model
+> surface read *"Extract, Contradict, and at least one unnamed piece that carries the whole authority
+> of the feature."* This is that piece, named — and whether the name survives is ruling 10.
 >
 > It has **no row in the build order**, which is
 > [`../decisions.md`](../decisions.md)'s to write and not this file's, and it has **no eval**, which
 > is a decision rather than an omission — see section 7, and read it before building anything here.
 >
-> Sections 1 to 5 are written. Section 6 is a placeholder because the oracle step has not run.
-> Section 7 is written early and out of order, against the usual rule that it closes a built piece,
-> because the one thing a reader most needs to know about this piece is what nobody has measured
-> about it.
+> Sections 1 to 5 are written. Section 6 is mostly a placeholder because the oracle step has not
+> run, though it now carries one property that does not wait on it. Section 7 is written early and
+> out of order, against the usual rule that it closes a built piece, because the one thing a reader
+> most needs to know about this piece is what nobody has measured about it.
+>
+> **Corrected 2026-08-08, after a reading against the rest of the repo.** Section 7 twice claimed
+> this piece has no instrument at all; it has one for its likeliest failure, for the cost of one
+> column on a measurement already scheduled, and that is now recorded there. Ruling 1 was rewritten
+> because two of its three grounds contradicted section 7 and do not survive; it stays **OPEN** and
+> its proposed answer is more weakly supported than it was. Section 6 gained the property that
+> encodes section 1's contract. Ruling 10, on the piece's own name, is new and was never among the
+> nine. Nothing was decided, renamed, or closed by that pass.
 
 ## 1. What it does
 
@@ -23,25 +31,26 @@ the identity of the model that produced all three. On the default path there is 
 any of this. The finding is the model's account of the subject, and Supply is where that account
 enters the product.
 
-**This is a new piece and not Compare with a different right-hand operand.** The question is worth
-settling in the first paragraph because getting it wrong either duplicates a piece or overloads one.
+**Whether this is a new piece or Compare with a different right-hand operand is open** — ruling 1,
+rewritten 2026-08-08 after the first draft of it was found to contradict section 7. The question
+belongs in the first paragraph because getting it wrong either duplicates a piece or overloads one.
 Compare's contract was *"the link present in the source and absent from the explanation"*, and both
 of its operands were link sets produced by the same extractor over text —
 [#22](https://github.com/danielhkuo/HoldTrue/issues/22) established exactly that, so that Compare
-could be set arithmetic and keep a property test. Three things break when the right-hand operand
-becomes model knowledge, and each of them alone is enough. The operands stop being the same type: a
-link from Extract carries an anchor into real text and a link the model holds carries nothing, so
-deciding whether two of them are *the same link* stops being set membership and becomes a semantic
-judgement. Compare's whole reason for living outside the model goes with it — the feature doc keeps
-it separate so that *"the omission shown to the user is certain even though the extraction feeding
-it is not"*, and certainty about set membership in a generated set is certainty about nothing.
-And Law 1 lands here in a way it never landed on Compare: Compare returned an omission and the
-answer came from the passage its output pointed at, whereas here there is no passage, so whatever
-names the gap must also produce the sentence that closes it. That is a different job, not a
-different argument. The full reasoning and the rejected alternative are ruling 1.
+could be set arithmetic and keep a property test. Two things change when the right-hand operand
+becomes model knowledge. The operands stop being the same type: a link from Extract carries an
+anchor into real text and a link the model holds carries nothing, so deciding whether two of them
+are *the same link* stops being set membership and becomes a semantic judgement. And Law 1 lands
+here in a way it never landed on Compare: Compare returned an omission and the answer came from the
+passage its output pointed at, whereas here there is no passage, so whatever names the gap must also
+produce the sentence that closes it. That is a different job, not a different argument.
 
-**What Compare keeps.** Everything. It is the retrieval path's piece, its reasoning is untouched,
-and nothing here supersedes it. Two pieces now exist where one did, because there are two paths.
+Sections 2 to 4 are written against the proposed answer — a separate piece — because a spec has to
+be written against something. **They are not written against a settled one.** Read ruling 1 before
+treating the seam as fixed.
+
+**What Compare keeps.** Everything, under either answer. It is the retrieval path's piece, its
+reasoning is untouched, and nothing here supersedes it.
 
 ## 2. Public API
 
@@ -51,7 +60,14 @@ and nothing here supersedes it. Two pieces now exist where one did, because ther
 import type { Anchor } from '../index/anchor'
 
 /** One causal link as Extract emits it over the user's own explanation. The anchor points into
-    the transcript and resolves through `src/index/anchor.ts`; see invariant 2 in section 4. */
+    the transcript and resolves through `src/index/anchor.ts`; see invariant 2 in section 4.
+
+    **Invented here, and not imported from anywhere.** Extract is unbuilt and unspecced —
+    `docs/specs/` holds `anchor.md` and this file and nothing else — so there is no emitted type
+    to import and no owner to import it from. This is the minimum Supply needs, written down so
+    the dependency is visible rather than assumed. It is provisional: when Extract is specced,
+    this shape is that spec's to give and this declaration changes to match it, which changes
+    `supply`'s second parameter. See the note to Extract in section 7. */
 type Link = {
   readonly cause: string
   readonly effect: string
@@ -239,38 +255,77 @@ in either direction right now.
 
 Everything below is **OPEN**. Nothing here has been ruled on by the owner, and every one of these
 questions would change a signature in section 2, which under `/holdtrue-workflow`'s gate means the
-oracle step cannot start until they are answered. Each carries a proposed answer and the
-alternative it rejects, because a bare question is more work for the person ruling than a wrong
-proposal is.
+oracle step cannot start until they are answered. Rulings 1 to 9 were written 2026-08-07; ruling 1
+was rewritten and ruling 10 added on 2026-08-08. Each carries a proposed answer and the alternative
+it rejects, because a bare question is more work for the person ruling than a wrong proposal is —
+with one exception. Ruling 10 states both cases and recommends neither, because what it turns on is
+a judgement this file does not hold.
 
-### 1. This is a new piece, not Compare with a different right-hand operand. OPEN.
+### 1. Whether this is a new piece or Compare with a different right-hand operand. OPEN.
+
+**Rewritten 2026-08-08, and the proposed answer is now more weakly supported than when it was
+written.** As first drafted this ruling gave three grounds and called each one sufficient. Read
+against the rest of the file, two of them fail and one of those contradicted section 7 outright —
+this ruling called determinism over a generated set decorative while section 7 mourns Compare's set
+arithmetic as one of two structural guarantees the pivot cost. Both cannot be true. What follows
+states each case at what it is actually worth, and the argument that now carries the most weight is
+one the first draft never made. **The proposal is unchanged and its support is thinner. That is the
+honest state of it, not a defect in the rewrite.**
 
 **Proposed:** a new piece, named Supply, with the contract in sections 1 and 2. Compare is
 untouched and stays scoped to the optional retrieval path.
 
-**Rejected: keeping Compare and swapping its operand** — a new upstream step produces an unanchored
-link set for the topic from model knowledge, and Compare performs `modelLinks \ explanationLinks` as
-before. This is the reading worth taking seriously, because it preserves a built-and-reasoned
-design and adds only one small piece. It is rejected on three grounds, each sufficient.
+**The alternative, at its strongest: keep Compare and swap its operand.** A new upstream step
+produces an unanchored link set for the topic from model knowledge, and Compare performs
+`modelLinks \ explanationLinks` as before. It preserves a built-and-reasoned design and adds one
+small piece rather than one large one. And — the part the first draft missed entirely — the differ
+half of that split stays *genuinely* deterministic and property-testable with no gold labels
+anywhere: **no finding names a link already present in the explanation.** That property is now in
+section 6. It is not decoration. It is the mechanical guard against the failure section 7 names as
+this piece's likeliest, in the one direction a machine can check.
 
-The operands are not commensurable. Under #22 both sides came from one extractor over text, so *is
-this the same link* was a decidable predicate over comparable tokens and Compare kept its property
-test. One side is now unanchored propositions from a model and the other is anchored spans into
-speech, and matching them requires paraphrase-tolerant identity, which is a model judgement wearing
-set notation.
+**Where the three original grounds now stand.**
 
-The determinism becomes decorative. Compare sits outside the model so that *"the omission shown to
-the user is certain even though the extraction feeding it is not"*, and that certainty was real
-because the right-hand side was grounded in a document. A true set difference over a generated set
-is certain about set membership and about nothing else, so the authority moves entirely upstream
-and the arithmetic stops earning its seam.
+*The operands are not commensurable* — **survives, and is the strongest of the three, but it argues
+about difficulty rather than about how many pieces there are.** Under #22 both sides came from one
+extractor over text, so *is this the same link* was a decidable predicate over comparable tokens.
+One side is now unanchored propositions from a model and the other is anchored spans into speech,
+so matching them needs paraphrase-tolerant identity, which is a model judgement wearing set
+notation. That is equally true whichever way the pieces are cut. The split does not remove the
+semantic match; it decides which module owns it.
 
-Splitting buys no testability, which is the point that decides it. The attraction of the split is
-that it keeps one deterministic, property-tested piece. But the producer has no gold standard —
-that is what the eval lost — and the differ's output is trivially correct given its inputs. Two
-pieces, neither measurable on the thing that matters, instead of one that is honestly labelled as
-unmeasured. A builder may still implement Supply with an internal comparison stage; that is
-implementation, and it is not a contract seam.
+*The determinism becomes decorative* — **withdrawn.** Section 7 is right and this ground was wrong.
+Difference over a generated set is certain about set membership, and set membership is exactly what
+the absence property needs: a finding naming a link already in Extract's output is refutable without
+knowing anything about the world. What the pivot cost is certainty that the *right-hand set is
+true*, which sits upstream of the arithmetic under either answer and is not the arithmetic's fault.
+
+*Splitting buys no testability* — **withdrawn on the same ground.** It buys the absence property a
+module boundary and a name, which is what makes it a contract somebody cannot quietly drop in a
+refactor. What survives is the narrower claim, which is real: the split buys no measurement of
+whether a named gap is *real*, and the producer half still has no gold standard.
+
+**What now carries the case for a separate piece, and the first draft never made it.** Compare is
+scoped to the optional RAG path in three places, deliberately and on the record.
+[`../decisions.md`](../decisions.md) marks #22 *"scoped to the optional RAG path 2026-08-07"*; the
+same file's open list names Index, Retrieve and Compare as having no subject when there is no
+corpus; and [`../features/feynman.md`](../features/feynman.md)'s decomposition table is marked
+*"This table describes the retrieval path."* Supply is default-path work that runs whether or not
+the user ever turns retrieval on. Reusing Compare either drags a default-path obligation into a
+gated, optional phase, or forces all three markings to be reopened and re-cut. And the decisions
+file says, in the same breath as its own marking, that what the default path decomposes into is
+unanswered and that *"nothing should be re-cut until it is."* Leaving Compare where it was put is
+the reading that leaves that scoping alone.
+Behind it sits the Law 1 argument in section 1: Compare returned an omission whose answer was the
+passage its output pointed at, and here there is no passage, so whatever names the gap owes the
+sentence that closes it.
+
+**What the owner is choosing between.** One piece with an internal comparison stage and no seam a
+test can stand on, against two pieces where the deterministic half is separately testable but the
+scoping in three documents has to be reopened and Compare acquires a second caller on a path it was
+explicitly moved off. Whoever rules should read section 6 first, because the absence property is the
+thing both readings are really arguing over. A builder may still implement Supply with an internal
+comparison stage under either answer; what is open is whether that stage is a contract seam.
 
 ### 2. What identifies a finding that has no source. OPEN.
 
@@ -314,7 +369,10 @@ would have to anchor into, reopening the offset route section 3 closes.
 **The cost is real and is not argued away.** Extraction is imperfect by an unmeasured margin on this
 genre, so a link the user genuinely stated and Extract missed will look to Supply like a gap. That
 is a false finding, and precision is the axis Law 1 charges for. It is recorded again in section 7,
-because it is the failure this piece is most likely to have and the one nothing currently measures.
+because it is the failure this piece is most likely to have — and section 7 also names the one
+instrument that reaches it, which is a column on the falsification week's hand-marked explanations.
+Nothing *scheduled* measures it today. Nothing at all measures precision on gaps that are genuinely
+real.
 
 ### 5. Whether there is a `confidence` field. OPEN.
 
@@ -383,9 +441,62 @@ the difference got larger with the pivot — an empty result *"now means the mod
 which is bounded by what the model knows and by nothing you can inspect."* A distinct variant makes
 the caller handle that sentence on purpose.
 
+### 10. Whether the piece keeps the name Supply. OPEN. Added 2026-08-08.
+
+Not one of the nine. The name was given in passing by the file that first needed one, which is how
+names usually get made and is not by itself a reason to keep it or to change it. It belongs here
+because it changes `supply`, `SupplyResult`, `src/feynman/supply.ts` and every reference in this
+file, which is the same test the other nine pass.
+
+**Neither answer is proposed.** What this turns on is a taste about naming that the owner holds and
+this file does not, so both cases are put at their strongest and the recommendation is left out on
+purpose.
+
+**The case for keeping it.** It names what the piece is *for* rather than what it does
+mechanically, and what it is for is the constitution's oldest surviving obligation — invariant 5 and
+Law 1, *what asks supplies the answer*. A name pointing at the rule the piece exists to satisfy is
+the best available defence against the piece drifting into a gap-finder that stops shipping repairs,
+which is exactly the invariant 5 failure section 3's first bullet is written to prevent. The name is
+also already spent, and more of it is spent every day: [`../decisions.md`](../decisions.md) uses it
+in its build order and its open list, and [`../features/feynman.md`](../features/feynman.md)'s
+decomposition now carries a Supply row. The count of references is going up, not down, so the cost
+of changing it is rising while nine other rulings are still open.
+
+**The case against is two arguments, not one.**
+
+*The module is ungreppable, and the law now reads ambiguously.* *Supply the answer* and *supplies
+the answer* are ordinary prose in this repo. `grep -rliE "suppl(y|ies) .*answer" --include="*.md"`,
+run 2026-08-08, returns **six files**: `AGENTS.md`, `docs/philosophy.md`, `docs/decisions.md`,
+`docs/features/feynman.md`, this file, and one archived map under `docs/.wayfinder-archive/`. So a
+search for the piece returns the law and a search for the law returns the piece. The second half is
+worse than the first: invariant 5 quoted in full — *"anything that asks the user a question supplies
+the answer"* — can now be read as naming this module, which is the false precision that the
+convention of quoting invariants in full exists to prevent.
+
+*It is the only piece named for a duty rather than for its own work.* Anchor, Index, Transcribe,
+Retrieve, Extract, Cohere, Compare and Contradict are verbs on what they are handed, and Clarity
+names the quantity it reports. This one names the obligation being discharged, while the headline
+output that sections 1 and 2 are built around is the **gap** — the repair travels beside it because
+Law 1 requires it, not because it is the point. A reader who has only the name expects a piece that
+answers questions, and then meets a `Finding` built around `missing`.
+
+**Candidates, offered as material rather than as a shortlist anyone has argued for.** *Complete*,
+which is a verb on the input and matches its neighbours, though it collides with the ordinary word
+and with completeness, which invariant 7 bans as a displayed figure. *Supplement*, which keeps the
+sense and loses the collision with the law's exact wording, though not with the root. *Missing*,
+which names the output and reads badly as a function. *Recall* should be struck on sight, since it
+collides with the eval term. A deliberately opaque coinage fixes the grepping outright and pays for
+it in the mnemonic.
+
+**Nothing is renamed by this ruling and nothing should be renamed in passing.** If the name changes,
+this file moves with it, and so does every reference in `../decisions.md` and
+`../features/feynman.md`, which are other owners' files.
+
 ## 6. Hard cases the property test generator must produce
 
-**Placeholder. Nothing goes here yet, and the reason is not that nobody has got round to it.**
+**Mostly a placeholder, and the reason is not that nobody has got round to it.** One property below
+does not wait on the oracle step and is stated in full; the hard cases a generator would have to
+produce for it are not written yet.
 
 Under `/holdtrue-workflow` this section is written at the oracle step, and the human writes the
 oracle. For a model-dependent piece the oracle step is replaced by the eval branch, and **the eval
@@ -397,9 +508,27 @@ labels, which are the first two of the four layers `AGENTS.md` specifies for a m
 validation, and the invariants expressed as properties. For this piece those are that every anchor
 in `said` resolves against the transcript it came from, that no `Finding` carries an empty `repair`
 or an empty `probe`, that no `Finding` lacks an attribution, and that an empty link set in produces
-`none` out. Those are cheap, they are real, and they check that the piece is well-formed. **None of
-them checks whether the finding is true**, which is the only question that matters here and the one
-the skipped eval was going to ask.
+`none` out. Those are cheap, they are real, and they check that the piece is well-formed.
+
+**And one more, which is not well-formedness and which the first draft of this section left out:
+no finding names a link already present in the explanation.** For every `Finding`, `missing` must
+not match any member of the `explanation` argument. This is section 1's contract — *the link the
+mechanism has that the explanation lacks* — written as a property, and it is the only one on the
+list that can catch a **false** finding rather than a malformed one. It needs no gold labels,
+because its ground truth is the input argument and nothing else; the generator only has to produce
+an explanation and a claimed finding over it. It is also the property ruling 1 turns on, so read
+that ruling before deciding whether it lives behind a module boundary or inside one.
+
+**What it does not reach, stated so nobody over-reads it.** Matching here is the same
+paraphrase-tolerant comparison ruling 1 calls a model judgement wearing set notation, so the
+property is exactly as good as that predicate and no better. And it cannot see a link the user
+stated that Extract dropped, because such a link is not in `explanation` either — which is the
+failure ruling 4 records and section 7 names as the likeliest. That one is not a property test's to
+catch. It has a different instrument, and section 7 says what it is.
+
+**What none of these checks is whether a finding is true** in the sense of naming a gap that is
+really a gap. That is the question that matters most here, and it is the one the skipped eval was
+going to ask.
 
 ## 7. What is not closed
 
@@ -412,13 +541,16 @@ building it is what *"full benchmark suites are for"*, he does not want to spend
 *"its not like we can do anything if the current models are insufficient."*
 
 **The cost, recorded beside it rather than argued away.** The piece that carries the entire
-authority of the feature will ship with no way to tell whether it works and no number to point at
-when a finding feels wrong. There is no measurement of how often Supply names a gap that is really a
-gap, no baseline to regress against when a prompt changes, and no threshold that could ever fail.
-The two structural guarantees the repo used to have are both gone here: the old Law 2 made a
-confident falsehood impossible to display, and Compare's set arithmetic made an omission certain.
-Neither has a successor on this path, and now neither does the measurement that was going to stand
-in for them.
+authority of the feature will ship with no way to tell whether a finding is right, and no number to
+point at when one feels wrong. There is no measurement of how often Supply names a gap that is
+really a gap, and no threshold on that which could ever fail. The two structural guarantees the repo
+used to have are both gone here: the old Law 2 made a confident falsehood impossible to display, and
+Compare's set arithmetic made an omission certain — certain because the set it differenced against
+was grounded in a document, which is the half the pivot took. What is left of the second is the
+absence property in section 6, which keeps the arithmetic and loses the grounding. It can still say
+that a finding names something the explanation already contains; it can no longer say that the
+finding is true of the world. **That is a remnant and not a successor**, and the distinction is the
+one ruling 1 was rewritten over.
 
 **The rejected alternative, which is the thing a future reader will most want to know was
 considered.** A cheaper, falsification-scale version was offered and declined: the owner marking
@@ -428,21 +560,51 @@ suite, and it would have produced a precision figure on the one genre the produc
 was declined for the reasons quoted above. It is recorded here so that nobody concludes the choice
 was between a full benchmark suite and nothing.
 
-**What the skip does not touch.** The three falsification-week measurements all survive and are
-still scheduled. The within-sentence rate and the false-question rate score the user's own
-explanation against hand marks on that same explanation, so neither ever depended on the notes, and
-vault eligibility is already done. **None of the three measures this piece.** Cohere's set
-arithmetic never consulted a source, so nothing in that week says whether model knowledge names a
-real gap.
+**What the skip does not touch.** The within-sentence rate and the false-question rate score the
+user's own explanation against hand marks on that same explanation, so neither ever depended on the
+notes; vault eligibility is already done. None of the three measures this piece **as they are
+currently written** — Cohere's set arithmetic never consulted a source, so nothing in that week as
+scheduled says whether model knowledge names a real gap.
 
-**What this means for whoever builds it.** Build the well-formedness properties in section 6, since
-they are cheap and they are the only automated signal available. Then hold two things in mind. The
-first is that a green suite here means the piece is well-formed and says nothing about whether it is
-right, so do not let a passing test read as a working feature. The second is that every tuning
-decision — the prompt, how much of the link set the model sees at once, whether a finding is
-dropped or kept — will be made on somebody's impression, because there is no instrument. Write down
-what you changed and why, because a changelog is the closest thing to a paired regression protocol
-this piece will have.
+**But one instrument for this piece is a column away, and this section was wrong to say twice that
+there was none. Corrected 2026-08-08.** The falsification week writes out fifteen to twenty
+explanations with every causal link hand-marked, and the false-question rate already runs Extract
+over exactly those explanations and scores its flags against exactly those hand marks — both under
+*The falsification week* in [`../features/feynman.md`](../features/feynman.md), with the file format
+in [`measurements/within-sentence/README.md`](../../measurements/within-sentence/README.md), which
+is where a column would actually be added. Run Supply over the same explanations and record, per
+finding, whether the hand marks show that link **was** stated. That is one more column on a table
+somebody is already filling in.
+
+It needs no subject expert, and that is the whole reason it is cheap. It does not ask *is this a
+real gap in this person's understanding*, which is the question that needs one. It asks *did the
+model name a gap the user actually filled*, and the hand marks answer that on their own. **Its
+sample is whatever the week produces, and the week is small on purpose**: fifteen to twenty
+explanations, one person, self-chosen topics, written out from memory and hand-marked by the same
+person who wrote them. Two limits follow and neither is repairable by running it harder. It is a
+number to look at rather than a benchmark, and it says nothing about anyone else. And the week's
+explanations are *written* from memory while this product's genre is *spoken*, so the rate it
+produces is a proxy on the axis Extract is most likely to differ on. Like every other number in that
+week, its kill number would have to be written down before the run.
+
+**This does not reopen the eval skip and is not offered as doing so.** It reaches one failure mode —
+the false finding caused by an Extract miss, which is ruling 4's recorded cost and the failure named
+at the end of this section. Precision on gaps that are genuinely real still has no cheap instrument
+and no scheduled one, and the owner's decision stands as ruled. What is corrected here is only the
+premise that **nothing** was measurable. Whether the column gets added is a scheduling question for
+whoever runs the week; this file records that it is available and cheap, and claims nothing further.
+
+**What this means for whoever builds it.** Build the properties in section 6, since they are cheap
+and they are the only automated signal available; the absence property is the one of them that can
+fail for a substantive reason rather than a structural one. Then hold two things in mind. The first
+is that a green suite here means the piece is well-formed and says almost nothing about whether a
+finding is right, so do not let a passing test read as a working feature. The second is that **most**
+tuning decisions — the prompt, how much of the link set the model sees at once, whether a finding is
+dropped or kept — will be made on somebody's impression. Not all of them: once the week has been
+run, anything that moves the rate of findings the hand marks already answered is measurable by the
+column above, and that is a genuine before-and-after on the failure this piece is likeliest to have.
+Everything else is impression. Write down what you changed and why, because a changelog is the
+closest thing to a paired regression protocol this piece will otherwise have.
 
 **The mechanical check invariant 3 left behind lands here.** `AGENTS.md` names the hole: invariant
 3 was the only invariant that was mechanically checkable and required a test, it is repealed, and
@@ -457,7 +619,19 @@ Supply's inputs, so a link the user did state and Extract missed looks to Supply
 produces a finding that opens a gap which does not exist and then closes it with something the user
 already knew, which is the failure Law 1 charges for. Stronger models do not obviously fix this:
 `philosophy.md` and `AGENTS.md` both warn that a stronger model is a free pass on recall and not on
-precision, because larger models are frequently more fluent and more confidently wrong.
+precision, because larger models are frequently more fluent and more confidently wrong. **This is
+the one failure with an instrument**, in the narrow form described above: the hand marks say which
+links were stated, so a column counts how often Supply names one of them. Section 6's absence
+property catches the same shape of error one step earlier, against Extract's output rather than
+against the hand marks, and therefore misses precisely the cases Extract dropped.
+
+**To whoever specs Extract.** The `Link` type in section 2 is invented here, because Extract is
+unbuilt and unspecced and there was nothing to import. It is provisional and it is not this file's
+to own: when Extract gets a spec, that spec gives the shape, this declaration changes to match, and
+`supply`'s second parameter changes with it. Two things in particular are guesses that a real
+Extract may not honour — that a link carries exactly one `Anchor` rather than one per side, and that
+`relation` is a free string rather than a closed set. Neither guess is defended here. Both are
+recorded so that the next reader treats the signature as borrowed rather than agreed.
 
 **A note back to Anchor's section 7.** `docs/specs/anchor.md` leaves open *"whether the default path
 shows a citation at all now that the finding comes from the model"*, and says the answer sets
