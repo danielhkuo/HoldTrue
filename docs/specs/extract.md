@@ -249,13 +249,24 @@ in [`../research/extraction-benchmarks.md`](../research/extraction-benchmarks.md
 restated here that is not already sourced there.
 
 No published number covers this genre — spoken, from-memory explanation by a learner. The best open
-model measured on pairwise causal extraction reached **47.12%** on a metric the abstract calls a mean
-score, and performance *"degraded substantially for implicit relationships, multi-sentence links, and
-texts with multiple causal pairs"* — all three of which describe this input. Two findings reach the
-prompt directly. A **propose-then-verify split** buys precision at a small cost in recall, and the
-gain held for open-weight backbones. And **reasoning-tuned models abstain 24% less** than their
-instruction-tuned counterparts, which is a measured reason to prefer an instruction-tuned model at
-the local floor for a piece whose downstream failure is a question about a step the user did explain.
+model measured on pairwise causal extraction reached **47.12%**, and that is a *conditional*
+figure — the score after the relation has already been found — so it reads better than the task
+goes. Performance *"degraded substantially for implicit relationships, multi-sentence links, and
+texts with multiple causal pairs"*, all three of which describe this input.
 
-Whether Extract's failure mode is silence or over-assertion is **unresolved**, and the one unopened
-paper that would settle it is named in that file's open list.
+**The failure mode is settled, and it is the opposite of what this repo has been guarding against.**
+The same paper's Table 7 gives **35.70% missing relations against 0.31% false positives** — roughly
+115 missed links for every spurious one. Extract will be **silent**, not over-assertive. Three
+things follow, and they are constraints on the prompt rather than context:
+
+- **Defend recall, not precision.** The false-positive worry that shaped the surrounding literature
+  is nearly free at this scale.
+- **A missed link is not a harmless absence.** It reaches Cohere as a hole, and the child asks about
+  a step you did explain — the failure [`child-speech.md`](child-speech.md) names as likeliest.
+- **Do not add a propose-then-verify stage.** It buys precision at a cost in recall, which is
+  exactly the wrong trade here, however well it reads in the literature.
+
+One model-selection finding stands alongside: **reasoning-tuned models abstain 24% less** than their
+instruction-tuned counterparts. That cuts both ways now — a model that says *yes* more often is what
+this piece needs on recall, and what the rest of the product does not want anywhere else. It is a
+reason to pick per-piece rather than once.

@@ -444,10 +444,38 @@ Second, **the claim that this 32B model beat both 70B models is refuted by the a
 names a 70B — DeepSeek-R1-Distill-Llama-70B — as the best *detector*. The 32B result is confined to
 extraction. That reads consistently with the AbstentionBench row below rather than against it: a
 reasoning-tuned distill saying *yes* more often is exactly what wins a detection score and exactly
-what a system built to stay quiet does not want. Third, the error breakdown of **35.7% missed
-relations against 0.31% false positives** is **still not in the abstract** and remains second-hand
-and unverified. It stays the highest-value unopened claim on this page, and the *silence rather than
-over-assertion* reading of Extract's failure mode still rests on nothing published. That error breakdown
+what a system built to stay quiet does not want. **Narrowed once more against the full text:** a 32B
+does beat a 70B in one place — *"DS-R1D-Q32B shows a higher value for explicit intra-sentential
+(D1,0), DS-R1D-L70B model has a better performance as considered in the other DD tasks."* One task,
+not the comparison.
+
+**The full text was opened on 2026-08-10 and the third caution is now closed rather than
+outstanding.** Two things come out of it, and the second is the most useful sentence on this page for
+Extract.
+
+**What the metrics are.** Section III-5 defines detection competence as `D(m,b) = 𝕀[A1x=1]`, *"the
+probability of correct causal detection for marker flag m and boundary flag b"*, and extraction
+competence as `X(m,b,r) = 𝕀[A2x=1 | A1x=1]`, *"the probability of extracting all gold C–E pairs
+**given successful detection**"*. So `C_extract` is a **conditional probability**, not F1 and not
+accuracy, and 47.12% is the score *after* the relation has already been found. The paper composes
+them: *"𝕀[A2x=1] = D(m,b) X(m,b,r)"*. **Do not multiply the two headline figures together** — they
+belong to different models, a 70B for detection and a 32B for extraction. What the formula does say
+is that any single model's end-to-end number is **below its better half**, so neither headline is an
+end-to-end rate and both read better than the task actually goes.
+
+**The error breakdown is real, and it points the opposite way from what this repo has been guarding
+against.** **Verified** from Table 7, Qwen2.5-Coder-32B-Instruct on extraction: **missing relations
+35.70%, false positives 0.31%**, with *"45.55% (unweighted average) accurate extractions."* That is
+roughly **115 missed relations for every spurious one.** At the local floor, on this task, the
+failure mode is **silence, not over-assertion.** Three consequences, and they are design constraints
+rather than context. Extract's prompt has to defend against **recall**, which is the reverse of the
+false-positive worry the ANCHOR-RE row below records. A missed link is not a harmless absence here:
+it reaches Cohere as a hole, and the child asks about a step the user did explain, which is the
+failure [`../specs/child-speech.md`](../specs/child-speech.md) and [`supply.md`](../specs/supply.md)
+both name as likeliest. And **a propose-then-verify split is the wrong trade for this shape** —
+ANCHOR-RE buys precision at a cost in recall, and precision is the half that is already almost free.
+**2026 preprint, unreviewed**, and the genre is still biomedical and multi-domain written text rather
+than spoken learner explanation. That error breakdown
 is the most interesting claim in the whole brief if true, because it inverts section 3: at 32B with
 candidates supplied, the failure mode would be *silence* rather than over-assertion, which would put
 the yes-bias in the *detection* step rather than the judgement step. **It is also the claim most
@@ -618,14 +646,11 @@ between 27% and 34% on correct work. The conclusion is the same and the ground u
 - **The explicit-connective share**, if anyone still wants a number for it. Start with Taboada, and
   expect it to be reported for coherence relations rather than causal ones specifically.
 - **Which metric 0.26 names** in arXiv:2311.00867. One look at the PDF settles it.
-- **The 32B error breakdown in arXiv:2601.15479** — 35.7% missed relations against 0.31% false
-  positives. Still the highest-value unopened PDF on the page. If it holds, the 32B failure mode
-  under supplied candidates is *silence*, not over-assertion, which would move the yes-bias from the
-  judgement step to the detection step and change what Extract's prompt has to defend against.
-  **Narrowed 2026-08-10**: the abstract was re-read and settles two of the three questions that were
-  bundled here — the metric is a *mean score*, not F1 and not accuracy, and the *beat both 70B
-  models* claim is refuted, since a 70B holds the detection result. The error breakdown alone
-  remains, and it needs the full text.
+- ~~**The 32B error breakdown in arXiv:2601.15479.**~~ **CLOSED 2026-08-10**, against the full HTML
+  rather than the abstract. It holds: Table 7 gives **35.70% missing relations against 0.31% false
+  positives**. The failure mode at the local floor is **silence**, and section 7 carries what that
+  does to Extract's prompt. The metric question is closed with it — `C_extract` is a conditional
+  probability, defined in section III-5, not F1 and not accuracy.
 - **Whether the bidirectional consistency result exists at all.** Reported as roughly tripling F1 on
   Causal-TimeBank, with no citation, and not located. Cheap to test directly against a local model
   rather than to keep searching for.

@@ -107,10 +107,17 @@ finds the repeal where the rule used to be.
 5. **Anything that asks the user a question supplies the answer.** No feature ends on a finding.
 6. **Findings are phrased at the task, never the person**: "You said X but not how Y", not "your
    explanation was shallow."
-7. **No grade, score, or rung is displayed beside a diagnosis.** Briefly amended 2026-08-05 to
-   permit traceable point-coverage, then reverted the same day: a four-way design panel
-   independently declined to use the permission, including the design whose sole job was
-   answering *do I need to study this again*. Reasoning in [`docs/decisions.md`](docs/decisions.md).
+7. **No grade, score, or rung is displayed beside a diagnosis, unless the score has ground truth
+   the diagnosis does not.** **Amended 2026-08-10**, and the exception currently admits exactly one
+   thing: the **catch rate** on planted errors, where the system knows what it planted. Everything
+   else stays banned beside a finding — no rating of an explanation, no progress ring, no clarity
+   count — because none of those has ground truth. The amendment is not free and its cost is
+   recorded in [`docs/philosophy.md`](docs/philosophy.md), which is where the rule now lives: it was
+   taken **against** the grades-versus-comments evidence, not around it. Do not widen the exception
+   from this sentence. Briefly amended once before, on 2026-08-05, to permit traceable
+   point-coverage, then reverted the same day: a four-way design panel independently declined to use
+   the permission, including the design whose sole job was answering *do I need to study this
+   again*. Reasoning for both in [`docs/decisions.md`](docs/decisions.md).
 8. **Extraction is per-sentence, never one-shot over a whole explanation.** **Unwarranted pending
    measurement, 2026-08-07.** It still governs — write per-sentence extraction, and do not widen
    what Extract reads on your own authority — but the published figure quoted as its warrant was

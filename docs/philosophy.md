@@ -37,10 +37,29 @@ Three consequences bind every feature:
   underneath it" is forbidden. "You said pressure drives flow but not how the gradient is
   generated. That step is X" is the form. Within the feedback literature, person-directed
   feedback is the direction measured as making performance *worse*.
-- **No grade sits beside a diagnosis.** Grades and comments together produce no gain where
-  comments alone produce large ones. Separately, the EU AI Act's high-risk annex covers
-  systems intended to evaluate learning outcomes, so not producing a grade is what keeps the
-  practice positioning available.
+- ~~**No grade sits beside a diagnosis.**~~ **AMENDED 2026-08-10**, and this is the only
+  consequence of Law 1 that has ever been weakened, so the old text stays visible and the
+  reason it fell is recorded rather than summarised. It read: *grades and comments together
+  produce no gain where comments alone produce large ones. Separately, the EU AI Act's
+  high-risk annex covers systems intended to evaluate learning outcomes, so not producing a
+  grade is what keeps the practice positioning available.*
+
+  **What replaces it.** A score may sit beside a diagnosis when the score has ground truth the
+  diagnosis does not. Today exactly one does: the **catch rate** on planted errors, where the
+  system knows what it planted and therefore knows whether you caught it. Every other number in
+  this product remains forbidden beside a finding — no rating of an explanation, no progress
+  ring, no clarity count. Those never had ground truth and still do not.
+
+  **What it costs, stated plainly because the evidence gate has no other slot for this.** This
+  is a decision taken *against* the evidence base rather than around it.
+  [`research/evidence-base.md`](research/evidence-base.md) carries Shute 2008 summarising
+  Wiliam 2007: students given only grades showed no learning gains, students given only
+  comments showed large gains, and students given **both showed no gains** — under the line *a
+  band beside a diagnosis destroys it*. Nothing here refutes that finding. The owner weighed it
+  and ruled anyway, twice, with the objection in front of him. The EU AI Act leg is untouched
+  and now bites harder, since a catch rate is closer to evaluating a learning outcome than
+  anything this product previously produced. Reasoning and rejected alternatives are in
+  [`decisions.md`](decisions.md).
 
 Law 1 survives the repeal below entire, and it binds harder for it. It never depended on
 where the answer came from — the evidence is about feedback *containing* the correct
@@ -194,8 +213,17 @@ there is no score.
 That last one matters more since Law 2 was repealed, not less. When a finding pointed at a
 passage in the user's own material, the user could go and check it. Now the finding is the
 model's opinion about their understanding, produced by a model whose precision on this task
-nobody has measured. The absence of a score is the only thing keeping that opinion from
-reading as a verdict.
+nobody has measured.
+
+**Until 2026-08-10 this paragraph ended *"the absence of a score is the only thing keeping
+that opinion from reading as a verdict"*, and that sentence is no longer true.** A score now
+appears beside the finding, under the amendment above. The distinction the amendment rests on
+is that the catch rate scores **detection of a planted error**, which has ground truth, and
+not **understanding**, which does not. That distinction is real and it is load-bearing, and
+nobody should assume a user will parse it. A number on a study screen reads as a grade. The
+old sentence named the thing standing between an unmeasured opinion and a verdict; the
+amendment removed it, and what stands there now is a distinction the reader has to make
+unaided.
 
 One claim we hold firmly despite thin support: **closing a surfaced gap**. The supporting
 studies converge, but several are individually weak. We hold it because the error cost is
