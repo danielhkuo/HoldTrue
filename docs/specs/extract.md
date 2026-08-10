@@ -1,8 +1,14 @@
 # Spec: Extract
 
-> **Status: draft, nothing built, 2026-08-10.** Sections 1 to 5 written; 6 comes at the oracle step
-> and 7 when the piece ships. **Every ruling in section 5 is OPEN**, and each would change a
-> signature, so `/holdtrue-workflow`'s gate holds the oracle until they are answered.
+> **Status: draft, nothing built, 2026-08-10. Section 5 is ruled and the oracle is unblocked.**
+> Sections 1 to 5 written; 6 comes at the oracle step and 7 when the piece ships. All six rulings
+> were taken on 2026-08-10 under a delegated call — read section 5's preamble before treating any of
+> them as the owner's own.
+>
+> **One precondition is open and belongs to another file.** Whether the chosen speech engine emits
+> punctuation decides whether `segment` has boundaries to find at all, and the engine is undecided in
+> [`../decisions.md`](../decisions.md). That does not block the oracle, because `segment`'s contract
+> is the same either way, but it blocks a real session.
 >
 > Build order entry 2, and the entry that carries the project's kill switch: if a local model cannot
 > do this, the headline feature is cloud-only or it does not exist.
@@ -127,12 +133,18 @@ nothing at a person and displays nothing. They govern what is built on top of it
 
 ## 5. Rulings and open questions
 
-Everything below is **OPEN**. Each changes a signature in section 2, except ruling 4, which is
-recorded because a reader will expect it here and which does **not** block the oracle.
+**All six ruled 2026-08-10, and the authority behind them should be visible.** The owner delegated
+the call — *"just pick one and run with it"*, then *"lets move"* — so these were taken by an agent
+under a standing instruction to decide rather than by the owner reading each one. Every proposal and
+every rejected alternative is written out below, which is what makes them cheap to reverse. **If any
+one of them is wrong, the cost is a signature change before code exists**, which is the cheapest
+moment there is. Section 2 is written against these, and the oracle may now start.
+
+One precondition survives the rulings and is not this spec's to close — see the note under ruling 3.
 
 ### 1. Does a link carry one anchor or one per side? OPEN.
 
-**Proposed:** one per side, plus the sentence. [`supply.md`](supply.md) invented a `Link` with a
+**Ruled 2026-08-10:** one per side, plus the sentence. [`supply.md`](supply.md) invented a `Link` with a
 single `anchor` and recorded it as a guess this spec would settle. It guessed wrong, and the reason
 is downstream: [`child-speech.md`](child-speech.md)'s guarantee is that *no child utterance names a
 concept absent from the transcript*, and Voice can only honour that if it is handed the cause and
@@ -144,7 +156,7 @@ the effect as separate quotes. A sentence-level anchor cannot say which words we
 
 ### 2. Is `relation` a closed set or a free string? OPEN.
 
-**Proposed:** the closed set in section 2 — `causes`, `enables`, `prevents`, `requires`. Two
+**Ruled 2026-08-10:** the closed set in section 2 — `causes`, `enables`, `prevents`, `requires`. Two
 consumers force it. Voice renders a move into a template, and a free string makes the template set
 unbounded. Notice's `conflict` move has to decide that two links disagree, which is decidable over a
 closed set and a model judgement over free text — and putting a model judgement inside Notice
@@ -157,7 +169,7 @@ reopen rather than a place to add one quietly.
 
 ### 3. What is Extract's input, exactly? OPEN.
 
-**Proposed:** a `Doc` — the transcript as one string with a content hash, which is what Anchor
+**Ruled 2026-08-10:** a `Doc` — the transcript as one string with a content hash, which is what Anchor
 already resolves against.
 
 **Rejected: Transcribe's timed segment list.** It carries more, including where the speaker paused,
@@ -173,7 +185,7 @@ see [`../decisions.md`](../decisions.md) and the three `stt-*` research files.
 
 ### 4. May the model see more than one sentence? OPEN, and not blocking.
 
-**Proposed:** no, for now. The model sees one sentence and emits links inside it.
+**Ruled 2026-08-10:** no, for now. The model sees one sentence and emits links inside it.
 
 **Recorded because a reader will look for it, and because it does not change a signature.** The live
 option named in [`../decisions.md`](../decisions.md) is widening the model's *reading* window while
@@ -183,7 +195,7 @@ What decides it is the within-sentence measurement, not an argument. Under the g
 
 ### 5. What happens when the speaker retracts? OPEN.
 
-**Proposed:** nothing. Extract emits the wrong link and the corrected link, and marks neither.
+**Ruled 2026-08-10:** nothing. Extract emits the wrong link and the corrected link, and marks neither.
 
 **This is the ruling the transcripts actually forced.** In [`../transcripts/`](../transcripts/), six
 of eighteen explainers corrected themselves mid-explanation — *"wait, no, hold on, I think I did that
@@ -198,7 +210,7 @@ a retraction and a genuine self-contradiction are the same event.
 
 ### 6. Does a failed sentence abort the extraction? OPEN.
 
-**Proposed:** no. A sentence whose model call fails or returns junk contributes no links, increments
+**Ruled 2026-08-10:** no. A sentence whose model call fails or returns junk contributes no links, increments
 `dropped`, and the rest continues. Only an unreachable model gives `unavailable`.
 
 **Rejected: aborting the whole extraction**, which is Supply's behaviour and correct there — Supply

@@ -496,6 +496,13 @@ code-free, since it runs Extract and then Cohere by its own description.
 
 - **Which STT engine.** Voice is decided; the engine is not. Constrained by accuracy on
   thinking-aloud speech and by the absence of published fairness data on every local option.
+  **A third constraint, added 2026-08-10: the engine must emit punctuation.** Invariant 8 makes
+  extraction per-sentence, so [`specs/extract.md`](specs/extract.md)'s `segment` needs sentence
+  boundaries, and with the transcript-correction step reversed on 2026-08-05 nobody supplies them by
+  hand. An engine that returns unpunctuated text leaves invariant 8 with nothing to stand on. None of
+  the three `research/stt-*.md` files records whether its candidates punctuate, so this is unanswered
+  rather than answered badly — and it is now a precondition of build-order entry 2, not just a
+  preference about output format.
 - **When the child interrupts.** After the explanation, or mid-sentence. Mid-sentence needs a
   streaming pipeline and is a much bigger build.
 - **What warrants invariant 8, now that its stated warrant is gone.** The invariant still holds;
