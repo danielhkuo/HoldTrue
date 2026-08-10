@@ -430,15 +430,24 @@ that reason.
 Shajee-Mohan, Chauhan & Chakraborty, *Benchmarking LLMs for Pairwise Causal Discovery in Biomedical
 and Multi-Domain Contexts* (arXiv:2601.15479, <https://arxiv.org/abs/2601.15479>), tests **13
 open-source LLMs** on pairwise causal discovery across 12 datasets. **Verified** from the abstract:
-the best detection model reaches **49.57% accuracy**, and *"the best for extraction,
-Qwen2.5-Coder-32B-Instruct, reached just 47.12%."* Performance *"degraded substantially for implicit
+*"The best model for detection, DeepSeek-R1-Distill-Llama-70B, only achieved a mean score of 49.57%
+(C_detect), while the best for extraction, Qwen2.5-Coder-32B-Instruct, reached just 47.12%
+(C_extract)."* Performance *"degraded substantially for implicit
 relationships, multi-sentence links, and texts with multiple causal pairs"* — the same explicit-versus-implicit
 and intra-versus-inter axes as sections 2 and 4, reproduced at open-model scale. **Two cautions
-before this number is used.** First, **the metric is ambiguous**: the abstract calls the detection
-figure *accuracy* and gives the extraction figure bare, and it was reported to this pass as *F1*. Do
-not write "47.12 F1" until someone confirms it. Second, the claims that this model **beat both 70B
-models in the comparison** and that its errors break down as **35.7% missed relations against 0.31%
-false positives** are **second-hand** — not in the abstract, not opened by me. That error breakdown
+before this number is used, and the abstract was re-read on 2026-08-10 to settle them.** First,
+**the metric is neither accuracy nor F1.** This file said until 2026-08-10 that the abstract called
+the detection figure *accuracy*; it does not. The abstract names both figures a **mean score**, and
+labels them `C_detect` and `C_extract` without defining either in the text available. So do not
+write *47.12 F1*, and do not write *47.12% accuracy* either — write the symbol, or open the PDF.
+Second, **the claim that this 32B model beat both 70B models is refuted by the abstract**, which
+names a 70B — DeepSeek-R1-Distill-Llama-70B — as the best *detector*. The 32B result is confined to
+extraction. That reads consistently with the AbstentionBench row below rather than against it: a
+reasoning-tuned distill saying *yes* more often is exactly what wins a detection score and exactly
+what a system built to stay quiet does not want. Third, the error breakdown of **35.7% missed
+relations against 0.31% false positives** is **still not in the abstract** and remains second-hand
+and unverified. It stays the highest-value unopened claim on this page, and the *silence rather than
+over-assertion* reading of Extract's failure mode still rests on nothing published. That error breakdown
 is the most interesting claim in the whole brief if true, because it inverts section 3: at 32B with
 candidates supplied, the failure mode would be *silence* rather than over-assertion, which would put
 the yes-bias in the *detection* step rather than the judgement step. **It is also the claim most
@@ -610,10 +619,13 @@ between 27% and 34% on correct work. The conclusion is the same and the ground u
   expect it to be reported for coherence relations rather than causal ones specifically.
 - **Which metric 0.26 names** in arXiv:2311.00867. One look at the PDF settles it.
 - **The 32B error breakdown in arXiv:2601.15479** — 35.7% missed relations against 0.31% false
-  positives. This is the highest-value unopened PDF on the page. If it holds, the 32B failure mode
+  positives. Still the highest-value unopened PDF on the page. If it holds, the 32B failure mode
   under supplied candidates is *silence*, not over-assertion, which would move the yes-bias from the
-  judgement step to the detection step and change what Extract's prompt has to defend against. The
-  same PDF settles whether 47.12 is F1 or accuracy.
+  judgement step to the detection step and change what Extract's prompt has to defend against.
+  **Narrowed 2026-08-10**: the abstract was re-read and settles two of the three questions that were
+  bundled here — the metric is a *mean score*, not F1 and not accuracy, and the *beat both 70B
+  models* claim is refuted, since a 70B holds the detection result. The error breakdown alone
+  remains, and it needs the full text.
 - **Whether the bidirectional consistency result exists at all.** Reported as roughly tripling F1 on
   Causal-TimeBank, with no citation, and not located. Cheap to test directly against a local model
   rather than to keep searching for.
