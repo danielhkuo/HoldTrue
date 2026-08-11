@@ -42,6 +42,7 @@ type Move =
   | { kind: 'term';      term: string }
   | { kind: 'unheard';   term: string }
   | { kind: 'confused';  span: Anchor }
+  | { kind: 'resay';     sentence: Anchor }
 
 notice(graph: readonly Link[], said: History): Move
 voice(move: Move): string
@@ -90,6 +91,20 @@ Five families. Every trigger is a property of your own graph.
 | Move | Fires when | The child says |
 |---|---|---|
 | `confused` | Cohere found a hole and Clarity is high on that sentence | *"Wait, I don't get it."* |
+| `resay` | Extract dropped a link on that sentence | *"Wait — say that part again?"* |
+
+`resay` is the only move that **recovers** a loss rather than reporting one. Added 2026-08-10 on the
+owner's observation that a sentence the extractor half-failed on is exactly where the child should
+ask. A dropped link is not necessarily a wrong link — a paraphrase can be a real link the model
+found and worded its own way, thrown away because there is nothing to anchor — so a non-zero
+`dropped` means the system knows it lost something real in that sentence. Saying it again gives
+Extract a second attempt.
+
+**It claims nothing about you or your sentence.** *Your explanation was unclear* is forbidden and
+has no ground truth, and extraction difficulty is mostly a fact about the model, so blaming the
+speaker for a 32B model's weakness would be wrong twice over. `resay` reports the listener's state,
+like `confused`, and asks for a repeat. **What it does not reach:** links the model never found at
+all, which leave no trace anywhere and remain the dominant failure.
 
 `guess` is the only move that asserts. Every instance writes a row to the **plant ledger**, and the
 review phase must disclose and close every row before the session ends. A plant left open is a
@@ -115,8 +130,9 @@ stakes, because the child opened it.
 
 **Invariant 6** — *findings are phrased at the task, never the person.* Governs every template.
 
-**Invariant 2** — quotes are validated as literal substrings. Reaches `mirror`, which carries your
-words back to you.
+**Invariant 2** — quotes are validated as literal substrings. **It reaches the anchors, not the
+child's mouth.** See ruling 6: the anchor stays exact, and what the child says is a cleaned
+rendering of it.
 
 **Invariant 1** — *no user-facing text originates from the model.* **Repealed 2026-08-07**, but the
 child honours it anyway, because these two pieces are deterministic. That is a property of this
@@ -185,6 +201,27 @@ Each would change a signature or repeal a rule.
    refutes.
 5. **Do the two pieces keep these names?** Notice and Voice are verbs on what they are handed,
    which matches their neighbours. Neither answer is proposed.
+6. ~~**Does the child speak your filled pauses and stammers back?**~~ **RULED 2026-08-10: no.**
+   Voice renders a cleaned form — filled pauses dropped, stammer repeats collapsed. The real
+   transcript behind this has 260 filled pauses and 119 repeats in 13,000 words, and a child saying
+   *"so it's it's a new set of beliefs"* is a bug, not fidelity.
+
+   **This does not break invariant 2, and the reason matters more than the ruling.** The invariant
+   governs anything presented as a quote. It is not phase-scoped — `AGENTS.md` narrowed it on
+   2026-08-07 to *wherever something is quoted*, not to the review phase — but the child is not
+   quoting. It is talking. **The anchor stays exact**, because the anchor is what the machine
+   resolves and what the property test compares against; only the spoken rendering is cleaned. If
+   the interface ever displays your words *as a quotation*, that display is literal or it is a bug.
+
+   **Section 6's property survives, restated.** It was *no child utterance names a concept absent
+   from the transcript*. It becomes: **no child utterance names a concept absent from the
+   transcript after the same normalisation**. Normalisation is deterministic, so the check is still
+   mechanical and still fails loudly. Nothing is given up but the word *literal*.
+
+   **Rejected: keeping the raw form**, which honours the letter of a rule the child was never
+   inside and makes the product sound broken. **And normalising the anchor itself**, which would
+   put a non-literal span where `resolveAnchor` expects a real one and quietly break the one piece
+   this repo has actually built.
 
 ## 9. Tests
 

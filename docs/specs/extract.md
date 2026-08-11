@@ -37,9 +37,20 @@ is the model.
 
 import type { Anchor, Doc } from '../index/anchor'
 
-/** One sentence, as Transcribe's per-engine adapter cuts it. `anchor.quote` is the sentence
-    text, and the anchor resolves against the full transcript. Ruling 3. */
-type Sentence = { readonly anchor: Anchor }
+/** One sentence, as Transcribe's adapter cuts it. `anchor.quote` is the sentence text, and
+    the anchor resolves against the full transcript. Ruling 3.
+
+    `dropped` counts links the model returned for this sentence that could not be anchored.
+    **It is per-sentence, not per-extraction, and that is deliberate.** A dropped link is not
+    necessarily a wrong one — a paraphrase can be a real link the model found and worded its
+    own way, thrown away because there is nothing to anchor. So a non-zero `dropped` means
+    *we know we lost something real here*, which is the only signal in the whole piece that
+    points at a specific sentence. Notice reads it to fire `resay`. It is never displayed:
+    invariant 7 bans a count beside a diagnosis. Ruling 7. */
+type Sentence = {
+  readonly anchor: Anchor
+  readonly dropped: number
+}
 
 /** A closed set, so Voice's templates are finite and `conflict` is decidable. Ruling 2. */
 type Relation = 'causes' | 'enables' | 'prevents' | 'requires'
@@ -56,11 +67,9 @@ type Link = {
 type Extraction = {
   readonly links: readonly Link[]
   /** Every sentence read, in order — including those that yielded no link. Cohere needs
-      the ones that yielded nothing as much as the ones that did. */
+      the ones that yielded nothing as much as the ones that did. Each carries how many
+      links were dropped on it. */
   readonly sentences: readonly Sentence[]
-  /** Links the model returned that failed validation. A diagnostic, never displayed:
-      invariant 7 bans a count beside a diagnosis, and this is not one. */
-  readonly dropped: number
 }
 
 type ExtractResult =
@@ -236,6 +245,96 @@ a retraction and a genuine self-contradiction are the same event.
 failing means a gap was opened and cannot be closed, which Law 1 forbids. Extract opens nothing. A
 missing link degrades the finding rather than breaking a promise, and stopping a live session
 because one sentence would not parse is worse than the sentence being missing.
+
+### 7. Is `dropped` per sentence or per extraction? RULED 2026-08-10, by the owner.
+
+**Ruled: per sentence**, on his observation that a sentence the extractor half-failed on is exactly
+where the child should ask a question.
+
+The reasoning that came out of it corrects something this spec had wrong. A dropped link was
+described here as junk. It is not necessarily: a paraphrase can be a **real link the model found and
+worded its own way**, discarded because there is nothing to anchor. The published 0.31% measures
+links that were *wrong*; validation failure measures links we *cannot verify*, and those are
+different sets. So a non-zero `dropped` on a sentence means the system knows it lost something real
+**there** — the only signal in this piece that points at a specific sentence rather than at the whole
+transcript.
+
+[`child-speech.md`](child-speech.md) consumes it as the `resay` move. That move is the only one in
+the design that recovers a loss instead of reporting one: saying the sentence again gives Extract a
+second attempt at it.
+
+**Rejected: one count for the whole extraction**, which is what this spec said until today and which
+carries no information a consumer can act on — you cannot ask about a sentence you cannot name.
+**And treating it as a clarity signal**, which is forbidden: *your explanation was unclear* has no
+ground truth, and extraction difficulty is mostly a fact about the model rather than the speaker.
+
+**What it does not reach.** Links the model never found leave no trace — no dropped count, no
+signal, nothing. That is the 35.70% and it remains the dominant failure, untouched by this.
+
+## 6. The oracle for `validate`
+
+**Written by the owner on 2026-08-10, transcribed here.** Examples 1, 2 and 3 are his. Example 4 is
+agent-proposed and still open — see the note on it. Do not edit this section to make an
+implementation pass.
+
+**What correct means.** A link survives `validate` when the model's cause and effect both appear in
+the sentence once filled pauses and stammers are ignored, and the anchor it gets points at the raw
+words the speaker actually said.
+
+**The three examples.**
+
+1. **A filled pause inside a match.** The speaker said *"push the uh handle down"*. The model returns
+   *"push the handle down"*. This is a **match** — filler words and disfluencies are filtered before
+   comparing. The anchor spans the raw text, so its `quote` is *"push the uh handle down"*, including
+   the *uh*. The comparison is normalised; the anchor never is.
+
+2. **A phrase that appears twice.** The sentence is *"the water flowing downstream moves the
+   waterwheel and that moves the water inside the building"*. The model returns *"the water"*. The
+   anchor points at the **first** occurrence.
+
+   **This is a known defect, recorded as one.** In that sentence the two occurrences are different
+   things, so the first is the wrong one. It is accepted because refusing every ambiguous match adds
+   to Extract's dominant failure — 35.70% missed relations against 0.31% false positives — and a
+   refused link is lost permanently where a mis-anchored one costs a slightly wrong quote. The
+   **prompt** carries the mitigation, not the validator: ask for the longest span that identifies the
+   phrase uniquely, which makes *"the water flowing downstream"* the answer and collapses most of the
+   case.
+
+3. **A paraphrase.** The sentence is *"when you push the handle down"*. The model returns
+   *"pressing the lever"*. Same meaning, not the speaker's words, nowhere to anchor. **Dropped.**
+
+4. **A mixed list.** The model returns six links for one sentence; three anchor cleanly and three are
+   paraphrases. **The three good ones are kept, the three unanchorable ones are dropped, and
+   `sentence.dropped` is 3.** The whole sentence is not discarded — that would add to the dominant
+   failure — but the loss is recorded against that sentence so the child can ask about it.
+
+   **Settled by the owner on 2026-08-10, and he reframed it rather than answering it.** Asked to
+   choose between keeping the good links and binning the sentence, he asked whether this was not the
+   moment the child should ask for clarification. It is, and the answer improved the design: see
+   ruling 7 and the `resay` move.
+
+**The invariant, in plain words.** For any sentence and any model output, every anchor `validate`
+returns resolves to a span inside that sentence, and that span's text — normalised — contains the
+model's phrase, normalised. Anything that cannot satisfy both is dropped rather than repaired.
+
+**One thing the oracle creates, which neither spec owned before.** Matching on normalised text while
+anchoring into raw text needs a **normaliser that carries an offset map** — strip *uh*, collapse
+*it's it's*, and remember which raw characters survived, so a match found at normalised position 12
+can be minted as a raw span. That is ordinary deterministic code and it needs its own tests.
+
+**It must be the same normaliser Voice uses.**
+[`child-speech.md`](child-speech.md)'s ruling 6 makes the child speak a cleaned rendering, and its
+property is *no child utterance names a concept absent from the transcript **after the same
+normalisation***. Two normalisers that drift apart break that property silently, which is the worst
+way for it to break. So this is one shared module with one set of tests, owned by neither piece.
+
+**What the generator must produce.** Sentences carrying filled pauses inside a candidate span;
+stammer repeats inside a candidate span; a phrase repeated two and three times in one sentence;
+model output that is a paraphrase, that is valid JSON of the wrong shape, that is not JSON at all,
+that names a relation outside the closed set, that returns an empty string, and that returns a
+mixed list of good and bad links. Sample it and assert the category counts before trusting a green
+run — degrading one generator to plain ASCII once left every property green at a mutation score of
+100%.
 
 ## The eval
 
