@@ -496,13 +496,16 @@ code-free, since it runs Extract and then Cohere by its own description.
 
 - **Which STT engine.** Voice is decided; the engine is not. Constrained by accuracy on
   thinking-aloud speech and by the absence of published fairness data on every local option.
-  **A third constraint, added 2026-08-10: the engine must emit punctuation.** Invariant 8 makes
-  extraction per-sentence, so [`specs/extract.md`](specs/extract.md)'s `segment` needs sentence
-  boundaries, and with the transcript-correction step reversed on 2026-08-05 nobody supplies them by
-  hand. An engine that returns unpunctuated text leaves invariant 8 with nothing to stand on. None of
-  the three `research/stt-*.md` files records whether its candidates punctuate, so this is unanswered
-  rather than answered badly — and it is now a precondition of build-order entry 2, not just a
-  preference about output format.
+  **A third constraint, added and then narrowed on 2026-08-10.** It was briefly written here as
+  *the engine must emit punctuation*, because invariant 8 makes extraction per-sentence and
+  [`specs/extract.md`](specs/extract.md) was going to cut the sentences itself. **That is no longer a
+  constraint on the engine**, because the cutting moved into Transcribe behind a per-engine adapter —
+  ruling 3 of that spec, re-ruled the same day. What replaces it is weaker and does not narrow the
+  candidate list: **whichever engine is chosen needs an adapter that can produce sentence
+  boundaries**, from punctuation where the engine is good at it and from pause timing where it is
+  not. Every candidate reports timing, so no candidate is excluded. **What is still worth recording
+  before the choice**: none of the three `research/stt-*.md` files says whether its candidates
+  punctuate, and the answer changes how much that adapter has to do.
 - **When the child interrupts.** After the explanation, or mid-sentence. Mid-sentence needs a
   streaming pipeline and is a much bigger build.
 - **What warrants invariant 8, now that its stated warrant is gone.** The invariant still holds;

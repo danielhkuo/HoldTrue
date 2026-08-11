@@ -5,10 +5,10 @@
 > were taken on 2026-08-10 under a delegated call — read section 5's preamble before treating any of
 > them as the owner's own.
 >
-> **One precondition is open and belongs to another file.** Whether the chosen speech engine emits
-> punctuation decides whether `segment` has boundaries to find at all, and the engine is undecided in
-> [`../decisions.md`](../decisions.md). That does not block the oracle, because `segment`'s contract
-> is the same either way, but it blocks a real session.
+> **Ruling 3 was re-ruled the same day and the spec is smaller for it.** Extract no longer cuts
+> sentences; it is handed them. `segment` is gone, and finding sentence boundaries moved into
+> Transcribe behind a per-engine adapter, because every signal it could have used turned out to be
+> an artifact of an engine nobody has chosen. Read ruling 3 before the API.
 >
 > Build order entry 2, and the entry that carries the project's kill switch: if a local model cannot
 > do this, the headline feature is cloud-only or it does not exist.
@@ -37,7 +37,8 @@ is the model.
 
 import type { Anchor, Doc } from '../index/anchor'
 
-/** One sentence, as `segment` cuts it. `anchor.quote` is the sentence text. */
+/** One sentence, as Transcribe's per-engine adapter cuts it. `anchor.quote` is the sentence
+    text, and the anchor resolves against the full transcript. Ruling 3. */
 type Sentence = { readonly anchor: Anchor }
 
 /** A closed set, so Voice's templates are finite and `conflict` is decidable. Ruling 2. */
@@ -66,16 +67,14 @@ type ExtractResult =
   | { readonly kind: 'extraction'; readonly extraction: Extraction }
   | { readonly kind: 'unavailable'; readonly reason: string }
 
-/** Deterministic. Cuts the transcript into sentences. Carries its own oracle. */
-segment(transcript: Doc): readonly Sentence[]
-
 /** Deterministic. Turns whatever the model returned for one sentence into links, or into
     nothing. Every anchor it emits is minted here from offsets into that sentence — the model
     never supplies an offset. Carries its own oracle. */
 validate(sentence: Sentence, raw: unknown): readonly Link[]
 
-/** The piece. Total: a model that returns junk or is unreachable is a result, never a throw. */
-extract(transcript: Doc, model: ModelHandle): Promise<ExtractResult>
+/** The piece. Takes sentences already cut, never raw transcript text — see ruling 3.
+    Total: a model that returns junk or is unreachable is a result, never a throw. */
+extract(sentences: readonly Sentence[], model: ModelHandle): Promise<ExtractResult>
 ```
 
 `ModelHandle` is the same shape [`supply.md`](supply.md) declares, and its ruling 8 — that it belongs
@@ -167,21 +166,41 @@ open-ended problem. The four were chosen against the 18 transcripts in
 [`../transcripts/`](../transcripts/) and cover them; if a fifth is needed, this is the ruling to
 reopen rather than a place to add one quietly.
 
-### 3. What is Extract's input, exactly? OPEN.
+### 3. What is Extract's input, exactly? RE-RULED 2026-08-10, hours after the first ruling.
 
-**Ruled 2026-08-10:** a `Doc` — the transcript as one string with a content hash, which is what Anchor
-already resolves against.
+**Ruled: a list of sentences, already cut. Extract does not segment, and `segment` is deleted from
+this spec.** Sentence-finding moves into Transcribe, behind a per-engine adapter.
 
-**Rejected: Transcribe's timed segment list.** It carries more, including where the speaker paused,
-and every bit of that is either useless here or refused elsewhere — disfluency as a signal is
-refuted in the evidence base and may not appear in this product.
+**The first ruling was *a `Doc`, and Extract segments it*, and it does not survive.** It rejected
+Transcribe's richer output on the ground that pause data is *"either useless here or refused
+elsewhere"*, citing the evidence base's refutation of disfluency. That citation was misapplied.
+What the evidence refutes is reading a pause as **doubt about the content** — Schachter et al.
+1991, where filled-pause rates varied threefold by discipline at ceiling certainty. Reading a pause
+as a **syntactic boundary** is a different claim about a different thing, and nothing in the
+evidence base touches it.
 
-**This ruling has a hazard the other two do not.** The transcript-correction step was reversed on
-2026-08-05, so nothing verifies Transcribe's output before it reaches here, and sentence boundaries
-in ASR output are the engine's punctuation guess rather than the speaker's. If the chosen engine
-emits unpunctuated text, `segment` has no boundaries to find and invariant 8 has nothing to stand on.
-**Whether the engine punctuates is a precondition of this ruling, and the engine is still open** —
-see [`../decisions.md`](../decisions.md) and the three `stt-*` research files.
+**What forced the change.** Held against a real transcript, every signal `segment` could have used
+turned out to be an artifact of a specific engine: newlines fell mid-sentence in 131 of 145 lines,
+capitalisation failed where the transcriber garbled a proper noun, and `>>` and `[Music]` are that
+engine's conventions and nobody else's. Some engines emit no punctuation at all. **Extract cannot
+have a contract that depends on which engine gets chosen**, and the engine is an open row in
+[`../decisions.md`](../decisions.md).
+
+**Why Transcribe and not a third piece.** The quirks are per-engine, so they belong with the thing
+that knows which engine ran. An engine that punctuates well can be segmented on punctuation; one
+that does not can be segmented on pause timing, which every engine reports and which is a fact about
+the speaker rather than about the transcriber. Both live behind one interface, and swapping engines
+swaps one adapter. That is seam question 2 in [`../workflow.md`](../workflow.md) answered honestly.
+
+**Rejected: keeping `segment` in Extract and picking a punctuating engine to suit it**, which lets a
+piece with a kill number dictate an unrelated decision. **And a third piece between them**, which
+adds a seam without adding a boundary — it would still have to know which engine ran.
+
+**The cost, and it is real.** Transcribe is marked *model, outside the gate*, so this moves
+correctness-critical work into a piece held to a lower standard. The answer is that the **adapter**
+is deterministic code around the model call and is gated normally, exactly as `validate` is here.
+Transcribe's contract has to change to say so, and that is
+[`../features/feynman.md`](../features/feynman.md)'s row to change rather than this file's.
 
 ### 4. May the model see more than one sentence? OPEN, and not blocking.
 

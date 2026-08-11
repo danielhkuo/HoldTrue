@@ -297,7 +297,7 @@ decision — which is why the row below is marked drafted rather than filled in.
 |---|---|---|---|
 | **Anchor** | A document and a character range | A reference that finds that range again after re-parsing | Deterministic |
 | **Index** | A folder of documents | Chunks with stable ids and offsets | Deterministic |
-| **Transcribe** | Spoken audio | Text the user then corrects by hand | **Model**, outside the gate |
+| **Transcribe** | Spoken audio | **Sentences**, plus the full text they are spans into | **Model**, outside the gate — but its per-engine adapter is deterministic and gated normally |
 | **Retrieve** | A set of concepts | Ranked passages from the user's folder | Deterministic |
 | **Extract** | The user's corrected explanation, **or a retrieved source passage** | The concepts named and the links asserted, with spans | **Model** |
 | **Cohere** | The extracted graph, alone | Where the chain does not close | Deterministic |
