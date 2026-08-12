@@ -6,7 +6,7 @@
  * does not hold, a content word your transcript does not contain, and a turn the model could
  * not read at all. It answers one question — *is this in what you said?* — and never whether
  * any of it is true. Checking an introduced item against knowledge is the review phase's,
- * and it is not this piece's. Ruling 13.
+ * and it is not this piece's. child-speech.md ruling 13.
  *
  * `line` is separate from `said` because the word check needs no model: it still runs when the
  * model is unreachable and `said` carries no text at all. A dead model loses the link check
@@ -15,7 +15,7 @@
  * Watch which way the error runs. An extra item costs the review phase one closure it did not
  * need; a missing item is a link the child introduced and nobody wrote down, which is the
  * failure Law 1 names. Every loosening below is bounded for that reason, and the loosest of
- * them — ruling 14's subset match — is the first place to look when the ledger is wrong.
+ * them — child-speech.md ruling 14's subset match — is the first place to look when the ledger is wrong.
  *
  * Contract, rulings and the failure mode: docs/specs/child-speech.md.
  */
@@ -25,15 +25,15 @@ import type { ExtractResult } from './extract.js'
 import type { Link, Relation } from './validate.js'
 
 export type Introduced =
-  /** A link the child asserted that your graph does not hold. Ruling 7. */
+  /** A link the child asserted that your graph does not hold. child-speech.md ruling 7. */
   | { readonly kind: 'link'; readonly cause: string; readonly effect: string; readonly relation: Relation }
   /**
-   * A content word in the child's line that your transcript does not contain. Ruling 8.
+   * A content word in the child's line that your transcript does not contain. child-speech.md ruling 8.
    * `within` names the link this word sits inside, when one was also flagged, so anything
    * counting introductions counts the link and not its parts. Oracle example 2.
    */
   | { readonly kind: 'word'; readonly word: string; readonly within?: string }
-  /** The model could not read the turn. Ruling 9, and a note rather than a debt. */
+  /** The model could not read the turn. child-speech.md ruling 9, and a note rather than a debt. */
   | { readonly kind: 'unread'; readonly reason: string }
 
 /** What the child said, and what the session now has to look at. */
@@ -57,10 +57,10 @@ const TOKEN = /[\p{L}\p{M}\p{N}'’]+/gu
  * Function words, and the noises a child's question is made of — the oracle's *"wait, is that
  * like a pump?"* introduces `pump` and nothing else, and *"so it does that?"* introduces
  * nothing at all. Kept tight on purpose: a word on this list can never be written down, and a
- * thing nobody wrote down is the Law 1 direction of the error (ruling 14).
+ * thing nobody wrote down is the Law 1 direction of the error (child-speech.md ruling 14).
  *
  * **Negation is deliberately absent** — *not*, *no*, *never*, *n't* — because a child that
- * negates your chain is exactly what the ledger must not lose in silence, and ruling 7 already
+ * negates your chain is exactly what the ledger must not lose in silence, and child-speech.md ruling 7 already
  * concedes that Extract may return no link on the line that does it.
  *
  * `like` sits here as a comparison word, and this is not the open question normalise.ts holds
@@ -84,7 +84,7 @@ const STOP: ReadonlySet<string> = new Set(
 )
 
 /**
- * Ruling 14's suffix stripper, private to this file until Cohere adopts it — a shared module
+ * child-speech.md ruling 14's suffix stripper, private to this file until Cohere adopts it — a shared module
  * owned by neither piece needs its own oracle and nobody has written it. Plural *-s* and
  * *-es*, verb *-ing* and *-ed*, and nothing else: every step past inflection is a judgement
  * about meaning, and a judgement about meaning is what this piece may not make.
@@ -119,7 +119,7 @@ const isSubset = (small: ReadonlySet<string>, large: ReadonlySet<string>): boole
 }
 
 /**
- * Ruling 14: stem every word, then match when one phrase's words are a subset of the other's.
+ * child-speech.md ruling 14: stem every word, then match when one phrase's words are a subset of the other's.
  * *pushing the handle* sits inside *when you push the handle down*, and *the flapper lifting*
  * and *lifting the flapper* are one concept, because word order is not read.
  *
@@ -135,7 +135,7 @@ const sameConcept = (mine: string, theirs: string): boolean => {
 }
 
 /**
- * Ruling 7, as tightened on 2026-08-12: your graph holds this link only when one of yours
+ * child-speech.md ruling 7, as tightened on 2026-08-12: your graph holds this link only when one of yours
  * joins these two concepts **with this relation**. Read graph-wide instead — any relation you
  * have used anywhere — and a reversed chain in a relation you happen to have used once
  * introduces nothing. Red-team hole 10.
@@ -159,24 +159,22 @@ const alreadyYours = (graph: readonly Link[], said: Link): boolean =>
  */
 const wordsIntroduced = (
   line: string,
-  graph: readonly Link[],
+  transcript: string,
   flagged: readonly Link[],
 ): readonly Introduced[] => {
-  // Every anchor in the graph, the sentence included. The check asks whether you ever said a
-  // word, and a word can sit in your sentence without sitting in a cause or an effect: *lets*,
-  // in "the flapper lifting lets the tank water rush into the bowl", is exactly that word.
-  // Section 3, clarified 2026-08-12, and red-team hole 9. This reads your graph and re-extracts
-  // nothing, so invariant 9 is untouched.
-  const yours = new Set<string>()
-  for (const link of graph) {
-    for (const anchor of [link.cause, link.effect, link.sentence]) {
-      for (const word of stemsOf(anchor.quote)) yours.add(word)
-    }
-  }
+  // Your transcript, not your graph. child-speech.md section 2 says "a content word in that
+  // line that I never said", and the graph is a narrower thing than that: a sentence you spoke
+  // that Extract found no link in contributes no anchors at all, so every word of it would read
+  // as new. That is not rare — the probe under child-speech.md ruling 7 found Extract returning nothing on
+  // three lines of three. Found by review, 2026-08-12.
+  //
+  // Reading your words is not re-extracting them, which is what section 3 forbids and what
+  // invariant 9 is about.
+  const yours = new Set(stemsOf(transcript))
 
   // Which flagged link a word sits inside, by stem. The row is named by its cause, because that
   // is what a link row leads with, and only flagged links count — a word stamped with a link
-  // it is not inside disappears from ruling 16's count. Red-team hole 7.
+  // it is not inside disappears from child-speech.md ruling 16's count. Red-team hole 7.
   const inside = new Map<string, string>()
   for (const link of flagged) {
     for (const word of [...stemsOf(link.cause.quote), ...stemsOf(link.effect.quote)]) {
@@ -191,7 +189,7 @@ const wordsIntroduced = (
     const root = stem(word)
     if (STOP.has(word) || STOP.has(root)) continue
     if (yours.has(root)) continue
-    // Two inflections of one word are one concept, so they are one note. Ruling 14.
+    // Two inflections of one word are one concept, so they are one note. child-speech.md ruling 14.
     if (counted.has(root)) continue
     counted.add(root)
 
@@ -208,11 +206,12 @@ export function tallyIntroduced(
   line: string,
   said: ExtractResult,
   graph: readonly Link[],
+  transcript: string,
 ): readonly Introduced[] {
   const items: Introduced[] = []
 
   // The link check is the half that needs a model. An empty list is the correct reading of a
-  // question and is counted, not logged; only an unreachable model is an item. Ruling 9.
+  // question and is counted, not logged; only an unreachable model is an item. child-speech.md ruling 9.
   const asserted = said.kind === 'extraction' ? said.extraction.links : []
   const novel = asserted.filter(link => !alreadyYours(graph, link))
 
@@ -227,8 +226,8 @@ export function tallyIntroduced(
     })
   }
 
-  // Debts first, then the notes. Ruling 15.
-  items.push(...wordsIntroduced(line, graph, novel))
+  // Debts first, then the notes. child-speech.md ruling 15.
+  items.push(...wordsIntroduced(line, transcript, novel))
 
   // Last, and never behind a guard on the line: a turn of nothing but function words is still
   // a turn nobody read, and the whole point is that it must not read as a clean one. Red-team
