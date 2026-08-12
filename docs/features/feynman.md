@@ -356,13 +356,7 @@ but hypothetical, and five days later it is the design: the live phase now calls
 turn — Extract over your sentence, the child's line, then Extract again over that line for the
 audit. The rest of the paragraph stands as written. Extract's only input is still the user's own
 transcript, Cohere is still set arithmetic over that graph, and what forbade a knowledge-fed live
-call was invariant 3, which is repealed. Original: *Extract reads your words and returns concepts
-and links with spans. Cohere is set arithmetic over that graph. So the part that can interrupt you
-mid-explanation stays as cheap and as certain as it ever was. That sentence used to end* and
-invariant 3 holds there trivially — nothing in the live phase consults a note. *Invariant 3 is
-repealed. What actually guarantees the live phase now is narrower and still true: Extract's only
-input is the user's own transcript. Nothing forbids a future live-phase call from reaching for
-model knowledge, because the thing that forbade it was invariant 3.*
+call was invariant 3, which is repealed.
 
 **What that costs, said plainly.** The live phase is no longer cheap or certain. It was both, and
 both were load-bearing for interrupting someone mid-sentence. Latency is now three model round

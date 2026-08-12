@@ -3,11 +3,12 @@
  *
  * Two callers, and they must be the same code. `validate` matches a model's phrase against
  * the sentence on normalised text and then mints an anchor into the *raw* text, so it needs
- * the map back. Voice speaks a cleaned rendering of an anchor's quote — child-speech.md
- * ruling 6 — and its property is that no child utterance names a concept absent from the
- * transcript *after the same normalisation*. Two normalisers that drift apart break that
- * property silently, which is the worst way for it to break, so this module is owned by
- * neither piece and tested on its own.
+ * the map back. The child's side cleans every phrase before it reaches the model —
+ * child-speech.md ruling 6 — and its audit compares concepts *after this same normalisation*.
+ * Two normalisers that drift apart make that comparison wrong silently, which is the worst way
+ * for it to break, so this module is owned by neither piece and tested on its own. (Corrected
+ * 2026-08-12: this named Voice, and a property enforced before the child spoke rather than a
+ * comparison run after it.)
  *
  * What it does is stated in extract.md section 6: strip filled pauses, collapse stammer
  * repeats, and remember which raw characters survived, so a match found at normalised

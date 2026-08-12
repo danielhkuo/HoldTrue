@@ -1,17 +1,24 @@
 # Spec: the child's speech
 
 > **Status: specced, not built. 2026-08-12.** Sections 1–5 are written; section 6 is written at the
-> red-team step and section 7 when the piece ships. Two rulings in section 5 are OPEN and both
-> change a signature, so the oracle cannot start.
+> red-team step and section 7 when the piece ships. **Ruling 8 is OPEN and changes a signature, so
+> the oracle cannot start.** Ruling 9 is open, changes no signature, and has to be answered before
+> the oracle is written rather than before the spec is committed.
 >
 > This replaces the deterministic design of the same morning, and reverses
 > [`../decisions.md`](../decisions.md)'s *The child speaks only from your own words* of 2026-08-10.
 > That reversal belongs to `decisions.md` and is recorded there, not here.
 
 **Ruling numbers in section 5 are permanent addresses**, the same convention `AGENTS.md` uses for
-invariants. Four files cite *ruling 6* by number — `src/feynman/normalise.ts:7`,
-`src/feynman/voice.ts:7`, `src/feynman/validate.ts:20` and `src/feynman/validate.test.ts:1114`. A
-ruling that dies keeps its number and its strikethrough.
+invariants. A ruling that dies keeps its number and its strikethrough. Five sites cite *this file's*
+ruling 6: `normalise.ts:7`, `voice.ts:7`, `voice.ts:30`, `validate.test.ts:1114` and
+`validate.test.ts:1245`.
+
+**Two specs have a ruling 6, and most of the code cites one of them as a bare `(ruling 6)`.**
+[`extract.md`](extract.md)'s ruling 6 is the totality rule — a model that fails is a result, never a
+throw — and it is cited at `extract.ts:77`, `validate.ts:20`, `validate.ts:108`,
+`validate.test.ts:734`, `:1405`, `:1430` and `:1468`. The first draft of this list claimed
+`validate.ts:20` for this file and was wrong. Write the file name when citing a ruling.
 
 ## 1. What it does
 
@@ -42,10 +49,20 @@ export type Spoken =
 
 export function speak(
   history: readonly Turn[],
+  said: string,
   shapes: readonly Shape[],
   model: ModelHandle,
 ): Promise<Spoken>
 ```
+
+`said` is the sentence you have just finished, and it is separate from `history` because it has no
+turn yet — the child has not answered it. Handing only `history` would keep the model from seeing
+the one sentence it is supposed to answer, which is the whole order this design turns on.
+
+**Everything `speak` puts in the prompt goes through `say` first**, including `said` and the phrases
+inside `shapes`. That is the mechanism of ruling 6: your stammer never reaches the model, so it
+cannot come back out. Nothing cleans the child's own line, and nothing should — the model wrote it,
+and it is not a rendering of your words.
 
 **Audit.** No model. It is handed what Extract made of the child's line and the graph of your own
 words, and it returns what the child introduced.
@@ -68,7 +85,14 @@ export type Turn = {
   readonly child: string
   readonly introduced: readonly Introduced[]
 }
+
+/** The turn, assembled. Total: a silent child gives an empty `child` and no items. */
+export function turn(said: string, spoken: Spoken, introduced: readonly Introduced[]): Turn
 ```
+
+`turn` is what ruling 10 means by *this piece returns a typed per-turn value*. It is four lines of
+total function, it is where the `silent` case is mapped onto a defined result, and Session records
+what it returns without knowing how any of it was produced.
 
 **And the phrase cleaner, which survives from the old design.**
 
@@ -76,6 +100,9 @@ export type Turn = {
 /** Your words, cleaned for saying out loud. Filled pauses and stammers go. Ruling 6. */
 export function say(phrase: string): string
 ```
+
+It lives in `voice.ts` today and moves into `speak.ts` when `voice.ts` is deleted. The five comments
+that cite ruling 6 move with it, or they point at nothing.
 
 The comparison key is `conceptOf` from [`../../src/feynman/cohere.ts`](../../src/feynman/cohere.ts),
 which is `normalise` plus lowercase. Two mentions match when their cleaned text matches exactly, so
@@ -97,30 +124,36 @@ need, and a missing item is a Law 1 failure.
 ## 4. Invariants that apply
 
 Quoted in full, because a number tells you where a rule lives and not whether it is still in force.
+**Cited by number and never by line.** The first draft of this section gave line numbers, and the
+same commit that wrote it added four lines to `AGENTS.md`, so every one of them pointed at the wrong
+rule within the hour. Numbers are permanent addresses; lines are not.
 
-**Invariant 5** ([`../../AGENTS.md:107`](../../AGENTS.md)) — *"Anything that asks the user a question
-supplies the answer. No feature ends on a finding."* The child asks on every turn. The ledger and
-its closure are what make the asking legal, so this is the whole design and not a constraint on it.
+**Invariant 5** — *"Anything that asks the user a question supplies the answer. No feature ends on a
+finding."* The child asks on every turn. The ledger and its closure are what make the asking legal,
+so this is the whole design and not a constraint on it.
 
-**Invariant 6** (`AGENTS.md:108`) — *"Findings are phrased at the task, never the person: 'You said X
-but not how Y', not 'your explanation was shallow.'"* It governs grammar, not where a sentence came
-from, so it reaches the model's line as much as it reached the templates.
+**Invariant 6** — *"Findings are phrased at the task, never the person: 'You said X but not how Y',
+not 'your explanation was shallow.'"* It governs grammar, not where a sentence came from, so it
+reaches the model's line as much as it reached the templates.
 
-**Invariant 8** (`AGENTS.md:121`) — *"Extraction is per-sentence, never one-shot over a whole
-explanation."* Marked *unwarranted pending measurement* on 2026-08-07 and **still in force**. It
-binds the audit, which runs Extract over one child line at a time.
+**Invariant 8** — *"Extraction is per-sentence, never one-shot over a whole explanation."* Marked
+*unwarranted pending measurement* on 2026-08-07 and still in force. **It does not bind the audit,
+and this section first claimed it did.** `AGENTS.md` re-checked its scope against the pivot and
+fixed it on the user's explanation, which is Extract's other input. The audit reads the child's
+line. It runs one line at a time anyway, by choice and not by rule, and the reason is the ordinary
+one: a model asked to read two things at once reads neither carefully.
 
-**Invariant 7** (`AGENTS.md:110`) — *"No grade, score, or rung is displayed beside a diagnosis,
-unless the score has ground truth the diagnosis does not."* Amended 2026-08-10, and the exception
-admits the catch rate alone. A count of introduced items is not it.
+**Invariant 7** — *"No grade, score, or rung is displayed beside a diagnosis, unless the score has
+ground truth the diagnosis does not."* Amended 2026-08-10, and the exception admits the catch rate
+alone. A count of introduced items is not it.
 
-**Invariant 4** (`AGENTS.md:98`) — *"`confidence` means 'how strong is my reason to stay quiet.'"*
-Marked for review 2026-08-07, in force until reviewed. Any number the audit ever attaches to an item
-inherits this reading.
+**Invariant 4** — *"`confidence` means 'how strong is my reason to stay quiet.'"* Marked for review
+2026-08-07, in force until reviewed. Any number the audit ever attaches to an item inherits this
+reading.
 
-**Invariant 2** (`AGENTS.md:77`) — *"Quotes are validated as literal substrings of the source before
-display; a non-matching quote is a rejected extraction, not a warning."* Scope narrowed 2026-08-07,
-not repealed. It binds any span of your transcript the review phase shows back.
+**Invariant 2** — *"Quotes are validated as literal substrings of the source before display; a
+non-matching quote is a rejected extraction, not a warning."* Scope narrowed 2026-08-07, not
+repealed. It binds any span of your transcript the review phase shows back.
 
 **Invariant 9 does not reach this piece**, and a reader will think it does. It forbids diffing two
 extractions of *your own words*. The audit diffs an extraction of the child's line against an
@@ -128,7 +161,7 @@ extraction of yours, and the child's line is not your words.
 
 **Invariant 1 is repealed** (2026-08-07) — *"No user-facing text originates from the model."* Its
 repeal is what permits section 1 at all. **Invariant 3 is repealed** as stated (2026-08-07), and
-`AGENTS.md:87-94` names the hole it left: it was the only mechanically checkable invariant, and its
+`AGENTS.md` names the hole it left under that entry: it was the only mechanically checkable one, and its
 replacement is open and *"deliberately not designed here."* The audit looks like that replacement
 and **is not being proposed as one**. It is a piece of this spec, it installs no rule, and the hole
 stays open until `decisions.md` closes it.
@@ -175,8 +208,9 @@ stays open until `decisions.md` closes it.
    nearly every question the child asks extracts to nothing, which is the correct reading of a
    question, so the ledger takes an item on almost every turn and Law 1 owes a closure on each. The
    narrower version, offered for a later ruling rather than taken quietly here: only `unavailable`
-   becomes an item, and an empty list is counted but not logged. **Changes a signature, so it blocks
-   the oracle.**
+   becomes an item, and an empty list is counted but not logged. **Changes no signature** — the type
+   is the same either way — so it does not block at step 4. It does decide what the oracle asserts,
+   so it has to be answered before the oracle is written rather than before the spec is committed.
 10. **Who owns the ledger row?** **RULED 2026-08-12: Session.** This piece returns `Turn`, which
     carries the items as discrete values, never a count and never a boolean. The obligation is stated
     here in prose — a session that ends with an item open is a Law 1 failure — and the row, its

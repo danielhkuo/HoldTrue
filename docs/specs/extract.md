@@ -49,10 +49,12 @@ import type { Anchor, Doc } from '../index/anchor'
     necessarily a wrong one — a paraphrase can be a real link the model found and worded its
     own way, thrown away because there is nothing to anchor. So a non-zero `dropped` means
     *we know we lost something real here*, which is the only signal in the whole piece that
-    points at a specific sentence. Nothing reads it today — `resay`, the move that fired on it,
-    went with the deterministic child on 2026-08-12. The count stays, because knowing where we
-    lost something is what it is for. It is never displayed: invariant 7 bans a count beside a
-    diagnosis. Ruling 7. */
+    points at a specific sentence. One reader today: `npm run demo` prints it beside the child's
+    line. `resay`, the move that fired on it, is retired with the deterministic child by
+    child-speech.md ruling 11. The count stays, because knowing where we lost something is what it
+    is for. **It is never displayed to a user**: invariant 7 bans a count beside a diagnosis, and
+    the demo is a developer surface. The day that line reaches a real one it breaks the invariant.
+    Ruling 7. */
 type Sentence = {
   readonly anchor: Anchor
   readonly dropped: number
@@ -188,7 +190,8 @@ consumers force it. The audit compares a relation by equality, and equality over
 not a comparison anyone can reason about. Cohere's `conflict` has to decide that two links disagree,
 which is decidable over a closed set and a model judgement over free text — and putting a model
 judgement inside Cohere undoes the ruling that put `conflict` there in the first place. **Restated
-2026-08-12**: the first consumer used to be Voice's template set, which is retired. The ruling is
+2026-08-12**: the first consumer used to be Voice's template set, which child-speech.md ruling 11
+retires. The ruling is
 unchanged, and it now rests on the audit instead.
 
 **Rejected: a free string**, which is more faithful to what people say and gives both consumers an

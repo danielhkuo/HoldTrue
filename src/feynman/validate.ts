@@ -36,7 +36,9 @@ import { normalise, toRawSpan, type Normalisation } from './normalise.js'
  * in transcript coordinates too, not sentence-local ones. Ruling 3.
  *
  * `dropped` counts links the model returned for this sentence that could not be anchored.
- * Per-sentence, deliberately: Notice reads it to fire `resay`. Ruling 7.
+ * Per-sentence, deliberately: it points at the one sentence where we know something was lost.
+ * `resay`, the move that read it, is retired with the deterministic child by child-speech.md
+ * ruling 11; `npm run demo` is the only reader left. Ruling 7.
  *
  * Declared here because `validate` is being built before `extract`. extract.md section 2
  * puts this type, `Relation`, `Link`, `Extraction` and `ExtractResult` in
@@ -48,12 +50,13 @@ export type Sentence = {
   readonly dropped: number
 }
 
-/** A closed set, so Voice's templates are finite and `conflict` is decidable. Ruling 2. */
+/** A closed set, so `conflict` is decidable and the audit compares a relation by equality.
+    Ruling 2. */
 export type Relation = 'causes' | 'enables' | 'prevents' | 'requires'
 
 /**
- * What you said connects to what. Both sides carry their own anchor, because Notice and
- * Voice quote them separately and must never name words you did not say. Ruling 1.
+ * What you said connects to what. Both sides carry their own anchor, because the shapes the
+ * child is handed quote them separately and the audit compares them separately. Ruling 1.
  */
 export type Link = {
   readonly cause: Anchor
