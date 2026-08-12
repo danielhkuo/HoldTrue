@@ -452,6 +452,57 @@ stays open until `decisions.md` closes it.
     confident *yes* discharge a falsehood. **And computing the four cells live**, which needs the
     truth of the claim and a model to judge it, at the moment there is a latency budget.
     Changes no signature, so it does not block.
+18. **`resay`: the child asks you to say it again.** **RULED 2026-08-12**, on the owner's
+    instruction — the voice session stays, a typed fallback is not an option, and what is needed is
+    a gate that catches a turn nobody could understand and forces a repeat. The move existed and was
+    cut; it comes back with a different trigger.
+
+    **It is legal because it claims nothing.** Asking someone to repeat asserts no correction and
+    makes no claim about their words, so it does not touch [`../decisions.md`](../decisions.md)'s
+    *the child asks, never tells*. A misfire costs one round trip, which is the asymmetry that row
+    turns on. And it is the most natural thing a child says.
+
+    **The gate is arithmetic and runs before `speak`.** `Spoken` gains a third kind,
+    `{ kind: 'resay' }`, so the refusal is a defined result rather than an exception and `turn`
+    stays total. **The speaking model must not own this decision**: handed a garbled line a model
+    reconciles it into sense rather than asking, which fails in exactly the direction the gate
+    exists for.
+
+    **What it must not use, and this one is counter-intuitive.** Not an out-of-vocabulary test.
+    `words.ts` holds 848 hand-written tokens and skips every word under five characters, so *"the
+    sto wa hot"* scores as fully known while *condenser*, *evaporator* and *gradient* score as
+    mostly unknown. **The complement of that list is the subject matter of the session.** It
+    measures what you are explaining, not whether we heard it.
+
+    **What it uses instead** is the transcriber's own numbers, catalogued with their sources in
+    [`../research/stt-signals.md`](../research/stt-signals.md), plus a repetition check — because a
+    repeat loop keeps *high* token probability and the probability signal cannot see it.
+
+    **The limit, stated first rather than discovered later.** Whisper's characteristic failure is
+    **fluent, confident, wrong** text. *flapper* heard as *flopper* carries high token probability,
+    normal entropy and clean grammar, so every signal reads healthy. **This gate catches
+    unintelligible turns and cannot catch misheard ones.** They are different failures, the owner
+    asked for the first, and the second remains where `decisions.md`'s *No upfront transcript
+    correction* row left it.
+
+    **No invented threshold.** The published constants — −1.0, 2.4, 0.6 — are decoder-fallback
+    triggers and no source calibrates them to word error rate, so citing one as an intelligibility
+    bar would repeat the 97/5 mistake exactly. Until something measures it the gate fires only where
+    no parameter is needed, and **logs its counts on every turn** so the falsification week can set
+    a bar from real material.
+
+    **OPEN, and it blocks the turn semantics rather than the gate.** When you say it again, the
+    repeat is appended and the first attempt marked superseded — nothing is deleted, and the
+    transcript handed to the tally and the link set handed to Cohere are assembled from unsuperseded
+    turns only. **That cannot be built yet.** `asDoc` hashes the whole transcript with
+    `unit_id: 'transcript'`, so appending re-hashes and nulls every anchor in the session. Somebody
+    has to decide whether the `Doc` is the turn rather than the session before an append is
+    possible. Until then the gate can ask, and nothing can record the answer.
+
+    Rejected: **letting the speaking model decide**, which reads meaning where the gate reads only
+    noise and papers over garbage. **An out-of-vocabulary trigger**, above. **And discarding the
+    bad turn**, which asserts that one utterance yields one transcript and pays for it with
+    permanent loss whenever the gate misfires.
 
 ## 6. The oracle for `tallyIntroduced`
 
