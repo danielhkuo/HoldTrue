@@ -76,10 +76,16 @@ type ExtractResult =
   | { readonly kind: 'extraction'; readonly extraction: Extraction }
   | { readonly kind: 'unavailable'; readonly reason: string }
 
+/** What survived, and how much did not. Ruling 8. */
+type Validation = {
+  readonly links: readonly Link[]
+  readonly dropped: number
+}
+
 /** Deterministic. Turns whatever the model returned for one sentence into links, or into
     nothing. Every anchor it emits is minted here from offsets into that sentence — the model
     never supplies an offset. Carries its own oracle. */
-validate(sentence: Sentence, raw: unknown): readonly Link[]
+validate(sentence: Sentence, raw: unknown): Validation
 
 /** The piece. Takes sentences already cut, never raw transcript text — see ruling 3.
     Total: a model that returns junk or is unreachable is a result, never a throw. */
@@ -270,6 +276,26 @@ ground truth, and extraction difficulty is mostly a fact about the model rather 
 
 **What it does not reach.** Links the model never found leave no trace — no dropped count, no
 signal, nothing. That is the 35.70% and it remains the dominant failure, untouched by this.
+
+### 8. What does `validate` return? RULED 2026-08-10, by the owner.
+
+**Ruled: `{ links, dropped }`, not a bare link array.**
+
+**Found by writing the tests, and it is a contradiction between two of the owner's own rulings
+rather than a new question.** Ruling 7 makes `Sentence.dropped` a per-sentence count and
+[`child-speech.md`](child-speech.md)'s `resay` move depends on it. But section 2 had `validate`
+returning `readonly Link[]`, so it could report what survived and never what did not. `extract`
+receives three links and cannot tell whether the model offered three or six.
+
+**Rejected: `extract` re-parsing `raw` and counting.** It duplicates validation, the two copies can
+disagree, and it cannot count entries in a payload that never parsed — which is the input this piece
+meets most often.
+
+**Note what this costs, so it is not read as free.** `dropped` counts links that were *offered and
+could not be anchored*. A payload that failed to parse at all offers nothing, so it drops nothing,
+and `dropped` is 0 on a sentence where the system learned less than usual. Distinguishing *the model
+said nothing* from *the model said something unreadable* needs a third channel this ruling does not
+add.
 
 ## 6. The oracle for `validate`
 
