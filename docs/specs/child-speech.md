@@ -207,6 +207,17 @@ stays open until `decisions.md` closes it.
    prompt is written for a declarative spoken sentence, the child speaks in elided questions, and
    Extract's measured weakness is under-counting inside a sentence. It may return nothing on exactly
    the reversed question this ruling was chosen to catch.
+
+   **Probed 2026-08-12, and the concession held.** Extract was run over the three child lines
+   recorded in the handoff's transcript, against the graph as it stood at each turn. **It returned
+   no links on all three**, including *"So the toilet fills up after it empties?"* — the reversed
+   line this ruling exists for. On that turn the word check was the only thing that caught anything,
+   flagging *toilet*, *fills* and *empties*. One reading is that Extract is right: that line asserts
+   a temporal order, not a causal one, and Extract is built for causal links in declarative speech.
+   If that reading holds, the reversed chain is not reliably a causal assertion at all, and the link
+   check is a weaker instrument than this ruling assumed. **n=3, one model, one explanation, and the
+   stop-word list was written for the probe rather than by anyone's decision.** It settles nothing.
+   It is recorded because the ruling was taken on the opposite expectation.
 8. **The two checks catch different failures, not the same failure at two depths.**
    **RULED 2026-08-12: both run.** The framing when ruling 7 was taken was wrong. A word check
    catches a new *word* in a line that asserts no link — *"is that like a pump?"* introduces *pump*
