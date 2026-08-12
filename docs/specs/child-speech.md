@@ -137,9 +137,9 @@ that cite ruling 6 move with it, or they point at nothing.
 
 The comparison key is `conceptOf` from [`../../src/feynman/cohere.ts`](../../src/feynman/cohere.ts)
 — `normalise` plus lowercase — **and inflection stripping, which does not exist yet.** Ruling 14
-owns it. Two mentions match when their stripped text matches, so *lifts* and *lifting* are one
-concept, while *the flapper lifting* and *lifting the flapper* are still two. Word order is not
-normalised, and nobody is proposing that it should be.
+owns it. Two mentions match when one's stemmed words are a subset of the other's, so *lifts* and
+*lifting* are one concept, *pushing the handle* sits inside *when you push the handle down*, and
+*the flapper lifting* and *lifting the flapper* are also one, because word order is not read.
 
 **Watch which way the error runs.** Exact matching over-reports, and an extra item costs the review
 phase one closure it did not need. Loose matching under-reports, and a missing item is a Law 1
@@ -293,7 +293,22 @@ stays open until `decisions.md` closes it.
     style but does not say a tally of what.
 14. **How close must two mentions be to count as the same concept?** Forced by oracle example 1,
     which the owner answered on 2026-08-12: *lifts* and *lifting* are one concept. Exact text
-    matching is therefore out. **RULED 2026-08-12: strip inflection, and stop there.** A deterministic
+    matching is therefore out. **AMENDED the same day, while writing the test that would have failed
+    on it.** *Stop there* does not reach the owner's own answer. Example 1's phrases are *"pushing
+    the handle"* against *"when you push the handle down"*: they differ by **extent**, not by
+    inflection, and no suffix rule makes them equal. So the rule is **stem every word, then match
+    when one phrase's words are a subset of the other's.** Inflection alone is kept below as the
+    reasoning that was right about direction and wrong about reach.
+
+    **This is the loosest thing in the spec and the first place to look when the ledger is wrong.**
+    Subset matching over-matches by construction, and [`extract.md`](extract.md) already records a
+    defect of exactly this shape — *"the water"* inside *"the water flowing downstream"*, two
+    different things in one sentence. Over-matching under-reports, which is the Law 1 direction, so
+    this trades against the argument in the paragraph below rather than extending it. It is here
+    because the owner's answer requires it, and it is flagged because he answered a morphology
+    question and got a containment rule.
+
+    The original reasoning, still correct as far as it goes: a deterministic
     suffix stripper — plural *-s*, *-es*, and verb *-ing*, *-ed* — living beside `normalise.ts`,
     owned by neither piece and tested on its own, the same arrangement `normalise` already has for
     the same reason. Two mentions match when their stripped text matches. Nothing else is matched:
