@@ -2,7 +2,8 @@
 
 > **Status: specced, not built. 2026-08-12.** Sections 1–5 are written; section 6 is written at the
 > red-team step and section 7 when the piece ships. **No ruling blocks the oracle.** Rulings 7 to 11
-> are settled. Ruling 13 asks only for a name, and it is answered before the oracle file is created.
+> and 13 are settled. The two pieces are `speak` and `tallyIntroduced`. What the oracle still needs
+> is in section 6, and it is the owner's.
 >
 > This replaces the deterministic design of the same morning, and reverses
 > [`../decisions.md`](../decisions.md)'s *The child speaks only from your own words* of 2026-08-10.
@@ -75,8 +76,8 @@ inside `shapes`. That is the mechanism of ruling 6: your stammer never reaches t
 cannot come back out. Nothing cleans the child's own line, and nothing should — the model wrote it,
 and it is not a rendering of your words.
 
-**Audit.** No model. It is handed what Extract made of the child's line and the graph of your own
-words, and it returns what the child introduced.
+**Tally.** No model. It is handed what Extract made of the child's line and the graph of your own
+words, and it counts up what the child introduced. Ruling 13 names it.
 
 ```ts
 import type { ExtractResult } from './extract.js'
@@ -90,15 +91,11 @@ export type Introduced =
   /** The model could not read the turn. Logged, so an unread turn never reads as a clean one. */
   | { readonly kind: 'unread'; readonly reason: string }
 
-export function audit(
+export function tallyIntroduced(
   line: string,
   said: ExtractResult,
   graph: readonly Link[],
 ): readonly Introduced[]
-
-`line` is passed separately from `said` on purpose. The word check needs no model, so it still runs
-when the model is unreachable and `said` carries no text at all. A dead auditor loses the link check
-and keeps the cheap one.
 
 /** One turn, and everything the session needs from it. */
 export type Turn = {
@@ -110,6 +107,10 @@ export type Turn = {
 /** The turn, assembled. Total: a silent child gives an empty `child` and no items. */
 export function turn(said: string, spoken: Spoken, introduced: readonly Introduced[]): Turn
 ```
+
+`line` is passed separately from `said` on purpose. The word check needs no model, so it still runs
+when the model is unreachable and `said` carries no text at all. A dead model loses the link check
+and keeps the cheap one.
 
 `turn` is what ruling 10 means by *this piece returns a typed per-turn value*. It is four lines of
 total function, it is where the `silent` case is mapped onto a defined result, and Session records
@@ -140,7 +141,7 @@ failure. The two are not symmetrical, which is the whole argument in ruling 14.
 - **End a session with an item open.** That is the failure this whole design exists to survive.
 - **Show a count of introduced items beside a finding.** Invariant 7, quoted below.
 - **Say your explanation was unclear.** It reports its own state, never a judgement of you.
-- **Read the transcript for the audit.** The audit reads the child's line. Your graph is already
+- **Read the transcript for the tally.** The tally reads the child's line. Your graph is already
   extracted, and re-extracting your words to diff them is invariant 9.
 - **Present the child's line as a quotation.** It is not one. Anything shown as a quote is literal
   or it is a bug — invariant 2.
@@ -165,9 +166,9 @@ not 'your explanation was shallow.'"* It governs grammar, not where a sentence c
 reaches the model's line as much as it reached the templates.
 
 **Invariant 8** — *"Extraction is per-sentence, never one-shot over a whole explanation."* Marked
-*unwarranted pending measurement* on 2026-08-07 and still in force. **It does not bind the audit,
+*unwarranted pending measurement* on 2026-08-07 and still in force. **It does not bind the tally,
 and this section first claimed it did.** `AGENTS.md` re-checked its scope against the pivot and
-fixed it on the user's explanation, which is Extract's other input. The audit reads the child's
+fixed it on the user's explanation, which is Extract's other input. The tally reads the child's
 line. It runs one line at a time anyway, by choice and not by rule, and the reason is the ordinary
 one: a model asked to read two things at once reads neither carefully.
 
@@ -176,7 +177,7 @@ ground truth the diagnosis does not."* Amended 2026-08-10, and the exception adm
 alone. A count of introduced items is not it.
 
 **Invariant 4** — *"`confidence` means 'how strong is my reason to stay quiet.'"* Marked for review
-2026-08-07, in force until reviewed. Any number the audit ever attaches to an item inherits this
+2026-08-07, in force until reviewed. Any number the tally ever attaches to an item inherits this
 reading.
 
 **Invariant 2** — *"Quotes are validated as literal substrings of the source before display; a
@@ -184,13 +185,13 @@ non-matching quote is a rejected extraction, not a warning."* Scope narrowed 202
 repealed. It binds any span of your transcript the review phase shows back.
 
 **Invariant 9 does not reach this piece**, and a reader will think it does. It forbids diffing two
-extractions of *your own words*. The audit diffs an extraction of the child's line against an
+extractions of *your own words*. The tally diffs an extraction of the child's line against an
 extraction of yours, and the child's line is not your words.
 
 **Invariant 1 is repealed** (2026-08-07) — *"No user-facing text originates from the model."* Its
 repeal is what permits section 1 at all. **Invariant 3 is repealed** as stated (2026-08-07), and
 `AGENTS.md` names the hole it left under that entry: it was the only mechanically checkable one, and its
-replacement is open and *"deliberately not designed here."* The audit looks like that replacement
+replacement is open and *"deliberately not designed here."* The tally looks like that replacement
 and **is not being proposed as one**. It is a piece of this spec, it installs no rule, and the hole
 stays open until `decisions.md` closes it.
 
@@ -208,7 +209,7 @@ stays open until `decisions.md` closes it.
    rather than only a planted guess. Rejected: yes, which the evolution transcript refutes — the
    adult corrected the error and the child reproduced it six turns later. Changes no signature.
 5. ~~**Do the two pieces keep the names Notice and Voice?**~~ **RULED 2026-08-12: no.** They are
-   `speak` and `audit`, which are verbs on what each is handed, the same test the old names passed.
+   `speak` and `tallyIntroduced`, which are verbs on what each is handed, the same test the old names passed.
 6. ~~**Does the child speak your filled pauses and stammers back?**~~ **RULED 2026-08-10: no**, and
    the ruling is re-sited rather than retired. `say` now cleans the phrases handed to the model as
    context, so the stammer never reaches the model and cannot come back out. The anchor stays exact,
@@ -216,7 +217,7 @@ stays open until `decisions.md` closes it.
    pauses and 119 repeats in 13,000 words. Rejected: keeping the raw form, which honours a rule the
    child was never inside and makes the product sound broken; and normalising the anchor, which
    would put a non-literal span where `resolveAnchor` expects a real one.
-7. **How deep does the audit read the child's line?** **RULED 2026-08-12: Extract runs over the
+7. **How deep does the tally read the child's line?** **RULED 2026-08-12: Extract runs over the
    turn.** Every `cause→effect` key or relation not already in your graph becomes an item. Rejected:
    a content-word check with no model call, which is cheaper and cannot see a reversed chain or a
    negation built from your own words. **Conceded, and it is the reason ruling 8 is open:** Extract's
@@ -264,8 +265,12 @@ stays open until `decisions.md` closes it.
     keep it, and drop it if the child reads stiff, because fluency is the thing being bought.
     Rejected: no context at all, which gives the model nothing to reach for when your chain does not
     close. Changes no signature, so it does not block.
-13. **What the audit is not, and whether it keeps that name.** It misled its own owner on the day it
-    was written, which is the strongest evidence a name can give. **The boundary, and it is not
+13. **What the tally is not, and what it is called.** **RULED 2026-08-12: `tallyIntroduced`**, in
+    `tally.ts`. The old name was `audit`, and it misled its own owner on the day it was written,
+    which is the strongest evidence a name can give. *Audit* says the piece checks whether something
+    is correct. It does not. It counts up what the child brought in that you never said, which is
+    what the new name says and what the `Introduced` type it returns is already called. **The
+    boundary, and it is not
     open:** this piece runs live, once per turn, and answers one question — *is this in what you
     said?* It cannot tell a true statement from a false one. It consults nothing and it is not the
     end-of-session pass. **Checking an introduced item against knowledge is the review phase**, and
@@ -274,9 +279,9 @@ stays open until `decisions.md` closes it.
     one. The optional sources — a configured knowledge base, and the internet — belong to that phase.
     Neither is decided, and **the internet is named in no document in this repo**; it also touches
     *local-first: nothing leaves the device unless you turn something on*, so it needs a row in
-    [`../decisions.md`](../decisions.md) before anyone builds it. Proposed for the name: **`tally`**,
-    which cannot be read as fact-checking. Rejected: keeping `audit`. **Answer this before the oracle
-    is written**, because the oracle file is named after the piece.
+    [`../decisions.md`](../decisions.md) before anyone builds it. Rejected for the name: **`audit`**,
+    which reads as fact-checking and did; and bare **`tally`**, which is the repo's one-word house
+    style but does not say a tally of what.
 14. **How close must two mentions be to count as the same concept?** Forced by oracle example 1,
     which the owner answered on 2026-08-12: *lifts* and *lifting* are one concept. Exact text
     matching is therefore out. Proposed: **strip inflection, and stop there.** A deterministic
@@ -346,7 +351,7 @@ stays open until `decisions.md` closes it.
     **The confound, recorded now so nobody reads past it.** The count moves when the child changes
     *and* when Extract changes, because an introduced link is only seen if Extract reads the child's
     line — and the probe under ruling 7 found it read none of three. A prompt change that improves
-    the auditor looks exactly like a persona that got bolder. Report the two counts separately, and
+    the tally looks exactly like a persona that got bolder. Report the two counts separately, and
     never compare a number across a change to either side.
 
     Rejected: **a believability score**, which has no ground truth and which a model would have to
@@ -370,7 +375,7 @@ stays open until `decisions.md` closes it.
 
     **(c) It lives in Session, not here.** Ruling 10 already gave Session the row, and Session
     already holds Extract's links for every one of your sentences from the same loop. So
-    `audit(line, said, graph)` is unchanged and **nothing here blocks the oracle.** This becomes a
+    `tallyIntroduced(line, said, graph)` is unchanged and **nothing here blocks the oracle.** This becomes a
     ticket on the feature's map for whoever builds Session.
 
     **What *engaged* can and cannot mean.** The retired `notice.ts` had this mechanism and its test
@@ -408,7 +413,7 @@ stays open until `decisions.md` closes it.
     truth of the claim and a model to judge it, at the moment there is a latency budget.
     Changes no signature, so it does not block.
 
-## 6. The oracle for `audit`
+## 6. The oracle for `tallyIntroduced`
 
 **UNFILLED. The blanks below belong to the owner, and no agent may fill one.** The inputs are drawn
 from the toilet explanation in `demo.ts`, so they are real. The shape follows
@@ -462,7 +467,7 @@ Extract returns: cause *"it empties"*, effect *"the toilet fills up"*, relation 
 It asks three things, and the third is the one nothing has ruled on.
 
 **(a) Does being right make a difference?** The child may well be correct — your fifth sentence,
-which you have not said yet, is *"then the fill valve refills the tank."* Ruling 13 says the audit
+which you have not said yet, is *"then the fill valve refills the tank."* Ruling 13 says the tally
 cannot tell true from false and never tries, so the test is *unsaid*, not *wrong*.
 
 **(b) Does the relation count on its own?** Your link is `enables` and the child's is `causes`.
@@ -492,13 +497,13 @@ Expected items: **_(yours)_**
 
 **Example 4 — the model is unreachable.**
 
-**4a. The child spoke, and the auditor could not read it.** Extract returns `unavailable`. Ruling 9
+**4a. The child spoke, and the tally could not read it.** Extract returns `unavailable`. Ruling 9
 makes that one `unread` item, and the word check needs no model, so any new words still come back.
 
 Expected items: **_(yours)_**
 
 **4b. The same failure one step earlier.** One model serves both calls, so in practice the child
-does not speak either: `speak` returns `silent` and there is no line to audit. `turn` gives an empty
+does not speak either: `speak` returns `silent` and there is no line to tally. `turn` gives an empty
 `child` and no items.
 
 Expected items: **_(yours)_**
@@ -506,7 +511,7 @@ Expected items: **_(yours)_**
 > **What `unread` is, which ruling 15 did not settle.** That ruling split a link, which is a
 > proposition Supply can close, from a word, which is not. `unread` is neither. It says *we do not
 > know whether the child introduced anything on this turn*, which is an admission rather than a
-> claim, and no amount of checking closes it — only re-running the audit does, or you reading the
+> claim, and no amount of checking closes it — only re-running the tally does, or you reading the
 > turn yourself. So: is it a debt under Law 1, is it a note like a word, or is it a third thing?
 > Your answer to 4a is what decides it.
 
