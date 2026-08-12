@@ -1,241 +1,107 @@
 # Spec: the child's speech
 
-> **Status: draft, nothing built, 2026-08-10.** Two pieces, both deterministic. Designed against
-> 18 generated transcripts of an adult explaining a mechanism to a child; see section 7 for what
-> that material is and is not.
+> **Draft, 2026-08-12.** Replaces the 2026-08-10 version, which was four times this length and
+> described a gap-finder rather than a listener. What changed is in *Why this was rewritten*.
 
-## 1. What it does
+## What it does
 
-The child says one thing at a time, built only from what you said.
+You say a sentence. The child says one thing back.
 
-**Notice** reads the graph Extract pulled out of your explanation and picks a move. **Voice** turns
-that move into a sentence. Neither calls a model. Nothing the child says contains a fact you did
-not supply.
+Most of what it says is a **reaction to the sentence that just landed**. Sometimes it is a
+question about something missing. It only ever knows what you have said — it calls no model
+and holds no facts about the world.
 
-This is what the child's naivety is made of, now that it is no longer made of a document: the
-child heard you, and heard nothing else.
+## The loop
 
-## 2. Public API
-
-```ts
-// src/feynman/notice.ts and src/feynman/voice.ts
-
-/** One causal link as Extract emits it. Provisional — see the note in section 7. */
-type Link = {
-  readonly cause: string
-  readonly effect: string
-  readonly relation: string
-  readonly anchor: Anchor
-}
-
-type Move =
-  | { kind: 'mirror';    chain: readonly Link[] }
-  | { kind: 'on' }
-  | { kind: 'guess';     cause: string; effect: string }   // a plant
-  | { kind: 'why';       link: Link }
-  | { kind: 'needed';    concept: string }
-  | { kind: 'start';     concept: string }
-  | { kind: 'which';     effect: string; causes: readonly string[] }
-  | { kind: 'same';      a: string; b: string }
-  | { kind: 'otherwise'; condition: string }
-  | { kind: 'conflict';  a: Link; b: Link }
-  | { kind: 'term';      term: string }
-  | { kind: 'unheard';   term: string }
-  | { kind: 'confused';  span: Anchor }
-  | { kind: 'resay';     sentence: Anchor }
-
-notice(graph: readonly Link[], said: History): Move
-voice(move: Move): string
+```
+you say a sentence  →  Extract reads it  →  the child says one thing  →  you keep going
 ```
 
-`notice` is total: when nothing else fires it returns `on`. The child never has nothing to say.
+The child answers the **new sentence** first, and reaches back into everything you have said
+only when the new sentence gives it nothing. That order is the whole design. Reverse it and
+you get a search engine with a personality bolted on, which is what the last version was.
 
-## 3. The moves
+## Two pieces
 
-Five families. Every trigger is a property of your own graph.
-
-**Repeat what you said.**
-
-| Move | Fires when | The child says |
+| Piece | Takes | Returns |
 |---|---|---|
-| `mirror` | A chain ends on a concept with no outgoing link | *"So the pressure drops and the valve opens, and that's it?"* |
-| `on` | Nothing else fired | *"Okay. Then what happened?"* |
+| **Notice** | The new sentence, the graph so far, what it has already asked | One typed move |
+| **Voice** | One move | One sentence |
 
-**Probe something missing.**
+Both deterministic. Voice is handed phrases and never the graph, so it cannot name a concept
+you did not say. That is the property in section *Tests*.
 
-| Move | Fires when | The child says |
+## The moves
+
+Checked in this order. First match wins.
+
+| Move | Fires when | Says |
 |---|---|---|
-| `guess` | Two concepts both link to a third, not to each other | *"So the valve opens because the air pushes it?"* |
-| `why` | Any stated link | *"Why does squeezing it make it hot?"* |
-| `needed` | A concept in the middle of a chain | *"Why does it need the compressor at all?"* |
-| `start` | A root with no parent | *"But where does the internet part come from?"* |
+| `gotIt` | Your new sentence closes a gap it asked about | *"ohhh okay, i get it now"* |
+| `whoa` | The new sentence carries a big number or a scale word | *"whoa, that's a lot"* |
+| `term` | The new sentence has a word a ten-year-old would not know | *"wait, what's a siphon?"* |
+| `conflict` | Two links in your graph disagree | *"but you just said the opposite"* |
+| `guess` | Two things you linked to a third, never to each other | *"so is it X that does Y?"* — **a plant** |
+| `needed` | Something appears mid-explanation with nothing under it | *"but what makes that happen?"* |
+| `why` | Any link you stated | *"how come though?"* |
+| `mirror` | Three turns in, and a chain exists | *"so X, then Y, then Z. and that's it?"* |
+| `on` | Nothing else fired | *"okay. then what?"* |
 
-**Your graph is under-determined.**
+`gotIt` and `whoa` carry no diagnostic content at all. They are a third of what a real child
+says — see [`../transcripts/`](../transcripts/) — and without them the rest reads as an
+interrogation.
 
-| Move | Fires when | The child says |
-|---|---|---|
-| `which` | One effect, two claimed causes | *"So is it the curve or the tilt?"* |
-| `same` | Two concepts with matching heads | *"Is that the same as the ocean part?"* |
-| `otherwise` | A stated condition | *"What about at night?"* |
-| `conflict` | Two links in your graph disagree | *"But you just said the curve does it."* |
-
-**A word.**
-
-| Move | Fires when | The child says |
-|---|---|---|
-| `term` | A concept's head word is not in the common-word list | *"What's a siphon?"* |
-| `unheard` | Transcribe flagged the term low-confidence | *"Stoma-what?"* |
-
-**Honest failure.**
-
-| Move | Fires when | The child says |
-|---|---|---|
-| `confused` | Cohere found a hole and Clarity is high on that sentence | *"Wait, I don't get it."* |
-| `resay` | Extract dropped a link on that sentence | *"Wait — say that part again?"* |
-
-`resay` is the only move that **recovers** a loss rather than reporting one. Added 2026-08-10 on the
-owner's observation that a sentence the extractor half-failed on is exactly where the child should
-ask. A dropped link is not necessarily a wrong link — a paraphrase can be a real link the model
-found and worded its own way, thrown away because there is nothing to anchor — so a non-zero
-`dropped` means the system knows it lost something real in that sentence. Saying it again gives
-Extract a second attempt.
-
-**It claims nothing about you or your sentence.** *Your explanation was unclear* is forbidden and
-has no ground truth, and extraction difficulty is mostly a fact about the model, so blaming the
-speaker for a 32B model's weakness would be wrong twice over. `resay` reports the listener's state,
-like `confused`, and asks for a repeat. **What it does not reach:** links the model never found at
-all, which leave no trace anywhere and remain the dominant failure.
-
-`guess` is the only move that asserts. Every instance writes a row to the **plant ledger**, and the
-review phase must disclose and close every row before the session ends. A plant left open is a
+**`guess` is the only move that asserts.** Every one writes a row to the plant ledger, and the
+review phase must disclose and close each before the session ends. A plant left open is a
 Law 1 failure.
 
-## 4. What it must not do
+## Adding a move
 
-- **Name a concept absent from the transcript.** This is the property in section 6 and it is the
-  whole guarantee.
-- **Assert anything except through `guess`,** and a `guess` is always phrased as a question.
-- **Say your explanation was unclear.** `confused` reports the listener's state, not a property of
-  your words. See ruling 1.
-- **Call a model.** Both pieces are deterministic. Extract is the only model in the live phase.
-- **Carry a score, count, rank or completeness figure.**
-- **Speak about you rather than the mechanism.** Invariant 6.
-- **Mint an anchor.** Every span comes from Extract.
+This is the extension point, and the only one.
 
-## 5. Invariants that apply
+1. Add a variant to `Move`.
+2. Add its trigger to `notice`, in the order above.
+3. Add its templates to `voice`.
 
-**Invariant 5** — *anything that asks the user a question supplies the answer.* Satisfied at the
-session, not per turn: the child asks, you answer, the review phase closes it. A `guess` raises the
-stakes, because the child opened it.
+Nothing else changes. A move is a trigger and some words; the loop, the ledger and the
+property do not care how many there are.
 
-**Invariant 6** — *findings are phrased at the task, never the person.* Governs every template.
+## What it must not do
 
-**Invariant 2** — quotes are validated as literal substrings. **It reaches the anchors, not the
-child's mouth.** See ruling 6: the anchor stays exact, and what the child says is a cleaned
-rendering of it.
+- Name a concept absent from your transcript.
+- Assert anything except through `guess`, and a `guess` is always a question.
+- Say your explanation was unclear. It reports its own state, never a judgement of you.
+- Call a model. Extract is the only model in the live phase.
+- Speak your filled pauses back. The anchors keep them; the spoken form is cleaned.
 
-**Invariant 1** — *no user-facing text originates from the model.* **Repealed 2026-08-07**, but the
-child honours it anyway, because these two pieces are deterministic. That is a property of this
-design, not a rule it obeys.
+## Tests
 
-**Invariant 3** — *no code path branches toward speech on a domain-knowledge value.* **Repealed.**
-Section 6's property is a candidate successor: it is mechanically checkable and it fails loudly,
-which is what [`../../AGENTS.md`](../../AGENTS.md) says the repo lost. Adopting it is not this
-file's to decide.
+**One property.** Every concept the child names appears in your transcript, after the same
+normalisation Extract uses. It needs no gold labels — the input is the ground truth.
 
-## 6. The property
+Then a fixture per move: a graph in, an exact sentence out. Both pieces are deterministic, so
+both are pinnable, and both can be built before Extract runs.
 
-**Voice's output names no concept absent from the transcript.** One test. It needs no gold labels,
-because its ground truth is the input.
+## Why this was rewritten
 
-Also cheap and worth having: no move fires on a concept before it is said; no move repeats on the
-same concept within N turns; `guess` never names a link already in the graph; the plant ledger
-contains only links absent from the graph.
+The first version had twelve moves, all of them probes, and `notice` searched the whole graph
+for the most interesting gap. Run against a real explanation it produced eight questions in a
+row and read like a form. The fault was not the templates. A real child answers the sentence
+that just landed; ours queried a database.
 
-## 7. What is not closed
+Two things came out of that and both are above: the new sentence is checked before the graph,
+and there is a class of move that finds nothing at all.
 
-**The transcripts are generated.** All 18 were written by a model, blind to this design. They are
-good for finding move types and bad for anything about frequency — the disfluency is *written*
-disfluency, and real speech at 15–25% word error looks different. They do **not** substitute for
-the falsification week, which needs your own explanations, hand-marked.
+## Open
 
-**A correction may not take.** In the evolution transcript the adult corrected an error and the
-child reproduced it six turns later. The ledger cannot assume one closure holds.
-
-**The best move in 18 transcripts is one this child cannot make.** A child told the adult that
-Grandma has Christmas on the beach in Australia, and a lifelong misconception collapsed. That runs
-on world knowledge. This design forbids it. That is the price of the ruling, recorded rather than
-argued away.
-
-**And a child that knows only your words will agree with your errors.** The same transcript has the
-child endorsing the wrong answer before refuting it. Nothing here un-endorses.
-
-**On the catch score.** The owner ruled on 2026-08-10 that the score appears beside the finding.
-This amends [`../philosophy.md`](../philosophy.md)'s third consequence of Law 1, not only invariant
-7, so it reaches every feature. The cost, recorded because the evidence gate has no other slot for
-it: [`../research/evidence-base.md`](../research/evidence-base.md) carries Shute 2008 summarising
-Wiliam 2007 — grades alone produced no gains, comments alone produced large gains, and grades with
-comments produced **no gains**. This is a decision taken against that finding, not around it.
-
-## 8. Open rulings
-
-Each would change a signature or repeal a rule.
-
-1. **May the child say "I don't get it"?** [`../features/feynman.md`](../features/feynman.md)
-   forbids *saying an explanation was unclear*, marked **Stands**. Proposed: `confused` is a
-   different object, since it reports the listener rather than your words. Rejected: dropping the
-   move, which leaves the system inventing a specific gap when it cannot tell confusion from
-   ignorance.
-2. **May Clarity route `confused`?** Clarity counts the things that predict tangled expression.
-   Proposed: yes, because choosing a question is not changing a finding. Rejected: reading Clarity
-   into the review phase, which the forbidden table bans outright.
-3. ~~**Is `conflict` Notice's or Contradict's?**~~ **RULED 2026-08-10: Notice's.** Contradict is a
-   model piece whose second input is a document. Two links in your own graph disagreeing is set
-   arithmetic with no second input and no model, and putting set arithmetic inside a model piece is
-   the `Analyse` mistake [`../workflow.md`](../workflow.md) records this repo paying for once.
-   Rejected: Contradict, on the name alone. What survives of `decisions.md`'s *contradiction is
-   checked before omission* is relocated rather than lost — within `notice`, `conflict` outranks
-   `guess`, `why`, `needed` and `start`, because asking about a skipped step is strange when you
-   just said two things that disagree.
-4. **Does one closure retire a plant?** Proposed: no. Rejected: yes, which the evolution transcript
-   refutes.
-5. **Do the two pieces keep these names?** Notice and Voice are verbs on what they are handed,
-   which matches their neighbours. Neither answer is proposed.
-6. ~~**Does the child speak your filled pauses and stammers back?**~~ **RULED 2026-08-10: no.**
-   Voice renders a cleaned form — filled pauses dropped, stammer repeats collapsed. The real
-   transcript behind this has 260 filled pauses and 119 repeats in 13,000 words, and a child saying
-   *"so it's it's a new set of beliefs"* is a bug, not fidelity.
-
-   **This does not break invariant 2, and the reason matters more than the ruling.** The invariant
-   governs anything presented as a quote. It is not phase-scoped — `AGENTS.md` narrowed it on
-   2026-08-07 to *wherever something is quoted*, not to the review phase — but the child is not
-   quoting. It is talking. **The anchor stays exact**, because the anchor is what the machine
-   resolves and what the property test compares against; only the spoken rendering is cleaned. If
-   the interface ever displays your words *as a quotation*, that display is literal or it is a bug.
-
-   **Section 6's property survives, restated.** It was *no child utterance names a concept absent
-   from the transcript*. It becomes: **no child utterance names a concept absent from the
-   transcript after the same normalisation**. Normalisation is deterministic, so the check is still
-   mechanical and still fails loudly. Nothing is given up but the word *literal*.
-
-   **Rejected: keeping the raw form**, which honours the letter of a rule the child was never
-   inside and makes the product sound broken. **And normalising the anchor itself**, which would
-   put a non-literal span where `resolveAnchor` expects a real one and quietly break the one piece
-   this repo has actually built.
-
-## 9. Tests
-
-**Deterministic, so predictable.** Hand-write a link set, assert the exact move and the exact
-string. Neither piece needs Extract, so both can be built now — the same argument that moved
-Extract ahead of Index.
-
-Four tiers:
-
-1. **Properties.** Section 6. No expected output needed.
-2. **Fixtures.** Hand-build the link set for each adult turn in a transcript. Assert the move.
-3. **Coverage.** Where the human-written child asked a mechanism question, did `notice` return
-   anything other than `on`? Real ground truth, already written down, costing nothing.
-4. **Read-through.** Does it sound like a child? Human judgement, a review ritual and not a test.
-   **Not a model.** A model grading a model is the second-model check
-   [`../philosophy.md`](../philosophy.md) rejects; if it returns, it returns as a decision with a
-   reason in [`../decisions.md`](../decisions.md).
+- **Reaction triggers.** `whoa` on a big number is obvious. What else earns a reaction without
+  a model is not settled.
+- **When the child interrupts.** Per sentence as you finish it, or after you stop.
+- **`gotIt` needs the loop.** It cannot fire until the child hears your answer, and nothing
+  yet feeds your reply back in.
+- **`resay` was cut from the MVP**, and is the first test of *Adding a move*. It fired when
+  Extract dropped a link it could not anchor — *"wait, say that part again?"* — and it is the
+  only move that recovers a loss instead of reporting one. It was cut because the local model
+  quoted exactly in every probe so far, so `dropped` was always zero and the move never fired.
+  Bring it back the moment that stops being true: one variant, one trigger on
+  `sentence.dropped > 0`, two templates.

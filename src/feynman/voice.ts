@@ -43,6 +43,20 @@ const pick = <T>(options: readonly T[], seed: string): T => {
 
 export function voice(move: Move): string {
   switch (move.kind) {
+    // No diagnostic content. A third of what a real child says, and what stops the rest
+    // reading as an interrogation.
+    case 'gotIt':
+      return pick(
+        [`ohhh okay. i get it now.`, `oh! okay that makes sense.`, `ohhh. okay yeah.`],
+        'gotIt',
+      )
+
+    case 'whoa':
+      return pick(
+        [`whoa, ${move.about}?!`, `${move.about}?? that's so much.`, `wait, ${move.about}? really?`],
+        move.about,
+      )
+
     case 'conflict': {
       const a = say(move.a.cause.quote)
       const b = say(move.a.effect.quote)
@@ -61,9 +75,6 @@ export function voice(move: Move): string {
         [`what's a ${move.term}?`, `wait, what's ${move.term}?`, `${move.term}? what's that?`],
         move.term,
       )
-
-    case 'resay':
-      return pick([`wait — say that part again?`, `hold on, i missed that bit. again?`], move.sentence)
 
     // The plant. Two things you linked to a third and never to each other.
     case 'guess': {
