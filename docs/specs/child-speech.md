@@ -284,6 +284,35 @@ stays open until `decisions.md` closes it.
     Rejected: **a lemmatiser as a dependency**, which is heavier than the problem and puts a table of
     English morphology under a rule this small. **And leaving it exact**, which the owner's answer
     rules out.
+15. **Is every introduced item a debt?** Raised by the owner on 2026-08-12: a real child draws on
+    some outside knowledge, that is normal, and the danger is bounded because a child persona does
+    not reach far. Proposed: **a link item is a debt, a word item is a note.**
+
+    The split is not a compromise, it is what the two things are. A link is a proposition — it can
+    be checked, and Law 1 says something must close it. **A word is not a proposition and has no
+    truth value.** Handing Supply *"the child said pump"* gives it nothing to check. What a word
+    item actually records is that the child reached outside your transcript, which is a reason to
+    look, not a claim to answer. So it is kept, shown, and owed nothing. The probe under ruling 7 is
+    what this is drawn from: on the one recorded transcript the words introduced were *toilet*,
+    *fills* and *empties*, and not one of them is something anybody could close.
+
+    **This does not touch the plant.** [`../decisions.md`](../decisions.md)'s guess row of 2026-08-10
+    requires every plant to be disclosed and closed, on Butler & Roediger 2008. A plant connects two
+    of your concepts, so a plant is a link, so a plant is a debt. That row is untouched.
+
+    **On the bound the roleplay gives, which is the part I do not accept.** The persona constrains
+    register, not accuracy. A model playing a child says childlike things, and a childlike thing can
+    be wrong — a plausible, everyday, wrong sentence in the voice of the character the product is
+    built around is the dangerous case, not an expert-sounding one. This file is not the place to
+    settle it, because `decisions.md` already did: *"the model is not naive, and pretending it is
+    does not make it so."* **The prediction is testable and nothing tests it yet.** If the child
+    stays modest the ledger is short, and a short ledger is cheap. The ledger is also the only
+    instrument that would show it, so it cannot be skipped on the strength of the prediction it
+    would check.
+
+    Rejected: **every item is a debt**, which is the current text and which owes a closure on a word
+    nobody can check. **And logging no words at all**, which ruling 8 already refused.
+    Changes no signature, so it does not block.
 
 ## 6. The oracle for `audit`
 
