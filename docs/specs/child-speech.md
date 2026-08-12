@@ -28,8 +28,20 @@ The model is what makes the child worth talking to. It answers the sentence that
 ask a question that points forward, and it does not produce a non-sequitur every fifth turn. What it
 buys with that fluency is knowledge you never gave it, and that same knowledge can ratify a belief
 you do not hold. So the guarantee is not that the child cannot say such a thing. The guarantee is
-that it cannot say it without being written down. Every written-down item is owed a closure before
-the session ends, and that debt is Law 1 — invariant 5, quoted in section 4.
+that it cannot say it without being written down.
+
+**What the ledger is for.** It is a work list for the review phase, and that is the whole of it. A
+row is one thing Supply can pick up and close. It is not a record of the child's mistakes — this
+piece cannot tell true from false, ruling 13 — and it is not a score, which invariant 7 and ruling
+16 both forbid. It is not new either: [`../decisions.md`](../decisions.md)'s plant ledger of
+2026-08-10 is the same ledger with a narrower inlet, when only a `guess` could write to it.
+
+**A link row is a debt** and Law 1 forbids ending the session with one open — invariant 5, quoted in
+section 4. **A word row is a note** and is owed nothing, because there is no proposition in it for
+anyone to close. Ruling 15.
+
+The test for whether something belongs in the ledger at all is one question: **what would the review
+phase do with this row?** If the answer is nothing it is not already doing, it is not a row.
 
 ## 2. Public API
 
