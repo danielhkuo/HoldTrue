@@ -163,11 +163,16 @@ describe('the invariant', () => {
   })
 
   // Half two again, at the link level. Two concepts you did say, joined in a way you never did.
+  // Red-team hole 5: the row must be the child's words. An implementation that renames a row
+  // into your graph's phrasing — for a stable key across turns — hands Supply your own sentence
+  // to check while the child's claim goes unrecorded.
   test('a link between your own concepts that you never stated is named', () => {
     const line = 'so the handle lifts the flapper?'
     const items = tallyIntroduced(line, read(line, [linkIn(line, 'the handle', 'lifts the flapper')]), GRAPH)
 
-    expect(links(items)).toHaveLength(1)
+    expect(links(items)).toEqual([
+      { kind: 'link', cause: 'the handle', effect: 'lifts the flapper', relation: 'causes' },
+    ])
   })
 
   // Ruling 7's other half: the same two concepts with a relation you never used.
@@ -175,6 +180,125 @@ describe('the invariant', () => {
     const line = 'so the flapper lifting stops the tank water rush into the bowl?'
     const stated = linkIn(line, 'the flapper lifting', 'the tank water rush into the bowl', 'prevents')
     const items = tallyIntroduced(line, read(line, [stated]), GRAPH)
+
+    expect(links(items)).toEqual([
+      {
+        kind: 'link',
+        cause: 'the flapper lifting',
+        effect: 'the tank water rush into the bowl',
+        relation: 'prevents',
+      },
+    ])
+  })
+
+  // Red-team hole 9, and it was a defect in this file rather than a gap in it. `lets` is in your
+  // transcript and in no cause or effect quote — it rides on the sentence anchor. The old test
+  // could pass either by reading that anchor, which is right, or by a stop list happening to
+  // hold `lets`, which is luck. Section 3 now says the sentence anchor is fair game.
+  test('a word you said only in the sentence, never inside a link, is still yours', () => {
+    const line = 'so the flapper lifting lets the sewer fill?'
+    const items = tallyIntroduced(line, read(line, []), GRAPH)
+
+    expect(words(items)).not.toContain('lets')
+    expect(words(items)).toContain('sewer')
+  })
+})
+
+// ---- the holes the red team found, four angles, 2026-08-12 ---------------------------
+
+describe('what the red team found', () => {
+  // Hole 1. The oracle never crossed its two axes: the degenerate line was paired with a
+  // successful extraction, and every `unread` case rode on a line full of content words. So a
+  // short-circuit above the `unavailable` branch swallowed the flag on exactly the turn it
+  // exists for — nobody knows what the child said, and the ledger reads clean.
+  test('a line of nothing but function words still logs unread', () => {
+    const items = tallyIntroduced('so it does that?', unreadable('ollama: connection refused'), GRAPH)
+
+    expect(items).toEqual([{ kind: 'unread', reason: 'ollama: connection refused' }])
+  })
+
+  test('an empty line still logs unread', () => {
+    const items = tallyIntroduced('   ', unreadable('ollama: connection refused'), GRAPH)
+
+    expect(items).toEqual([{ kind: 'unread', reason: 'ollama: connection refused' }])
+  })
+
+  // Hole 2. The empty-graph case handed the tally no extracted links, so skipping the link
+  // check on an empty graph went green. Turn one is when everything the child says is new.
+  test('on turn one, with nothing said yet, every link the child asserts is introduced', () => {
+    const line = 'so the toilet fills up after it empties?'
+    const items = tallyIntroduced(line, read(line, [linkIn(line, 'it empties', 'the toilet fills up')]), [])
+
+    expect(links(items)).toEqual([
+      { kind: 'link', cause: 'it empties', effect: 'the toilet fills up', relation: 'causes' },
+    ])
+  })
+
+  // Holes 3 and 4. `pump`, at four characters, was the shortest word the oracle required, so a
+  // length floor of four passed. The same floor fed the subset match, shrinking a short phrase
+  // to the empty set — and the empty set is a subset of everything, so the link was judged
+  // already held and nothing was written down at all.
+  test('a three-letter part you never named is flagged, and its link is not swallowed', () => {
+    const line = 'so the lid lifts the flapper?'
+    const items = tallyIntroduced(line, read(line, [linkIn(line, 'the lid', 'lifts the flapper')]), GRAPH)
+
+    expect(links(items)).toEqual([
+      { kind: 'link', cause: 'the lid', effect: 'lifts the flapper', relation: 'causes' },
+    ])
+    expect(words(items)).toContain('lid')
+  })
+
+  // Hole 6. No test handed the tally more than one extracted link, so `find` passed where the
+  // spec means `filter`, and the second proposition was dropped in silence.
+  test('two novel links both come back', () => {
+    const line = 'so the toilet fills up after it empties and the sewer takes the water?'
+    const items = tallyIntroduced(
+      line,
+      read(line, [
+        linkIn(line, 'it empties', 'the toilet fills up'),
+        linkIn(line, 'the sewer', 'takes the water'),
+      ]),
+      GRAPH,
+    )
+
+    expect(links(items)).toHaveLength(2)
+  })
+
+  // Hole 7. Example 2's three words all genuinely sit inside its one link, so an implementation
+  // that stamps the first flagged link onto every word passed. Ruling 16 never counts a
+  // contained word, so a word wrongly marked contained disappears from the instrument.
+  test('a word outside every flagged link carries no within', () => {
+    const line = 'so the toilet fills up after it empties and the sewer takes the water?'
+    const items = tallyIntroduced(line, read(line, [linkIn(line, 'it empties', 'the toilet fills up')]), GRAPH)
+
+    expect(items).toContainEqual({ kind: 'word', word: 'sewer' })
+  })
+
+  // Hole 8. `turn`'s `said` branch was asserted by nothing. An implementation could drop the
+  // items, or run `say` over the child's line and turn its question into a statement — which
+  // would make any span shown back non-literal, against invariant 2.
+  test('turn keeps the child line verbatim and keeps its items', () => {
+    const line = 'wait, is that like a pump?'
+    const items: readonly Introduced[] = [{ kind: 'word', word: 'pump' }]
+    const built = turn('the chain lifts the flapper.', { kind: 'said', line }, items)
+
+    expect(built.child).toBe(line)
+    expect(built.introduced).toEqual(items)
+    expect(built.you).toBe('the chain lifts the flapper.')
+  })
+
+  // Hole 10, and it was a defect in ruling 7's wording rather than in this file. "or relation
+  // not already in your graph" reads as graph-wide. Here `prevents` is in the graph and is new
+  // to this pair, which is the only case that tells the two readings apart.
+  test('a relation you used elsewhere is still new to this pair', () => {
+    const more = `${YOURS} the flapper dropping stops the water leaving the tank.`
+    const graph: readonly Link[] = [
+      ...GRAPH,
+      linkIn(more, 'the flapper dropping', 'the water leaving the tank', 'prevents'),
+    ]
+    const line = 'so the flapper lifting stops the tank water rush into the bowl?'
+    const stated = linkIn(line, 'the flapper lifting', 'the tank water rush into the bowl', 'prevents')
+    const items = tallyIntroduced(line, read(line, [stated]), graph)
 
     expect(links(items)).toHaveLength(1)
   })

@@ -150,8 +150,13 @@ failure. The two are not symmetrical, which is the whole argument in ruling 14.
 - **End a session with an item open.** That is the failure this whole design exists to survive.
 - **Show a count of introduced items beside a finding.** Invariant 7, quoted below.
 - **Say your explanation was unclear.** It reports its own state, never a judgement of you.
-- **Read the transcript for the tally.** The tally reads the child's line. Your graph is already
-  extracted, and re-extracting your words to diff them is invariant 9.
+- **Re-extract your words.** The tally reads the child's line, and your side is already extracted —
+  running Extract over your transcript a second time to diff it is invariant 9. **Clarified
+  2026-08-12** after the red team read the old wording as a ban on touching `link.sentence.quote`:
+  every anchor in the graph is fair game, including the sentence anchor, because it is part of the
+  `Link` the tally was handed. It has to be — the word check asks whether you ever said a word, and
+  a word can sit in your sentence without sitting in a cause or an effect. *lets*, in *"the flapper
+  lifting lets the tank water rush into the bowl"*, is exactly that word.
 - **Present the child's line as a quotation.** It is not one. Anything shown as a quote is literal
   or it is a bug — invariant 2.
 - **Fall back to a deterministic child.** Ruling 11.
@@ -227,7 +232,12 @@ stays open until `decisions.md` closes it.
    child was never inside and makes the product sound broken; and normalising the anchor, which
    would put a non-literal span where `resolveAnchor` expects a real one.
 7. **How deep does the tally read the child's line?** **RULED 2026-08-12: Extract runs over the
-   turn.** Every `cause→effect` key or relation not already in your graph becomes an item. Rejected:
+   turn.** A link is an item when your graph holds no link joining those two concepts **with that
+   relation**. **Wording tightened 2026-08-12** after the red team read the original — *"every
+   `cause→effect` key or relation not already in your graph"* — as graph-wide rather than per pair.
+   Under the loose reading, once you have used `prevents` anywhere, a child that reverses your chain
+   with `prevents` introduces nothing. The test set could not tell the two readings apart, because
+   its graph held no `prevents` at all. Rejected:
    a content-word check with no model call, which is cheaper and cannot see a reversed chain or a
    negation built from your own words. **Conceded, and it is the reason ruling 8 is open:** Extract's
    prompt is written for a declarative spoken sentence, the child speaks in elided questions, and
@@ -564,7 +574,36 @@ the record of the silence — no extra field earns its place, and anything count
 
 ---
 
-**Hard cases from the red team.** Written at step 6, after this oracle is filled and attacked.
+## Hard cases the red team found
+
+Four agents, four angles, 2026-08-12. **All four succeeded**, and every one wrote an implementation
+that passed all fourteen tests while breaking something section 1 or section 3 states. Ten holes,
+all ruled real, all now closed by a test. Two of them are defects in the oracle itself rather than
+gaps in it.
+
+**The Law 1 direction, and this is what the step is for.** The two worst holes both make the tally
+go *silent* about something the child introduced. Silence is the failure mode Law 1 names, and a
+green suite is exactly what it looks like.
+
+| # | The hole | Why nothing caught it |
+|---|---|---|
+| 1 | A line of nothing but function words, with the model unreachable, can lose its `unread` item to a short-circuit guard | The tests never cross the two axes: the degenerate line is paired with a *successful* extraction, and every `unread` assertion rides on a line full of content words |
+| 2 | An implementation that skips the link check entirely when the graph is empty passes | The empty-graph test hands it no extracted links. Turn one is precisely when everything the child says is introduced |
+| 3 | A three-letter content word — *lid*, *rim*, *jet* — is never flagged, and a length floor at four characters passes | *pump* at four characters is the shortest word the oracle requires. The floor sits one character above the cliff |
+| 4 | The same floor feeds the subset match, so a short phrase shrinks to the empty set, and the empty set is a subset of everything — so the link is judged already held | Nothing puts a short concept on either side of a link |
+| 5 | A row can be renamed into **your** graph's words, so the ledger holds a link you asserted wearing the shape of one the child did | The two link tests assert `toHaveLength(1)` and read nothing inside the row |
+| 6 | `find` instead of `filter`: only the first novel link is emitted | No test hands the tally more than one extracted link |
+| 7 | `within` stamped from the first flagged link onto every word, contained or not | Example 2's three words all genuinely sit inside its one link, so *names the link* is the only reading it pins |
+| 8 | `turn`'s `said` branch is asserted by nothing, so an implementation can drop `introduced`, or clean the child's line through `say` and turn its question into a statement | Example 4b exercises `silent` only |
+| 9 | **A defect in the oracle.** The invariant case *"the flapper lifting lets the tank water rush into the bowl"* can only pass by reading `link.sentence.quote` or by luck with a stop list — *lets* is in no anchor quote | The test could not tell a correct implementation from a forbidden one. Section 3's wording is now clarified and the case is pinned explicitly |
+| 10 | **A defect in ruling 7's wording.** *"or relation not already in your graph"* reads as graph-wide, so once `prevents` appears anywhere, a reversed chain using it introduces nothing | The fixture graph held no `prevents`, so both readings gave the same answer |
+
+**Dismissed: none.** Every attack named an input, and every input distinguishes a wrong
+implementation from a right one.
+
+**The strongest thing the step produced was not a hole.** It was hole 9 — the red team found the
+oracle asserting something it could not actually check, which is the failure the oracle exists to
+prevent, one level up.
 
 ## 7. What is not closed
 
