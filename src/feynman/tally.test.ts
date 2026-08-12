@@ -71,7 +71,7 @@ describe('the oracle', () => {
   // came from anywhere but you.
   test('example 1: the child says back something you did say', () => {
     const line = 'so pushing the handle pulls the chain?'
-    const items = tallyIntroduced(line, read(line, [linkIn(line, 'pushing the handle', 'pulls the chain')]), GRAPH)
+    const items = tallyIntroduced(line, read(line, [linkIn(line, 'pushing the handle', 'pulls the chain')]), GRAPH, YOURS)
     expect(items).toEqual([])
   })
 
@@ -79,7 +79,7 @@ describe('the oracle', () => {
   // contained so that anything counting introductions counts one.
   test('example 2: the reversed chain is one link and three contained words', () => {
     const line = 'so the toilet fills up after it empties?'
-    const items = tallyIntroduced(line, read(line, [linkIn(line, 'it empties', 'the toilet fills up')]), GRAPH)
+    const items = tallyIntroduced(line, read(line, [linkIn(line, 'it empties', 'the toilet fills up')]), GRAPH, YOURS)
 
     expect(links(items)).toHaveLength(1)
     expect(items).toContainEqual({
@@ -99,7 +99,7 @@ describe('the oracle', () => {
   // asserts nothing, and ruling 9 says an empty link list is not an `unread`.
   test('example 3: a new word with no link', () => {
     const line = 'wait, is that like a pump?'
-    const items = tallyIntroduced(line, read(line, []), GRAPH)
+    const items = tallyIntroduced(line, read(line, []), GRAPH, YOURS)
 
     expect(items).toEqual([{ kind: 'word', word: 'pump' }])
   })
@@ -108,7 +108,7 @@ describe('the oracle', () => {
   // needed a model, so it still runs.
   test('example 4a: unreadable turn keeps the word check', () => {
     const line = 'so the toilet fills up after it empties?'
-    const items = tallyIntroduced(line, unreadable('no answer from the model'), GRAPH)
+    const items = tallyIntroduced(line, unreadable('no answer from the model'), GRAPH, YOURS)
 
     expect(items).toContainEqual({ kind: 'unread', reason: 'no answer from the model' })
     expect(items.filter(i => i.kind === 'unread')).toHaveLength(1)
@@ -145,7 +145,7 @@ describe('the invariant', () => {
 
     for (const [line, source] of cases) {
       const echoed = linkIn(line, findable(line, source.cause.quote), findable(line, source.effect.quote), source.relation)
-      const items = tallyIntroduced(line, read(line, [echoed]), GRAPH)
+      const items = tallyIntroduced(line, read(line, [echoed]), GRAPH, YOURS)
       expect(items, `"${line}" is made of your own words`).toEqual([])
     }
   })
@@ -157,7 +157,7 @@ describe('the invariant', () => {
 
     for (const word of planted) {
       const line = `the chain lifts the flapper and the ${word} too`
-      const items = tallyIntroduced(line, read(line, []), GRAPH)
+      const items = tallyIntroduced(line, read(line, []), GRAPH, YOURS)
       expect(words(items), `"${word}" is not in your transcript`).toContain(word)
     }
   })
@@ -168,7 +168,7 @@ describe('the invariant', () => {
   // to check while the child's claim goes unrecorded.
   test('a link between your own concepts that you never stated is named', () => {
     const line = 'so the handle lifts the flapper?'
-    const items = tallyIntroduced(line, read(line, [linkIn(line, 'the handle', 'lifts the flapper')]), GRAPH)
+    const items = tallyIntroduced(line, read(line, [linkIn(line, 'the handle', 'lifts the flapper')]), GRAPH, YOURS)
 
     expect(links(items)).toEqual([
       { kind: 'link', cause: 'the handle', effect: 'lifts the flapper', relation: 'causes' },
@@ -179,7 +179,7 @@ describe('the invariant', () => {
   test('a relation you never used between your own concepts is named', () => {
     const line = 'so the flapper lifting stops the tank water rush into the bowl?'
     const stated = linkIn(line, 'the flapper lifting', 'the tank water rush into the bowl', 'prevents')
-    const items = tallyIntroduced(line, read(line, [stated]), GRAPH)
+    const items = tallyIntroduced(line, read(line, [stated]), GRAPH, YOURS)
 
     expect(links(items)).toEqual([
       {
@@ -197,7 +197,7 @@ describe('the invariant', () => {
   // hold `lets`, which is luck. Section 3 now says the sentence anchor is fair game.
   test('a word you said only in the sentence, never inside a link, is still yours', () => {
     const line = 'so the flapper lifting lets the sewer fill?'
-    const items = tallyIntroduced(line, read(line, []), GRAPH)
+    const items = tallyIntroduced(line, read(line, []), GRAPH, YOURS)
 
     expect(words(items)).not.toContain('lets')
     expect(words(items)).toContain('sewer')
@@ -212,7 +212,7 @@ describe('the invariant', () => {
 // each one names an inflection that changes whether a row is written.
 describe('inflection, which is ruling 14 doing its job', () => {
   const noNoteFor = (line: string, word: string): void => {
-    const items = tallyIntroduced(line, read(line, []), GRAPH)
+    const items = tallyIntroduced(line, read(line, []), GRAPH, YOURS)
     expect(words(items), `"${word}" is your own word in another form`).not.toContain(word)
   }
 
@@ -238,7 +238,7 @@ describe('inflection, which is ruling 14 doing its job', () => {
     const yours = 'the body of the tank fills up when the valve opens.'
     const graph = [linkIn(yours, 'the valve opens', 'the body of the tank fills up')]
     const line = 'so the bodies fill up?'
-    const items = tallyIntroduced(line, read(line, []), graph)
+    const items = tallyIntroduced(line, read(line, []), graph, yours)
 
     expect(words(items)).not.toContain('bodies')
   })
@@ -247,14 +247,14 @@ describe('inflection, which is ruling 14 doing its job', () => {
     // "glass" must not stem to "glas". Nothing you said contains it, so it is a note either
     // way — what this pins is that the note names the word the child actually said.
     const line = 'is the flapper made of glass?'
-    const items = tallyIntroduced(line, read(line, []), GRAPH)
+    const items = tallyIntroduced(line, read(line, []), GRAPH, YOURS)
 
     expect(words(items)).toContain('glass')
   })
 
   test('two inflections of one new word are one note', () => {
     const line = 'so the pump pumps the water?'
-    const items = tallyIntroduced(line, read(line, []), GRAPH)
+    const items = tallyIntroduced(line, read(line, []), GRAPH, YOURS)
 
     expect(words(items).filter(w => w.startsWith('pump'))).toHaveLength(1)
   })
@@ -263,7 +263,7 @@ describe('inflection, which is ruling 14 doing its job', () => {
   // looks right strips too much: "dies" is not "dy" and "axes" is not "ax". Mutation found
   // every one of these guards unpinned, because the toilet's vocabulary is all long words.
   const inYourWords = (yours: string, cause: string, effect: string, line: string, word: string): void => {
-    const items = tallyIntroduced(line, read(line, []), [linkIn(yours, cause, effect)])
+    const items = tallyIntroduced(line, read(line, []), [linkIn(yours, cause, effect)], yours)
     expect(words(items), `"${word}" is your own word`).not.toContain(word)
   }
 
@@ -297,12 +297,24 @@ describe('inflection, which is ruling 14 doing its job', () => {
     inYourWords('the gas escapes the trap.', 'the gas', 'escapes the trap', 'so the gases escape?', 'gases')
   })
 
+  // The review was right that these need no collision — a base form sitting exactly on the
+  // guard, against its own inflection, is enough. "ring" is four letters, so the rule that
+  // fires at four strips it to "r" while "ringing" still strips to "ring", and your own word
+  // stops matching itself.
+  test('a four-letter -ing word is not stripped to one letter', () => {
+    inYourWords('the ring seals the tank.', 'the ring', 'seals the tank', 'so the ringing seals it?', 'ringing')
+  })
+
+  test('a four-letter -ed word is not stripped to two letters', () => {
+    inYourWords('the seed blocks the pipe.', 'the seed', 'blocks the pipe', 'so the seeded pipe blocks?', 'seeded')
+  })
+
   test('stemming never merges two different words', () => {
     // The other direction, and the dangerous one. A rule that trims two characters off
     // everything collapses "chain" and "chair" onto one stem, and a word you never said stops
     // being written down at all.
     const line = 'so the chair holds the tank?'
-    const items = tallyIntroduced(line, read(line, []), GRAPH)
+    const items = tallyIntroduced(line, read(line, []), GRAPH, YOURS)
 
     expect(words(items)).toContain('chair')
   })
@@ -314,7 +326,19 @@ describe('inflection, which is ruling 14 doing its job', () => {
 describe('the empty set is a subset of everything', () => {
   test('a link whose concept has no words is never already yours', () => {
     const line = 'so — ?'
-    const items = tallyIntroduced(line, read(line, [linkIn(line, '—', '?')]), GRAPH)
+    const items = tallyIntroduced(line, read(line, [linkIn(line, '—', '?')]), GRAPH, YOURS)
+
+    expect(links(items)).toHaveLength(1)
+  })
+
+  // The same guard from the other side. A link of YOURS with no words in it must not swallow
+  // everything the child says, which is what happens when the empty set is allowed to be a
+  // subset of the child's concepts.
+  test('a wordless link in your own graph matches nothing', () => {
+    const mine = '— ? the chain lifts the flapper.'
+    const graph = [linkIn(mine, '—', '?')]
+    const line = 'so the handle lifts the flapper?'
+    const items = tallyIntroduced(line, read(line, [linkIn(line, 'the handle', 'lifts the flapper')]), graph, mine)
 
     expect(links(items)).toHaveLength(1)
   })
@@ -328,13 +352,13 @@ describe('what the red team found', () => {
   // short-circuit above the `unavailable` branch swallowed the flag on exactly the turn it
   // exists for — nobody knows what the child said, and the ledger reads clean.
   test('a line of nothing but function words still logs unread', () => {
-    const items = tallyIntroduced('so it does that?', unreadable('ollama: connection refused'), GRAPH)
+    const items = tallyIntroduced('so it does that?', unreadable('ollama: connection refused'), GRAPH, YOURS)
 
     expect(items).toEqual([{ kind: 'unread', reason: 'ollama: connection refused' }])
   })
 
   test('an empty line still logs unread', () => {
-    const items = tallyIntroduced('   ', unreadable('ollama: connection refused'), GRAPH)
+    const items = tallyIntroduced('   ', unreadable('ollama: connection refused'), GRAPH, YOURS)
 
     expect(items).toEqual([{ kind: 'unread', reason: 'ollama: connection refused' }])
   })
@@ -343,7 +367,7 @@ describe('what the red team found', () => {
   // check on an empty graph went green. Turn one is when everything the child says is new.
   test('on turn one, with nothing said yet, every link the child asserts is introduced', () => {
     const line = 'so the toilet fills up after it empties?'
-    const items = tallyIntroduced(line, read(line, [linkIn(line, 'it empties', 'the toilet fills up')]), [])
+    const items = tallyIntroduced(line, read(line, [linkIn(line, 'it empties', 'the toilet fills up')]), [], '')
 
     expect(links(items)).toEqual([
       { kind: 'link', cause: 'it empties', effect: 'the toilet fills up', relation: 'causes' },
@@ -356,7 +380,7 @@ describe('what the red team found', () => {
   // already held and nothing was written down at all.
   test('a three-letter part you never named is flagged, and its link is not swallowed', () => {
     const line = 'so the lid lifts the flapper?'
-    const items = tallyIntroduced(line, read(line, [linkIn(line, 'the lid', 'lifts the flapper')]), GRAPH)
+    const items = tallyIntroduced(line, read(line, [linkIn(line, 'the lid', 'lifts the flapper')]), GRAPH, YOURS)
 
     expect(links(items)).toEqual([
       { kind: 'link', cause: 'the lid', effect: 'lifts the flapper', relation: 'causes' },
@@ -375,6 +399,7 @@ describe('what the red team found', () => {
         linkIn(line, 'the sewer', 'takes the water'),
       ]),
       GRAPH,
+      YOURS,
     )
 
     expect(links(items)).toHaveLength(2)
@@ -385,7 +410,7 @@ describe('what the red team found', () => {
   // contained word, so a word wrongly marked contained disappears from the instrument.
   test('a word outside every flagged link carries no within', () => {
     const line = 'so the toilet fills up after it empties and the sewer takes the water?'
-    const items = tallyIntroduced(line, read(line, [linkIn(line, 'it empties', 'the toilet fills up')]), GRAPH)
+    const items = tallyIntroduced(line, read(line, [linkIn(line, 'it empties', 'the toilet fills up')]), GRAPH, YOURS)
 
     expect(items).toContainEqual({ kind: 'word', word: 'sewer' })
   })
@@ -394,17 +419,24 @@ describe('what the red team found', () => {
   // links, the row it is charged to must be stable — the first, not the last. Otherwise the
   // same word moves between rows depending on the order Extract happened to return links in.
   test('a word inside two flagged links is charged to the first', () => {
-    const line = 'so the sewer takes the water and the sewer floods the street?'
+    // Both links must carry a DIFFERENT cause, or first and last are the same string and the
+    // test cannot tell them apart — which is what the first version of it did, and the review
+    // caught it. "the water" sits in the effect of the first and the cause of the second.
+    // The shared word must also be one you never said, or it is never flagged and the two
+    // orders look identical. "water" is in your transcript; "sludge" is not.
+    const line = 'so the sewer takes the sludge and the sludge floods the street?'
     const items = tallyIntroduced(
       line,
       read(line, [
-        linkIn(line, 'the sewer', 'takes the water'),
-        linkIn(line, 'the sewer', 'floods the street'),
+        linkIn(line, 'the sewer', 'takes the sludge'),
+        linkIn(line, 'the sludge', 'floods the street'),
       ]),
       GRAPH,
+      YOURS,
     )
 
-    expect(items).toContainEqual({ kind: 'word', word: 'sewer', within: 'the sewer' })
+    expect(items).toContainEqual({ kind: 'word', word: 'sludge', within: 'the sewer' })
+    expect(items).toContainEqual({ kind: 'word', word: 'street', within: 'the sludge' })
   })
 
   // Hole 8. `turn`'s `said` branch was asserted by nothing. An implementation could drop the
@@ -431,7 +463,7 @@ describe('what the red team found', () => {
     ]
     const line = 'so the flapper lifting stops the tank water rush into the bowl?'
     const stated = linkIn(line, 'the flapper lifting', 'the tank water rush into the bowl', 'prevents')
-    const items = tallyIntroduced(line, read(line, [stated]), graph)
+    const items = tallyIntroduced(line, read(line, [stated]), graph, more)
 
     expect(links(items)).toHaveLength(1)
   })
@@ -444,7 +476,7 @@ describe('section 3', () => {
   // anything absent from that line.
   test('every item names something present in the child\'s line', () => {
     const line = 'so the toilet fills up after it empties?'
-    const items = tallyIntroduced(line, read(line, [linkIn(line, 'it empties', 'the toilet fills up')]), GRAPH)
+    const items = tallyIntroduced(line, read(line, [linkIn(line, 'it empties', 'the toilet fills up')]), GRAPH, YOURS)
 
     for (const item of items) {
       if (item.kind === 'word') expect(line.toLowerCase()).toContain(item.word)
@@ -458,7 +490,7 @@ describe('section 3', () => {
   // Total. An empty graph is a real state on turn one, before Extract has read anything.
   test('an empty graph is a state, not a crash', () => {
     const line = 'so the toilet fills up after it empties?'
-    const items = tallyIntroduced(line, read(line, []), [])
+    const items = tallyIntroduced(line, read(line, []), [], '')
 
     expect(words(items).length).toBeGreaterThan(0)
     expect(items.filter(i => i.kind === 'unread')).toEqual([])
@@ -466,25 +498,27 @@ describe('section 3', () => {
 
   // Total. An empty line cannot introduce anything.
   test('an empty line returns nothing', () => {
-    expect(tallyIntroduced('', read(' '), GRAPH)).toEqual([])
+    expect(tallyIntroduced('', read(' '), GRAPH, YOURS)).toEqual([])
   })
 
   // Ruling 9. An empty link list is the correct reading of a question and is never `unread`.
   test('an empty link list is never an unread item', () => {
     const line = 'what does lifting the flapper do?'
-    const items = tallyIntroduced(line, read(line, []), GRAPH)
+    const items = tallyIntroduced(line, read(line, []), GRAPH, YOURS)
 
     expect(items.filter(i => i.kind === 'unread')).toEqual([])
   })
 
-  // Ruling 15's boundary in the type: a word carries no relation and a link carries no word.
-  test('no item mixes a word with a link', () => {
-    const line = 'so the toilet fills up after it empties?'
-    const items = tallyIntroduced(line, read(line, [linkIn(line, 'it empties', 'the toilet fills up')]), GRAPH)
+  // A sentence of yours that Extract found no link in still counts as words you said. The
+  // graph cannot carry it — no link means no anchor — so the tally is handed your transcript.
+  // Found by review, 2026-08-12: the first implementation read the graph and charged you for
+  // your own words whenever Extract came back empty, which the probe says is common.
+  test('a sentence Extract found no link in is still words you said', () => {
+    const spoken = `${YOURS} the siphon pulls the rest of the water along.`
+    const line = 'so the siphon does that?'
+    const items = tallyIntroduced(line, read(line, []), GRAPH, spoken)
 
-    for (const item of items) {
-      expect(['link', 'word', 'unread']).toContain(item.kind)
-    }
+    expect(words(items)).not.toContain('siphon')
   })
 })
 
