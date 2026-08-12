@@ -351,6 +351,62 @@ stays open until `decisions.md` closes it.
 
     Rejected: **a believability score**, which has no ground truth and which a model would have to
     judge, and `AGENTS.md` bans an LLM judge. Changes no signature, so it does not block.
+17. **Your response to the child is the signal, and nothing was reading it.** Raised by the owner on
+    2026-08-12: *"do I correct it? Answer their question? How do I respond? That's what really
+    matters."* A row is opened by what the child said at turn N. What you did about it is the `you`
+    of turn N+1, and nothing joined the two.
+
+    **Proposed, in three parts.**
+
+    **(a) Your response does not close the row.** Supply closes it, by checking the proposition.
+    Closing on engagement would discharge *"so the toilet fills up after it empties?"* on a confident
+    *yes, exactly* — which is the one case the ledger exists for, and it would void
+    [`../decisions.md`](../decisions.md)'s disclose-and-close condition on Butler & Roediger.
+
+    **(b) The response is recorded on the row, as a separate fact.** Engaged or not: did the concept
+    the row waits on appear in the links of the sentence you said next? That is set membership over
+    `conceptOf` with ruling 14's stripping. No model, no fact about the world. It orders Supply's
+    queue; it discharges nothing.
+
+    **(c) It lives in Session, not here.** Ruling 10 already gave Session the row, and Session
+    already holds Extract's links for every one of your sentences from the same loop. So
+    `audit(line, said, graph)` is unchanged and **nothing here blocks the oracle.** This becomes a
+    ticket on the feature's map for whoever builds Session.
+
+    **What *engaged* can and cannot mean.** The retired `notice.ts` had this mechanism and its test
+    was `conceptOf(effect) === waitingOn` — topical overlap, nothing more. A wrong answer about the
+    right concept passed it. So engaged means *you took it up*, never *you got it right*. What
+    ruling 11 threw away was the wiring, not a signal: `notice.ts` and `voice.ts` both labelled
+    `gotIt` *"No diagnostic content"* and spent it on the words *"ohhh okay. i get it now."*
+
+    **The four cells belong to the review phase.** Cross Supply's verdict with the recorded response
+    and you get: accepted a false line, corrected a false one, accepted a true one, **corrected a
+    true one** — the last being a misconception of yours, surfaced by your own teaching. That cross
+    is Supply's output and is not this piece's to license. Note where it lands:
+    [`../features/feynman.md`](../features/feynman.md)'s step 7 *"kept its shape and lost its
+    speaker"*, and `decisions.md` says relaxing *the child asks, never tells* is a constitutional
+    change rather than a tuning decision.
+
+    **The evidence gate, and this is the part to read twice.** `AGENTS.md` requires a claim about how
+    people learn to already be in [`../research/evidence-base.md`](../research/evidence-base.md).
+    **The premise under this ruling has no row there.** Every row in its correction section grades
+    feedback flowing *to* a learner; not one reads the explainer's reply as a diagnostic. Two nearby
+    rows point away from it — Roscoe & Chi, where audience-directed explanation produced 87%
+    knowledge-telling against 60%, and the row saying explaining is not privileged over practice
+    testing. So (a) to (c) stand as **bookkeeping the catch rate needs**, and no displayed number and
+    no claim about understanding may rest on them until somebody files the row.
+
+    **The case is already in the repo.** In the Seasons transcript the adult states the
+    distance-to-the-sun misconception, the child answers *"the sun's like a heater and if you're
+    closer to a heater you're hotter"*, and the adult replies *"Exactly, yeah! It's just like that."*
+    The teacher ratifies a false belief the child introduced. Two turns later the child's Grandma
+    in Australia counterexample forces *"hold on, let me think about that for a second."* The
+    failure and the recovery both sit in the adult's reply, and nothing in this design reads it.
+
+    Rejected: **your answer closes the row**, which makes Supply genuinely smaller and lets a
+    confident *yes* discharge a falsehood. **And computing the four cells live**, which needs the
+    truth of the claim and a model to judge it, at the moment there is a latency budget.
+    Changes no signature, so it does not block.
 
 ## 6. The oracle for `audit`
 
