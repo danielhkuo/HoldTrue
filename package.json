@@ -9,6 +9,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
+    "demo": "npx --yes tsx src/feynman/demo.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:red": "vitest run --reporter=verbose",
