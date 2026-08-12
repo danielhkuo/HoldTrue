@@ -611,6 +611,49 @@ implementation from a right one.
 oracle asserting something it could not actually check, which is the failure the oracle exists to
 prevent, one level up.
 
+## What mutation found
+
+`npx stryker run --mutate src/feynman/tally.ts`, three rounds. **43 survivors, then 21, then 11.**
+Score 67.97 → 86.27 → 92.81, and the score is not the point: what the runs actually said is below.
+The instrument was checked first — `stryker.config.json` declares the vitest runner, which it did
+not on 2026-08-06, when the missing declaration made Stryker fall back to the command runner and
+report coverage analysis that was fiction.
+
+**The finding: nothing tested the stemmer.** Twenty-six of the first forty-three survivors sat in
+it, and it is ruling 14's entire mechanism. The oracle's own vocabulary is why — *flapper*,
+*siphon*, *toilet*, *empties* are all long words that miss every suffix rule but one. Thirteen
+behavioural tests now go through the tally and pin what each rule changes about a row:
+
+- *chains* is *chain*, *lifted* and *lifting* are *lifts*, *rushes* is *rush* — strip only the `-s`
+  from *rushes* and you get *rushe*, and the child is charged for a word you said yourself.
+- **The length guards, each with a short word that breaks the rule that looks right.** *dies* is not
+  *dy*, *axes* is not *ax*, *gas* is not *ga*, and *batteries* is *battery* rather than *baty*.
+- **The other direction, and the dangerous one.** *chain* and *chair* must not collapse onto one
+  stem. A rule that trims two characters off everything merges them, and a word you never said stops
+  being written down at all.
+- **A word inside two flagged links is charged to the first**, so a row does not move because
+  Extract happened to return its links in a different order.
+
+**The eleven left are dismissed, each for a stated reason**, per `AGENTS.md`'s rule that a survivor
+is a bug report rather than a score:
+
+- **Four length-guard mutants on `-ing` and `-ed`** (`> 4` against `>= 4`, and the guard removed).
+  No input distinguishes them: both sides of every comparison stem identically, so a wrong stem
+  still matches a wrong stem. Killing them needs two English words that collide only under the
+  mutant, and *ring/king/shed/feed* do not supply one.
+- **Two on the `-s` guard's lower bound**, same argument.
+- **One regex mutant**, dropping the `$` from the sibilant rule. It needs a single token carrying
+  *ches*, *shes* or *xes* somewhere other than the end. English compounds that do are not one token.
+- **Two on `sameConcept`'s empty-set guard**, reachable only from a graph whose own link quotes hold
+  no word characters. Extract cannot produce one: `validate` mints a link only from a phrase that
+  anchored into a sentence.
+- **Two on the stop-list construction**, `.split(/\s+/)` and `.filter(Boolean)`. Both let an empty
+  string into the list, and `TOKEN` never yields one, so nothing can ever look it up.
+
+**No mutant was killed by a test written to protect dead code, and none was fixed by deleting a
+guard.** Every guard the runs touched turned out to be load-bearing, which is itself worth knowing:
+the file has no dead defensive code in it.
+
 ## 7. What is not closed
 
 Written when the piece ships.

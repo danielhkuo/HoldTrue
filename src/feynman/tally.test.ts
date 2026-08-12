@@ -204,6 +204,122 @@ describe('the invariant', () => {
   })
 })
 
+// ---- what mutation found, 2026-08-12 -------------------------------------------------
+
+// Twenty-six of forty-three surviving mutants sat in the stemmer, which is ruling 14's whole
+// mechanism and which nothing exercised directly: the oracle's own words happen to miss every
+// suffix rule but one. These are behavioural — they go through the tally, not around it — and
+// each one names an inflection that changes whether a row is written.
+describe('inflection, which is ruling 14 doing its job', () => {
+  const noNoteFor = (line: string, word: string): void => {
+    const items = tallyIntroduced(line, read(line, []), GRAPH)
+    expect(words(items), `"${word}" is your own word in another form`).not.toContain(word)
+  }
+
+  test('a plural of your word is your word', () => {
+    noNoteFor('so the chains lift the flapper?', 'chains')
+  })
+
+  test('an -es after a sibilant is stripped, not just the -s', () => {
+    // You said "rush". Strip only the -s and you get "rushe", which matches nothing, and the
+    // child gets charged with a word you said two sentences ago.
+    noNoteFor('so the water rushes into the bowl?', 'rushes')
+  })
+
+  test('a past tense of your word is your word', () => {
+    noNoteFor('so the chain lifted the flapper?', 'lifted')
+  })
+
+  test('a gerund of your word is your word', () => {
+    noNoteFor('so the chain is lifting the flapper?', 'lifting')
+  })
+
+  test('-ies becomes -y rather than losing three letters', () => {
+    const yours = 'the body of the tank fills up when the valve opens.'
+    const graph = [linkIn(yours, 'the valve opens', 'the body of the tank fills up')]
+    const line = 'so the bodies fill up?'
+    const items = tallyIntroduced(line, read(line, []), graph)
+
+    expect(words(items)).not.toContain('bodies')
+  })
+
+  test('a word ending in ss keeps both of them', () => {
+    // "glass" must not stem to "glas". Nothing you said contains it, so it is a note either
+    // way — what this pins is that the note names the word the child actually said.
+    const line = 'is the flapper made of glass?'
+    const items = tallyIntroduced(line, read(line, []), GRAPH)
+
+    expect(words(items)).toContain('glass')
+  })
+
+  test('two inflections of one new word are one note', () => {
+    const line = 'so the pump pumps the water?'
+    const items = tallyIntroduced(line, read(line, []), GRAPH)
+
+    expect(words(items).filter(w => w.startsWith('pump'))).toHaveLength(1)
+  })
+
+  // The length guards on the suffix rules. Each of these is a short word where the rule that
+  // looks right strips too much: "dies" is not "dy" and "axes" is not "ax". Mutation found
+  // every one of these guards unpinned, because the toilet's vocabulary is all long words.
+  const inYourWords = (yours: string, cause: string, effect: string, line: string, word: string): void => {
+    const items = tallyIntroduced(line, read(line, []), [linkIn(yours, cause, effect)])
+    expect(words(items), `"${word}" is your own word`).not.toContain(word)
+  }
+
+  test('a four-letter -ies word keeps its stem', () => {
+    inYourWords('the fish die when the tank drains.', 'the tank drains', 'the fish die', 'so the fish dies?', 'dies')
+  })
+
+  test('a four-letter sibilant -es word keeps its stem', () => {
+    inYourWords('the axe cuts the pipe.', 'the axe', 'cuts the pipe', 'so the axes cut it?', 'axes')
+  })
+
+  test('a double-s word is not cut short', () => {
+    // Strip the -s from "glass" and you get "glas", which no longer matches the "glasses" the
+    // child said. You are charged for a word you used yourself.
+    inYourWords('the glass covers the tank.', 'the glass', 'covers the tank', 'so the glasses cover it?', 'glasses')
+  })
+
+  test('a long -ies word keeps its front, not its first three letters', () => {
+    inYourWords(
+      'the battery runs the pump.',
+      'the battery',
+      'runs the pump',
+      'so the batteries run it?',
+      'batteries',
+    )
+  })
+
+  test('a three-letter word ending in s is left alone', () => {
+    // "gas" is three letters. Strip its -s and you get "ga", while the child's "gases" strips
+    // correctly to "gas" — so your own word stops matching itself.
+    inYourWords('the gas escapes the trap.', 'the gas', 'escapes the trap', 'so the gases escape?', 'gases')
+  })
+
+  test('stemming never merges two different words', () => {
+    // The other direction, and the dangerous one. A rule that trims two characters off
+    // everything collapses "chain" and "chair" onto one stem, and a word you never said stops
+    // being written down at all.
+    const line = 'so the chair holds the tank?'
+    const items = tallyIntroduced(line, read(line, []), GRAPH)
+
+    expect(words(items)).toContain('chair')
+  })
+})
+
+// The guard red-team hole 4 exists for, and nothing pinned it. A phrase with no words at all
+// stems to the empty set, the empty set is a subset of everything, and every link would be
+// judged already held — the ledger goes silent, which is the Law 1 direction.
+describe('the empty set is a subset of everything', () => {
+  test('a link whose concept has no words is never already yours', () => {
+    const line = 'so — ?'
+    const items = tallyIntroduced(line, read(line, [linkIn(line, '—', '?')]), GRAPH)
+
+    expect(links(items)).toHaveLength(1)
+  })
+})
+
 // ---- the holes the red team found, four angles, 2026-08-12 ---------------------------
 
 describe('what the red team found', () => {
@@ -272,6 +388,23 @@ describe('what the red team found', () => {
     const items = tallyIntroduced(line, read(line, [linkIn(line, 'it empties', 'the toilet fills up')]), GRAPH)
 
     expect(items).toContainEqual({ kind: 'word', word: 'sewer' })
+  })
+
+  // Found by mutation rather than by the red team. When one word sits inside two flagged
+  // links, the row it is charged to must be stable — the first, not the last. Otherwise the
+  // same word moves between rows depending on the order Extract happened to return links in.
+  test('a word inside two flagged links is charged to the first', () => {
+    const line = 'so the sewer takes the water and the sewer floods the street?'
+    const items = tallyIntroduced(
+      line,
+      read(line, [
+        linkIn(line, 'the sewer', 'takes the water'),
+        linkIn(line, 'the sewer', 'floods the street'),
+      ]),
+      GRAPH,
+    )
+
+    expect(items).toContainEqual({ kind: 'word', word: 'sewer', within: 'the sewer' })
   })
 
   // Hole 8. `turn`'s `said` branch was asserted by nothing. An implementation could drop the
