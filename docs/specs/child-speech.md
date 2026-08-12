@@ -313,6 +313,32 @@ stays open until `decisions.md` closes it.
     Rejected: **every item is a debt**, which is the current text and which owes a closure on a word
     nobody can check. **And logging no words at all**, which ruling 8 already refused.
     Changes no signature, so it does not block.
+16. **The ledger is also an instrument, and it measures the fiction.** Raised by the owner on
+    2026-08-12. A child who introduces nothing is not listening to itself, it is reciting you, and
+    it reads robotic. A child who introduces on every turn is not drawing on what you said. The
+    count per turn is a cheap, deterministic signal sitting between those, and it needs no labels.
+
+    Proposed: **it reports counts, never verdicts.** That is the rule
+    [`../decisions.md`](../decisions.md) already gives Clarity, taken here for the same reason —
+    *"Your sentences averaged 34 words"* is a fact, and *"the child was unconvincing"* is an
+    inference nobody has evidence for. Nobody knows the right number and no gold set exists, so a
+    band drawn today would be a threshold invented to look measured. **Never beside a finding**,
+    which is invariant 7; the same file records why Clarity's number is legal — it is not beside
+    anything.
+
+    **What it is good for, concretely.** Three Extract prompt variants were compared on 2026-08-12
+    and the comparison was worthless because each agent built its own test set. A per-turn count over
+    one fixed explanation is stable, so it compares a prompt against a prompt and a model against a
+    model. The falsification week's explanations make that nearly free once the loop runs.
+
+    **The confound, recorded now so nobody reads past it.** The count moves when the child changes
+    *and* when Extract changes, because an introduced link is only seen if Extract reads the child's
+    line — and the probe under ruling 7 found it read none of three. A prompt change that improves
+    the auditor looks exactly like a persona that got bolder. Report the two counts separately, and
+    never compare a number across a change to either side.
+
+    Rejected: **a believability score**, which has no ground truth and which a model would have to
+    judge, and `AGENTS.md` bans an LLM judge. Changes no signature, so it does not block.
 
 ## 6. The oracle for `audit`
 
