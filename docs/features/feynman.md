@@ -112,20 +112,24 @@ Two techniques, neither optional:
 
 ## The session
 
-Two phases. The **live phase** runs while you are talking and touches nothing but your own
-words. The **review phase** runs once you have stopped and is where subject knowledge comes in.
-Revised 2026-08-05, and again on 2026-08-07 when the source of that knowledge changed from the
-user's notes to the model; reasoning in [`../decisions.md`](../decisions.md).
+Two phases. The **live phase** runs while you are talking. The **review phase** runs once you have
+stopped, and is where the child's debts are paid. Revised 2026-08-05; again on 2026-08-07 when the
+source of subject knowledge changed from the user's notes to the model; and again on 2026-08-12,
+when subject knowledge entered the live phase as well. The live phase no longer touches only your
+own words — the child speaks from the model, and what it introduces is written down for the review
+phase to close. Reasoning in [`../decisions.md`](../decisions.md).
 
 ### Live
 
 1. **Pick something from your material that works by a mechanism.**
 2. **Say it out loud from memory, nothing visible.** The illusion collapses on producing, not
    recognizing.
-3. **The child asks where your own chain breaks.** It knows no facts and consults nothing. It
-   only knows you named a thing and never said what it does. Cheap, so it can interrupt. That is
-   a description of what the live phase does — Extract, then set arithmetic — and since 2026-08-07
-   it is no longer also a law: the law was invariant 3, and it is repealed.
+3. **The child answers what you just said, and asks where your chain breaks.** A model speaks it,
+   and it is handed the shapes Cohere found as context rather than as an instruction. **Rewritten
+   2026-08-12.** It used to read *"It knows no facts and consults nothing"*, which described a
+   deterministic child that has been retired. The check moved rather than disappeared: a second
+   pass reads the child's line and writes down every link in it your graph does not hold, and the
+   review phase owes a closure on each. See [`../specs/child-speech.md`](../specs/child-speech.md).
 
 No transcript-correction step: it is friction in the one place the session should feel like
 talking. The cost is real and accepted — at 15–25% word error the child will sometimes quote
@@ -346,13 +350,24 @@ cost rather than as an absence. Contradict still needs its own eval
 set — one more labelling effort on top of the one already scheduled, and see below for what has
 happened to the ground truth those labels were going to come from.
 
-What did not change: **the live phase still calls exactly one model.** Extract reads your words
-and returns concepts and links with spans. Cohere is set arithmetic over that graph. So the part
-that can interrupt you mid-explanation stays as cheap and as certain as it ever was. That sentence
-used to end *and invariant 3 holds there trivially — nothing in the live phase consults a note*.
-Invariant 3 is repealed. What actually guarantees the live phase now is narrower and still true:
-Extract's only input is the user's own transcript. Nothing forbids a future live-phase call from
-reaching for model knowledge, because the thing that forbade it was invariant 3.
+~~What did not change: **the live phase still calls exactly one model.**~~ **Overtaken 2026-08-12**,
+by the last sentence of this very paragraph. It called a further live-phase model call permitted
+but hypothetical, and five days later it is the design: the live phase now calls three models per
+turn — Extract over your sentence, the child's line, then Extract again over that line for the
+audit. The rest of the paragraph stands as written. Extract's only input is still the user's own
+transcript, Cohere is still set arithmetic over that graph, and what forbade a knowledge-fed live
+call was invariant 3, which is repealed. Original: *Extract reads your words and returns concepts
+and links with spans. Cohere is set arithmetic over that graph. So the part that can interrupt you
+mid-explanation stays as cheap and as certain as it ever was. That sentence used to end* and
+invariant 3 holds there trivially — nothing in the live phase consults a note. *Invariant 3 is
+repealed. What actually guarantees the live phase now is narrower and still true: Extract's only
+input is the user's own transcript. Nothing forbids a future live-phase call from reaching for
+model knowledge, because the thing that forbade it was invariant 3.*
+
+**What that costs, said plainly.** The live phase is no longer cheap or certain. It was both, and
+both were load-bearing for interrupting someone mid-sentence. Latency is now three model round
+trips per turn rather than one, and the certainty is gone entirely — replaced by a ledger, which
+catches afterwards what the old design could not say at all.
 
 Transcribe calls a model too. With the correction step dropped, **nothing downstream verifies
 it any more**, so its errors now propagate into every finding rather than being caught by the

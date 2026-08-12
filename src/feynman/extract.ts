@@ -1,8 +1,9 @@
 /**
  * Extract: your words, one sentence at a time, as a graph of what you said causes what.
  *
- * The only model call in the live phase. Everything downstream — Cohere, Notice, Voice — is
- * arithmetic over what this returns, and none of them reads your transcript again.
+ * The first model call in the live phase, and since 2026-08-12 not the only one: the child's
+ * line is a second, and this module runs again over that line for the audit. What stays true
+ * is that your transcript is read once per sentence and never re-extracted to check itself.
  *
  * Contract, rulings and the failure mode: docs/specs/extract.md.
  *

@@ -1534,10 +1534,11 @@ describe('regressions: the payload', () => {
 
   // Finding 30. A repetition loop running to the output token cap is a real degenerate mode
   // of heavily quantised models, which is the class AGENTS.md's stack table now floors at.
-  // No correctness break — the link drops — but Extract is the only model call in the live
-  // phase, and normalising a 100 KB needle once per link against a 52-character sentence is
-  // a live-session stall with no stated bound on it. The default test timeout is the only
-  // instrument here.
+  // No correctness break — the link drops — but this runs on the live path, and normalising a
+  // 100 KB needle once per link against a 52-character sentence is a live-session stall with no
+  // stated bound on it. The default test timeout is the only instrument here. (Comment corrected
+  // 2026-08-12: it said Extract was the only live model call. There are now three per turn, and
+  // the second of them reads the child's line, so the stall argument got stronger.)
   test('a degenerate 100 KB phrase drops without stalling', () => {
     const { sentence } = payloadFixture()
     const needle = 'the water flows out '.repeat(5_000)

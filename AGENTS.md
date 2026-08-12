@@ -46,12 +46,16 @@ Nothing else about your work is limited.
 Not style preferences: a violation is wrong even if it works.
 
 **Numbers are permanent addresses, not positions in a list.** The 2026-08-07 pivot repealed two of
-these and split a third, and nothing was renumbered. Seven documents cite invariants by number —
+these and split a third, and nothing was renumbered. Ten documents cite invariants by number —
 `docs/specs/supply.md`, far the heaviest and the one that quotes every invariant it cites in full;
 `docs/decisions.md`; `docs/features/feynman.md`; `docs/philosophy.md`; `docs/specs/anchor.md`;
+`docs/specs/extract.md`; `docs/specs/child-speech.md`; `docs/research/extraction-benchmarks.md`;
 `measurements/within-sentence/README.md`; `docs/workflow.md` — as do `src/index/anchor.ts`, its test
-file, `measurements/within-sentence/rate.mjs` (invariant 8 is its kill number),
-`.claude/skills/holdtrue-workflow/SKILL.md` and the wayfinder archive.
+file, `src/feynman/validate.ts`, `src/feynman/validate.test.ts`,
+`measurements/within-sentence/rate.mjs` (invariant 8 is its kill number),
+`.claude/skills/holdtrue-workflow/SKILL.md` and the wayfinder archive. **Five entries added
+2026-08-12** by running the grep below, which is what the next paragraph asks of every reader and
+what nobody had done since the roster was written.
 
 **That roster is the instrument, so keep it complete.** It exists so that whoever repeals, narrows
 or renumbers a rule can walk every citation of it and leave none stale — the failure mode is silent,

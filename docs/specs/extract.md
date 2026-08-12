@@ -18,10 +18,14 @@
 Extract reads what you said, one sentence at a time, and returns the causal links you asserted —
 each with a span into your own words.
 
-It is the **only model call in the live phase**, and everything downstream is arithmetic over its
-output. Cohere finds where the chain does not close, Notice picks what the child asks, Voice says
-it. None of them reads your transcript again. That is invariant 9, and it is why this piece runs
-once per sentence and never twice over the same words.
+It is the **first model call in the live phase**, and every finding is built on its output. Cohere
+finds where the chain does not close, and Speak is handed those shapes. **Corrected 2026-08-12, on
+all three counts.** This used to say *only*, it used to name Notice and Voice, and it used to call
+the no-second-pass rule invariant 9. The live phase now calls three models per turn: this one, the
+child's line, then this one again over that line for the audit. Invariant 9 forbids **diffing two
+extractions of the user's own words**, which is narrower than never re-reading anything. What is
+still true, and is what this piece guarantees, is that Extract runs once per sentence of your
+transcript and nothing re-extracts your words to check them.
 
 It is also the piece whose errors nothing catches. A link you stated that Extract misses looks
 downstream like a gap you have, and the child will ask about a step you did explain.
@@ -45,18 +49,21 @@ import type { Anchor, Doc } from '../index/anchor'
     necessarily a wrong one — a paraphrase can be a real link the model found and worded its
     own way, thrown away because there is nothing to anchor. So a non-zero `dropped` means
     *we know we lost something real here*, which is the only signal in the whole piece that
-    points at a specific sentence. Notice reads it to fire `resay`. It is never displayed:
-    invariant 7 bans a count beside a diagnosis. Ruling 7. */
+    points at a specific sentence. Nothing reads it today — `resay`, the move that fired on it,
+    went with the deterministic child on 2026-08-12. The count stays, because knowing where we
+    lost something is what it is for. It is never displayed: invariant 7 bans a count beside a
+    diagnosis. Ruling 7. */
 type Sentence = {
   readonly anchor: Anchor
   readonly dropped: number
 }
 
-/** A closed set, so Voice's templates are finite and `conflict` is decidable. Ruling 2. */
+/** A closed set, so `conflict` is decidable and the audit compares a relation by equality.
+    Ruling 2. */
 type Relation = 'causes' | 'enables' | 'prevents' | 'requires'
 
-/** What you said connects to what. Both sides carry their own anchor, because Notice and
-    Voice quote them separately and must never name words you did not say. Ruling 1. */
+/** What you said connects to what. Both sides carry their own anchor, because the shapes the
+    child is handed quote them separately and the audit compares them separately. Ruling 1. */
 type Link = {
   readonly cause: Anchor
   readonly effect: Anchor
@@ -105,8 +112,9 @@ to a model-client module that does not exist yet — governs here too. This spec
   and a null is a dropped link, not a warning.
 - **No reading across a sentence boundary at emission.** Invariant 8. Whether the model may *see*
   more than one sentence is ruling 4 and a different question.
-- **No second pass over the same words.** Invariant 9. Extract runs once per sentence, and nothing
-  downstream re-reads the transcript to check it.
+- **No second pass over your words.** Invariant 9. Extract runs once per sentence of your
+  transcript, and nothing re-extracts your words to check them. It is not a ban on running Extract
+  at all again: since 2026-08-12 the audit runs it over the child's line, which is not your words.
 - **No marking a retraction.** When you correct yourself mid-explanation, Extract emits the wrong
   link and the corrected link, both. See ruling 5.
 - **No judgement about you.** Extract reports what was asserted, not whether it was true, clear or
@@ -135,7 +143,9 @@ enforced, and section 3's ban on model-supplied offsets is what keeps this piece
 
 **Invariant 9**, quoted: *"Never diff two extractions of the user's own words."* The struck clause
 that followed was repealed; the prohibition above it stands untouched. Extract reads each sentence
-once, and no consumer reads the transcript again.
+of your transcript once, and no consumer re-extracts your words to check them. **The audit added
+2026-08-12 runs Extract over the child's line**, which is not your words, so it does not reach this
+invariant — and a reader who remembers this rule as *never run Extract twice* will think it does.
 
 **Invariant 1**, quoted: *"No user-facing text originates from the model."* **REPEALED 2026-08-07**,
 and quoted because an agent will import it from memory. It never bound this piece hard anyway —
@@ -160,21 +170,26 @@ One precondition survives the rulings and is not this spec's to close — see th
 
 **Ruled 2026-08-10:** one per side, plus the sentence. [`supply.md`](supply.md) invented a `Link` with a
 single `anchor` and recorded it as a guess this spec would settle. It guessed wrong, and the reason
-is downstream: [`child-speech.md`](child-speech.md)'s guarantee is that *no child utterance names a
-concept absent from the transcript*, and Voice can only honour that if it is handed the cause and
-the effect as separate quotes. A sentence-level anchor cannot say which words were the cause.
+is downstream: [`child-speech.md`](child-speech.md)'s audit asks whether a link in the child's line
+is one your graph already holds, and it can only ask that if cause and effect arrive as separate
+quotes. A sentence-level anchor cannot say which words were the cause. **Restated 2026-08-12**: this
+used to cite a guarantee enforced before the child spoke — *no child utterance names a concept
+absent from the transcript* — which is now a comparison run afterwards. The shape it needs did not
+change, which is why the ruling stands untouched.
 
-**Rejected: one anchor for the whole link**, which is smaller and makes the guarantee unenforceable.
-**And an anchor on the relation too**, which sounds symmetrical and has no consumer — no move in
+**Rejected: one anchor for the whole link**, which is smaller and makes the comparison unenforceable.
+**And an anchor on the relation too**, which sounds symmetrical and has no consumer — nothing in
 `child-speech.md` quotes a relation.
 
 ### 2. Is `relation` a closed set or a free string? OPEN.
 
 **Ruled 2026-08-10:** the closed set in section 2 — `causes`, `enables`, `prevents`, `requires`. Two
-consumers force it. Voice renders a move into a template, and a free string makes the template set
-unbounded. Notice's `conflict` move has to decide that two links disagree, which is decidable over a
-closed set and a model judgement over free text — and putting a model judgement inside Notice
-undoes the ruling that put `conflict` there in the first place.
+consumers force it. The audit compares a relation by equality, and equality over a free string is
+not a comparison anyone can reason about. Cohere's `conflict` has to decide that two links disagree,
+which is decidable over a closed set and a model judgement over free text — and putting a model
+judgement inside Cohere undoes the ruling that put `conflict` there in the first place. **Restated
+2026-08-12**: the first consumer used to be Voice's template set, which is retired. The ruling is
+unchanged, and it now rests on the audit instead.
 
 **Rejected: a free string**, which is more faithful to what people say and gives both consumers an
 open-ended problem. The four were chosen against the 18 transcripts in
@@ -348,11 +363,12 @@ anchoring into raw text needs a **normaliser that carries an offset map** — st
 *it's it's*, and remember which raw characters survived, so a match found at normalised position 12
 can be minted as a raw span. That is ordinary deterministic code and it needs its own tests.
 
-**It must be the same normaliser Voice uses.**
-[`child-speech.md`](child-speech.md)'s ruling 6 makes the child speak a cleaned rendering, and its
-property is *no child utterance names a concept absent from the transcript **after the same
-normalisation***. Two normalisers that drift apart break that property silently, which is the worst
-way for it to break. So this is one shared module with one set of tests, owned by neither piece.
+**It must be the same normaliser the audit uses.**
+[`child-speech.md`](child-speech.md)'s ruling 6 cleans every phrase the child is handed, and its
+audit compares concepts **after the same normalisation** — `conceptOf` is that normaliser plus
+lowercase. Two normalisers that drift apart make the comparison wrong silently, which is the worst
+way for it to break. **Restated 2026-08-12**: it used to name Voice, and a property enforced before
+the child spoke rather than a comparison run after. So this is one shared module with one set of tests, owned by neither piece.
 
 **What the generator must produce.** Sentences carrying filled pauses inside a candidate span;
 stammer repeats inside a candidate span; a phrase repeated two and three times in one sentence;
