@@ -1,9 +1,8 @@
 # Spec: the child's speech
 
 > **Status: specced, not built. 2026-08-12.** Sections 1–5 are written; section 6 is written at the
-> red-team step and section 7 when the piece ships. **Ruling 8 is OPEN and changes a signature, so
-> the oracle cannot start.** Ruling 9 is open, changes no signature, and has to be answered before
-> the oracle is written rather than before the spec is committed.
+> red-team step and section 7 when the piece ships. **No ruling blocks the oracle.** Rulings 7 to 11
+> are settled. Ruling 13 asks only for a name, and it is answered before the oracle file is created.
 >
 > This replaces the deterministic design of the same morning, and reverses
 > [`../decisions.md`](../decisions.md)'s *The child speaks only from your own words* of 2026-08-10.
@@ -72,12 +71,22 @@ import type { ExtractResult } from './extract.js'
 import type { Link, Relation } from './validate.js'
 
 export type Introduced =
-  /** A link the child asserted that your graph does not hold. */
+  /** A link the child asserted that your graph does not hold. Ruling 7. */
   | { readonly kind: 'link'; readonly cause: string; readonly effect: string; readonly relation: Relation }
-  /** The auditor could not read the turn. Logged, so an unread turn never reads as a clean one. */
+  /** A content word in the child's line that your transcript does not contain. Ruling 8. */
+  | { readonly kind: 'word'; readonly word: string }
+  /** The model could not read the turn. Logged, so an unread turn never reads as a clean one. */
   | { readonly kind: 'unread'; readonly reason: string }
 
-export function audit(said: ExtractResult, graph: readonly Link[]): readonly Introduced[]
+export function audit(
+  line: string,
+  said: ExtractResult,
+  graph: readonly Link[],
+): readonly Introduced[]
+
+`line` is passed separately from `said` on purpose. The word check needs no model, so it still runs
+when the model is unreachable and `said` carries no text at all. A dead auditor loses the link check
+and keeps the cheap one.
 
 /** One turn, and everything the session needs from it. */
 export type Turn = {
@@ -120,6 +129,9 @@ need, and a missing item is a Law 1 failure.
 - **Present the child's line as a quotation.** It is not one. Anything shown as a quote is literal
   or it is a bug — invariant 2.
 - **Fall back to a deterministic child.** Ruling 11.
+- **Check whether anything is true.** This piece cannot tell a true statement from a false one, and
+  it never tries. It answers one question — *is this in what you said?* — and hands the answer on.
+  Ruling 13.
 
 ## 4. Invariants that apply
 
@@ -195,22 +207,19 @@ stays open until `decisions.md` closes it.
    prompt is written for a declarative spoken sentence, the child speaks in elided questions, and
    Extract's measured weakness is under-counting inside a sentence. It may return nothing on exactly
    the reversed question this ruling was chosen to catch.
-8. **OPEN — the two checks catch different failures, not the same failure at two depths.** This was
-   framed as a depth choice when ruling 7 was taken, and that framing is wrong. A content-word check
+8. **The two checks catch different failures, not the same failure at two depths.**
+   **RULED 2026-08-12: both run.** The framing when ruling 7 was taken was wrong. A word check
    catches a new *word* in a line that asserts no link — *"is that like a pump?"* introduces *pump*
-   and no link at all, and the audit as ruled logs nothing. A link check catches a new *link* built
-   from words you already said. Neither contains the other. Proposed: keep ruling 7 and add the word
-   check as a second pass in the same turn, giving `Introduced` a third variant, `{ kind: 'word' }`.
-   Rejected: leaving it, which ships a ledger that is silent on the commonest way a child introduces
-   something. **Changes a signature, so it blocks the oracle.**
-9. **OPEN — is an empty extraction an item, or only an unreachable model?** Ruled with 7 as written:
-   an `unavailable` result and an empty link list both become an `unread` item. The cost is that
-   nearly every question the child asks extracts to nothing, which is the correct reading of a
-   question, so the ledger takes an item on almost every turn and Law 1 owes a closure on each. The
-   narrower version, offered for a later ruling rather than taken quietly here: only `unavailable`
-   becomes an item, and an empty list is counted but not logged. **Changes no signature** — the type
-   is the same either way — so it does not block at step 4. It does decide what the oracle asserts,
-   so it has to be answered before the oracle is written rather than before the spec is committed.
+   and no link at all — and a link check catches a new *link* built from words you already said.
+   Neither contains the other, so `Introduced` carries a variant for each. Rejected: links only,
+   which ships a ledger that is silent on the commonest way a child introduces something.
+9. **Is an empty extraction an item, or only an unreachable model?** **RULED 2026-08-12: only an
+   unreachable model.** An `unavailable` result becomes an `unread` item. An empty link list is
+   counted and not logged, because an empty list is the correct reading of a question and the child
+   asks one nearly every turn. Rejected: logging both, which was the first ruling and which makes
+   closure a formality — Law 1 gets its force from every open item mattering. **The cost, recorded:**
+   a turn where Extract silently under-reads the child's line now looks exactly like a turn where
+   the child asserted nothing. The count is the only trace, and nothing yet reads it.
 10. **Who owns the ledger row?** **RULED 2026-08-12: Session.** This piece returns `Turn`, which
     carries the items as discrete values, never a count and never a boolean. The obligation is stated
     here in prose — a session that ends with an item open is a Law 1 failure — and the row, its
@@ -228,10 +237,93 @@ stays open until `decisions.md` closes it.
     keep it, and drop it if the child reads stiff, because fluency is the thing being bought.
     Rejected: no context at all, which gives the model nothing to reach for when your chain does not
     close. Changes no signature, so it does not block.
+13. **What the audit is not, and whether it keeps that name.** It misled its own owner on the day it
+    was written, which is the strongest evidence a name can give. **The boundary, and it is not
+    open:** this piece runs live, once per turn, and answers one question — *is this in what you
+    said?* It cannot tell a true statement from a false one. It consults nothing and it is not the
+    end-of-session pass. **Checking an introduced item against knowledge is the review phase**, and
+    that work is [`supply.md`](supply.md)'s. This design is what makes Supply small: instead of
+    hunting for gaps with no ground truth, Supply is handed specific propositions and checks each
+    one. The optional sources — a configured knowledge base, and the internet — belong to that phase.
+    Neither is decided, and **the internet is named in no document in this repo**; it also touches
+    *local-first: nothing leaves the device unless you turn something on*, so it needs a row in
+    [`../decisions.md`](../decisions.md) before anyone builds it. Proposed for the name: **`tally`**,
+    which cannot be read as fact-checking. Rejected: keeping `audit`. **Answer this before the oracle
+    is written**, because the oracle file is named after the piece.
 
-## 6. Hard cases
+## 6. The oracle for `audit`
 
-Written at the red-team step, not before.
+**UNFILLED. The blanks below belong to the owner, and no agent may fill one.** The inputs are drawn
+from the toilet explanation in `demo.ts`, so they are real. The shape follows
+[`extract.md`](extract.md) section 6, which is the oracle for `validate`.
+
+Three things are needed, and the examples are the hard part only because they look harder than they
+are. For each one, read the child's line, look at what your graph holds, and write what should come
+back. There is no right answer waiting to be guessed — **what you write is what correct means**.
+
+**What correct means.** One sentence. A starting shape, to accept or replace:
+
+> _Every link in the child's line that my graph does not already hold comes back as an item, every
+> content word in that line that I never said comes back as an item, and nothing else does._
+
+**The invariant, in plain words.** One sentence, no code:
+
+> **_(yours)_**
+
+---
+
+**Example 1 — the child says back something you did say, in its own words.**
+
+Your graph holds one link: cause *"when you push the handle down"*, effect *"pulls the chain"*,
+relation `causes`.
+The child says: *"so pushing the handle pulls the chain?"*
+Extract reads the child's line and returns: cause *"pushing the handle"*, effect *"pulls the chain"*,
+relation `causes`.
+
+The comparison key is exact text after normalising, so *"pushing the handle"* and *"when you push
+the handle down"* are two different concepts and this counts as a new link.
+
+Expected items: **_(yours)_**
+
+> This example decides the whole piece. Say *no items* and the audit must match concepts loosely,
+> and something has to say how loosely. Say *one link item* and the ledger over-reports every time
+> the child rephrases you, and the review phase pays for each one.
+
+---
+
+**Example 2 — the reversed chain. This is the case ruling 7 exists for.**
+
+Your graph holds: *"the flapper lifting"* enables *"the tank water rush into the bowl"*.
+The child says: *"so the toilet fills up after it empties?"*
+Extract returns: cause *"it empties"*, effect *"the toilet fills up"*, relation `causes`.
+
+Expected items: **_(yours)_**
+
+---
+
+**Example 3 — a new word, and no link at all.**
+
+Your graph holds the toilet links. You never said the word *pump*.
+The child says: *"wait, is that like a pump?"*
+Extract returns no links, because the line asserts none.
+
+Expected items: **_(yours)_**
+
+> Ruling 9 says an empty link list is not an `unread` item. Ruling 8 says the word check still runs.
+
+---
+
+**Example 4 — the model is unreachable.**
+
+The child said something. Extract returns `unavailable`.
+
+Expected items: **_(yours)_**
+
+> The word check needs no model, so it can still run on the line.
+
+---
+
+**Hard cases from the red team.** Written at step 6, after this oracle is filled and attacked.
 
 ## 7. What is not closed
 
