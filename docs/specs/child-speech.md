@@ -113,11 +113,15 @@ export function say(phrase: string): string
 It lives in `voice.ts` today and moves into `speak.ts` when `voice.ts` is deleted. The five comments
 that cite ruling 6 move with it, or they point at nothing.
 
-The comparison key is `conceptOf` from [`../../src/feynman/cohere.ts`](../../src/feynman/cohere.ts),
-which is `normalise` plus lowercase. Two mentions match when their cleaned text matches exactly, so
-*the flapper lifting* and *lifting the flapper* are two concepts. **That over-reports, and
-over-reporting is the safe direction**: an extra item costs the review phase one closure it did not
-need, and a missing item is a Law 1 failure.
+The comparison key is `conceptOf` from [`../../src/feynman/cohere.ts`](../../src/feynman/cohere.ts)
+— `normalise` plus lowercase — **and inflection stripping, which does not exist yet.** Ruling 14
+owns it. Two mentions match when their stripped text matches, so *lifts* and *lifting* are one
+concept, while *the flapper lifting* and *lifting the flapper* are still two. Word order is not
+normalised, and nobody is proposing that it should be.
+
+**Watch which way the error runs.** Exact matching over-reports, and an extra item costs the review
+phase one closure it did not need. Loose matching under-reports, and a missing item is a Law 1
+failure. The two are not symmetrical, which is the whole argument in ruling 14.
 
 ## 3. What it must not do
 
@@ -261,6 +265,25 @@ stays open until `decisions.md` closes it.
     [`../decisions.md`](../decisions.md) before anyone builds it. Proposed for the name: **`tally`**,
     which cannot be read as fact-checking. Rejected: keeping `audit`. **Answer this before the oracle
     is written**, because the oracle file is named after the piece.
+14. **How close must two mentions be to count as the same concept?** Forced by oracle example 1,
+    which the owner answered on 2026-08-12: *lifts* and *lifting* are one concept. Exact text
+    matching is therefore out. Proposed: **strip inflection, and stop there.** A deterministic
+    suffix stripper — plural *-s*, *-es*, and verb *-ing*, *-ed* — living beside `normalise.ts`,
+    owned by neither piece and tested on its own, the same arrangement `normalise` already has for
+    the same reason. Two mentions match when their stripped text matches. Nothing else is matched:
+    no synonyms, no embeddings, no *close enough*.
+
+    **Why the line is drawn there and not further out.** Loosening the match is not free in both
+    directions. An over-report costs the review phase a closure it did not need. An under-report is
+    a link the child introduced and nobody wrote down, which is the failure Law 1 names. Inflection
+    is the one loosening that carries no judgement — *lifts* and *lifting* are the same word, and
+    calling them different concepts is a defect in the string comparison, not a finding. Every step
+    past that is a judgement about meaning, and a judgement about meaning is the thing this piece is
+    forbidden to make.
+
+    Rejected: **a lemmatiser as a dependency**, which is heavier than the problem and puts a table of
+    English morphology under a rule this small. **And leaving it exact**, which the owner's answer
+    rules out.
 
 ## 6. The oracle for `audit`
 
@@ -294,11 +317,16 @@ relation `causes`.
 The comparison key is exact text after normalising, so *"pushing the handle"* and *"when you push
 the handle down"* are two different concepts and this counts as a new link.
 
-Expected items: **_(yours)_**
+**Expected items: none.** *Answered by the owner on 2026-08-12, transcribed here.* His reasoning:
+*lifting* and *lifts* are the same word in two forms, and a child who connects something to their
+own experience before you say it is behaving normally.
 
-> This example decides the whole piece. Say *no items* and the audit must match concepts loosely,
-> and something has to say how loosely. Say *one link item* and the ledger over-reports every time
-> the child rephrases you, and the review phase pays for each one.
+**What it settles, and what it opens.** Concepts no longer match on exact text. They match after
+inflection is stripped, which is work that does not exist yet — ruling 14 owns it.
+
+**And the direction of the error flips with it.** Exact matching over-reports, and an extra item
+costs the review phase one closure it did not need. Every step looser under-reports, and a missing
+item is a Law 1 failure. Ruling 14 stops at inflection for exactly that reason.
 
 ---
 
