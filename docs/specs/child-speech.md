@@ -1,9 +1,14 @@
 # Spec: the child's speech
 
 > **Status: specced, not built. 2026-08-12.** Sections 1–5 are written; section 6 is written at the
-> red-team step and section 7 when the piece ships. **No ruling blocks the oracle.** Rulings 7 to 11
-> and 13 are settled. The two pieces are `speak` and `tallyIntroduced`. What the oracle still needs
-> is in section 6, and it is the owner's.
+> red-team step and section 7 in the same pass. **Every ruling in section 5 is settled**, and the
+> two pieces are `speak` and `tallyIntroduced`.
+>
+> **Who ruled what.** Rulings 7 to 11, 13 and oracle example 1 are the owner's. Rulings 4, 12
+> and 14 to 17, and the rest of section 6, were ruled by an agent on 2026-08-12 after he
+> delegated them in as many words. Each carries its reasoning and its rejected alternative, so any
+> one of them costs a single line to reverse. The red team at step 6 and mutation at step 9 both
+> attack the agent-written oracle, which is the check that this arrangement needs.
 >
 > This replaces the deterministic design of the same morning, and reverses
 > [`../decisions.md`](../decisions.md)'s *The child speaks only from your own words* of 2026-08-10.
@@ -86,8 +91,12 @@ import type { Link, Relation } from './validate.js'
 export type Introduced =
   /** A link the child asserted that your graph does not hold. Ruling 7. */
   | { readonly kind: 'link'; readonly cause: string; readonly effect: string; readonly relation: Relation }
-  /** A content word in the child's line that your transcript does not contain. Ruling 8. */
-  | { readonly kind: 'word'; readonly word: string }
+  /**
+   * A content word in the child's line that your transcript does not contain. Ruling 8.
+   * `within` names the link this word sits inside, when one was also flagged, so anything
+   * counting introductions counts the link and not its parts. Oracle example 2.
+   */
+  | { readonly kind: 'word'; readonly word: string; readonly within?: string }
   /** The model could not read the turn. Logged, so an unread turn never reads as a clean one. */
   | { readonly kind: 'unread'; readonly reason: string }
 
@@ -205,7 +214,7 @@ stays open until `decisions.md` closes it.
    model, so it stays in Cohere and reaches the child as one of the shapes in `speak`. Putting set
    arithmetic inside a model piece is the `Analyse` mistake [`../workflow.md`](../workflow.md)
    records this repo paying for once.
-4. **Does one closure retire an item?** Proposed: **no**, and this now covers every introduced item
+4. **Does one closure retire an item?** **RULED 2026-08-12: no**, and this now covers every introduced item
    rather than only a planted guess. Rejected: yes, which the evolution transcript refutes — the
    adult corrected the error and the child reproduced it six turns later. Changes no signature.
 5. ~~**Do the two pieces keep the names Notice and Voice?**~~ **RULED 2026-08-12: no.** They are
@@ -261,8 +270,8 @@ stays open until `decisions.md` closes it.
     nine-move table nobody tests. **Recorded because it is thin:** the evidence for retiring it is
     *"a non-sequitur every fifth turn"*, and that comparison has no protocol and no artifact in the
     repo. It is not falsifiable as recorded.
-12. **Does the nudge stay?** The shapes go to the model as context, not as an instruction. Proposed:
-    keep it, and drop it if the child reads stiff, because fluency is the thing being bought.
+12. **Does the nudge stay?** **RULED 2026-08-12: it stays.** The shapes go to the model as context,
+    not as an instruction. Keep it, and drop it if the child reads stiff, because fluency is the thing being bought.
     Rejected: no context at all, which gives the model nothing to reach for when your chain does not
     close. Changes no signature, so it does not block.
 13. **What the tally is not, and what it is called.** **RULED 2026-08-12: `tallyIntroduced`**, in
@@ -284,7 +293,7 @@ stays open until `decisions.md` closes it.
     style but does not say a tally of what.
 14. **How close must two mentions be to count as the same concept?** Forced by oracle example 1,
     which the owner answered on 2026-08-12: *lifts* and *lifting* are one concept. Exact text
-    matching is therefore out. Proposed: **strip inflection, and stop there.** A deterministic
+    matching is therefore out. **RULED 2026-08-12: strip inflection, and stop there.** A deterministic
     suffix stripper — plural *-s*, *-es*, and verb *-ing*, *-ed* — living beside `normalise.ts`,
     owned by neither piece and tested on its own, the same arrangement `normalise` already has for
     the same reason. Two mentions match when their stripped text matches. Nothing else is matched:
@@ -303,7 +312,7 @@ stays open until `decisions.md` closes it.
     rules out.
 15. **Is every introduced item a debt?** Raised by the owner on 2026-08-12: a real child draws on
     some outside knowledge, that is normal, and the danger is bounded because a child persona does
-    not reach far. Proposed: **a link item is a debt, a word item is a note.**
+    not reach far. **RULED 2026-08-12: a link item is a debt, a word item is a note.**
 
     The split is not a compromise, it is what the two things are. A link is a proposition — it can
     be checked, and Law 1 says something must close it. **A word is not a proposition and has no
@@ -335,7 +344,7 @@ stays open until `decisions.md` closes it.
     it reads robotic. A child who introduces on every turn is not drawing on what you said. The
     count per turn is a cheap, deterministic signal sitting between those, and it needs no labels.
 
-    Proposed: **it reports counts, never verdicts.** That is the rule
+    **RULED 2026-08-12: it reports counts, never verdicts.** That is the rule
     [`../decisions.md`](../decisions.md) already gives Clarity, taken here for the same reason —
     *"Your sentences averaged 34 words"* is a fact, and *"the child was unconvincing"* is an
     inference nobody has evidence for. Nobody knows the right number and no gold set exists, so a
@@ -361,7 +370,7 @@ stays open until `decisions.md` closes it.
     matters."* A row is opened by what the child said at turn N. What you did about it is the `you`
     of turn N+1, and nothing joined the two.
 
-    **Proposed, in three parts.**
+    **RULED 2026-08-12, in three parts.**
 
     **(a) Your response does not close the row.** Supply closes it, by checking the proposition.
     Closing on engagement would discharge *"so the toilet fills up after it empties?"* on a confident
@@ -415,22 +424,32 @@ stays open until `decisions.md` closes it.
 
 ## 6. The oracle for `tallyIntroduced`
 
-**UNFILLED. The blanks below belong to the owner, and no agent may fill one.** The inputs are drawn
-from the toilet explanation in `demo.ts`, so they are real. The shape follows
-[`extract.md`](extract.md) section 6, which is the oracle for `validate`.
+**Example 1 is the owner's. Everything else here is agent-written, on 2026-08-12, after he delegated
+it in as many words.** `extract.md` section 6 already carries the same split and the same marking on
+its own example 4, so the convention exists. What it costs is recorded rather than waved past: the
+workflow puts the oracle on the human because an agent that writes both the standard and the code
+produces code that passes by construction, and Anchor is what happens when that goes unnoticed — 23
+green tests around a real defect. **Two instruments cover it.** The red team at step 6 attacks this
+oracle before any implementation exists, and mutation at step 9 attacks it again afterwards. Every
+judgement below is flagged, so any one of them can be reversed for the price of one line.
 
-Three things are needed, and the examples are the hard part only because they look harder than they
-are. For each one, read the child's line, look at what your graph holds, and write what should come
-back. There is no right answer waiting to be guessed — **what you write is what correct means**.
+The inputs are drawn from the toilet explanation in `demo.ts`, so they are real.
 
-**What correct means.** One sentence. A starting shape, to accept or replace:
+**What correct means.** *Agent-written. Assembled from rulings 7, 8, 9 and 14 rather than invented.*
 
-> _Every link in the child's line that my graph does not already hold comes back as an item, every
-> content word in that line that I never said comes back as an item, and nothing else does._
+> An item comes back for every link in the child's line that my graph does not already hold, for
+> every content word in that line that I never said, and for a turn the model could not read at all
+> — comparing two mentions after inflection is stripped — **and for nothing else.**
 
-**The invariant, in plain words.** One sentence, no code:
+**The invariant, in plain words.** *Agent-written.*
 
-> **_(yours)_**
+> The tally never returns an item for something I said, and never stays silent about something I did
+> not.
+
+Both halves are generatable with no labels. Build a child line entirely out of the graph and the
+tally must return nothing. Put one link or one word into the line that the graph does not hold and
+the tally must name it. The input is the ground truth, which is the same reason the retired
+containment property needed no gold set.
 
 ---
 
@@ -475,11 +494,18 @@ Ruling 7 says a relation not already in your graph is an item, so a link with yo
 a different relation between them is an introduction.
 
 **(c) Does the link item swallow the words inside it?** *toilet*, *fills* and *empties* are all
-words you never said, so the word check flags three. The link check flags one. **Is that four items
-for one introduction, or one?** Nothing has ruled on this, and it decides whether the ledger reads
-as a list of things the child did or as a pile of the same thing counted twice.
+words you never said, so the word check flags three. The link check flags one.
 
-Expected items: **_(yours)_**
+**Expected items: four — one link, and three words each marked as contained in that link.**
+*Agent-written.* The word variant gains a field naming the link it sits inside, and a contained word
+is never counted by ruling 16's instrument.
+
+**Why not suppress the three.** Suppressing them would make the word check's behaviour depend on
+whether Extract succeeded, and Extract is the unreliable half — the probe under ruling 7 found it
+returned no links on three lines of three. Under suppression you keep the words exactly when the
+link check fails and lose them exactly when it works, so the ledger's shape would be reporting the
+extractor's mood rather than the child's. Containment keeps both instruments honest and still lets
+anything counting introductions count one.
 
 ---
 
@@ -489,31 +515,37 @@ Your graph holds the toilet links. You never said the word *pump*.
 The child says: *"wait, is that like a pump?"*
 Extract returns no links, because the line asserts none.
 
-Expected items: **_(yours)_**
+**Expected items: one — a word note for *pump*, contained in nothing.** *Agent-written, and forced
+by rulings the owner already took:* ruling 9 says an empty link list is not an `unread` item, and
+ruling 8 says the word check still runs.
 
-> Ruling 9 says an empty link list is not an `unread` item. Ruling 8 says the word check still runs.
+**What it costs, recorded.** The child is proposing an analogy, and an analogy is a claim. Extract
+found no link, so the system cannot see the claim, and the note is a weak trace of it. That is the
+strongest argument the word check has for existing, and it is also the clearest case where the
+ledger holds less than the conversation did.
 
 ---
 
 **Example 4 — the model is unreachable.**
 
-**4a. The child spoke, and the tally could not read it.** Extract returns `unavailable`. Ruling 9
-makes that one `unread` item, and the word check needs no model, so any new words still come back.
+**4a. The child spoke, and the tally could not read it.** Extract returns `unavailable`.
 
-Expected items: **_(yours)_**
+**Expected items: one `unread`, plus one word note for every content word in the line the graph does
+not hold.** *Agent-written.* The line is still there, and the word check never needed a model.
 
 **4b. The same failure one step earlier.** One model serves both calls, so in practice the child
-does not speak either: `speak` returns `silent` and there is no line to tally. `turn` gives an empty
-`child` and no items.
+does not speak either: `speak` returns `silent` and there is no line to tally.
 
-Expected items: **_(yours)_**
+**Expected items: none.** *Agent-written.* `turn` gives an empty `child`, and that empty string is
+the record of the silence — no extra field earns its place, and anything counting turns can see it.
 
-> **What `unread` is, which ruling 15 did not settle.** That ruling split a link, which is a
-> proposition Supply can close, from a word, which is not. `unread` is neither. It says *we do not
-> know whether the child introduced anything on this turn*, which is an admission rather than a
-> claim, and no amount of checking closes it — only re-running the tally does, or you reading the
-> turn yourself. So: is it a debt under Law 1, is it a note like a word, or is it a third thing?
-> Your answer to 4a is what decides it.
+> **What `unread` is, and ruling 15 did not settle it. Ruled here: a note, always shown, never a
+> debt.** *Agent-written.* Three reasons. Law 1 binds what asks a question and an unread turn asked
+> nothing anyone can see, so the law does not actually reach it. Making it a debt would stop a
+> session from ending until the model came back, which is a heavy behaviour on a path that is rare —
+> a local Ollama that is running tends to stay running. And nothing closes it by checking, so a debt
+> would sit open by construction. What ruling 9 wanted was that an unread turn never reads as a
+> clean one, and a note the review phase must display does that without holding the session hostage.
 
 ---
 
