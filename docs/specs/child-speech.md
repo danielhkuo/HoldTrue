@@ -391,6 +391,21 @@ Your graph holds: *"the flapper lifting"* enables *"the tank water rush into the
 The child says: *"so the toilet fills up after it empties?"*
 Extract returns: cause *"it empties"*, effect *"the toilet fills up"*, relation `causes`.
 
+It asks three things, and the third is the one nothing has ruled on.
+
+**(a) Does being right make a difference?** The child may well be correct — your fifth sentence,
+which you have not said yet, is *"then the fill valve refills the tank."* Ruling 13 says the audit
+cannot tell true from false and never tries, so the test is *unsaid*, not *wrong*.
+
+**(b) Does the relation count on its own?** Your link is `enables` and the child's is `causes`.
+Ruling 7 says a relation not already in your graph is an item, so a link with your two concepts and
+a different relation between them is an introduction.
+
+**(c) Does the link item swallow the words inside it?** *toilet*, *fills* and *empties* are all
+words you never said, so the word check flags three. The link check flags one. **Is that four items
+for one introduction, or one?** Nothing has ruled on this, and it decides whether the ledger reads
+as a list of things the child did or as a pile of the same thing counted twice.
+
 Expected items: **_(yours)_**
 
 ---
@@ -409,11 +424,23 @@ Expected items: **_(yours)_**
 
 **Example 4 — the model is unreachable.**
 
-The child said something. Extract returns `unavailable`.
+**4a. The child spoke, and the auditor could not read it.** Extract returns `unavailable`. Ruling 9
+makes that one `unread` item, and the word check needs no model, so any new words still come back.
 
 Expected items: **_(yours)_**
 
-> The word check needs no model, so it can still run on the line.
+**4b. The same failure one step earlier.** One model serves both calls, so in practice the child
+does not speak either: `speak` returns `silent` and there is no line to audit. `turn` gives an empty
+`child` and no items.
+
+Expected items: **_(yours)_**
+
+> **What `unread` is, which ruling 15 did not settle.** That ruling split a link, which is a
+> proposition Supply can close, from a word, which is not. `unread` is neither. It says *we do not
+> know whether the child introduced anything on this turn*, which is an admission rather than a
+> claim, and no amount of checking closes it — only re-running the audit does, or you reading the
+> turn yourself. So: is it a debt under Law 1, is it a note like a word, or is it a third thing?
+> Your answer to 4a is what decides it.
 
 ---
 
