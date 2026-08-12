@@ -318,6 +318,12 @@ stays open until `decisions.md` closes it.
     because the owner's answer requires it, and it is flagged because he answered a morphology
     question and got a containment rule.
 
+    **Where the stemmer lives, decided 2026-08-12 while building.** Private to `tally.ts` for now,
+    not a shared module. A shared module owned by neither piece needs its own oracle and its own
+    tests, and nobody has written them; shipping an untested shared module is worse than shipping a
+    private helper. It moves out the day Cohere adopts it — `conceptOf` has the same *lifts* against
+    *lifting* bug in your own graph — and that hand-off is in section 7.
+
     The original reasoning, still correct as far as it goes: a deterministic
     suffix stripper — plural *-s*, *-es*, and verb *-ing*, *-ed* — living beside `normalise.ts`,
     owned by neither piece and tested on its own, the same arrangement `normalise` already has for
