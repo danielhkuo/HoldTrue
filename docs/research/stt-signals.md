@@ -2,7 +2,7 @@
 
 **Engineering research, 2026-08-12.** Read from the source and the paper, every claim carrying its
 URL. Written because the repeat-gate in [`../specs/child-speech.md`](../specs/child-speech.md)
-ruling 18 needs a signal, and because the three earlier speech-to-text files evaluated eight engines
+ruling 18 needs a signal, and because the three earlier speech-to-text files evaluated seven engines
 against four criteria — rule compliance, platform, word error rate, fairness — and **none of them
 asked whether an engine can say which words it is unsure of.**
 

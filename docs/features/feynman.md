@@ -566,7 +566,11 @@ be built first or last. Transcribe is needed before any real session runs.
   was the target; on 2026-08-07 the floor moved up to the largest model the user's machine can
   actually hold, with local-first intact, and what happens when someone runs something weaker is
   ruled in [`../philosophy.md`](../philosophy.md) rather than here.
-- **Which speech-to-text engine.** Open. The choice is constrained, not free: thinking-aloud
+- ~~**Which speech-to-text engine.**~~ **CLOSED 2026-08-12** — whisper.cpp behind a `whisper-server`
+  sidecar, on [issue 23](https://github.com/danielhkuo/HoldTrue/issues/23); the model size stays
+  open. What that engine can say about its own errors is in
+  [`../research/stt-signals.md`](../research/stt-signals.md). The original entry read: The choice is
+  constrained, not free: thinking-aloud
   speech runs 15 to 25% word error rate, and errors fall hardest on accented and non-standard
   speech. Apple's SpeechAnalyzer, Parakeet and Kokoro publish no fairness data at all. Step 3
   turns that error into typing rather than a false finding, but those users still type more.

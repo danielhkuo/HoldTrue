@@ -362,7 +362,9 @@ assertions were modified: an agent editing a test to make it pass. Commit the
 test alone, watch it fail, then commit the fix. The second blocks the banned assertion patterns
 under Testing.
 
-Only these are non-skippable; everything else is a rule an agent can forget.
+These two are the only ones a machine enforces at all; everything else is a rule an agent can
+forget. **They are not unskippable** — `.githooks/pre-commit` prints the `--no-verify` escape in its
+own refusal message, which is deliberate and is not a loophole to reach for.
 
 ## Skills
 

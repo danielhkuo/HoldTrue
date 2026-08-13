@@ -1,7 +1,7 @@
 # Spec: Anchor
 
 > **Status: built and closed, 2026-08-06. Role narrowed 2026-08-07.** First piece of the build
-> order. `src/index/anchor.ts`, 87 lines, 30 tests, mutation 52/52 at 100%.
+> order. `src/index/anchor.ts`, 88 lines, 30 tests, mutation 52/52 at 100%.
 >
 > The code is unchanged, still correct, and still has callers — Extract's spans point into the
 > user's own explanation and resolve through here. What it lost is the claim in section 1 that

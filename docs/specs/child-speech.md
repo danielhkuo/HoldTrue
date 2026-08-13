@@ -234,7 +234,9 @@ stays open until `decisions.md` closes it.
    records this repo paying for once.
 4. **Does one closure retire an item?** **RULED 2026-08-12: no**, and this now covers every introduced item
    rather than only a planted guess. Rejected: yes, which the evolution transcript refutes — the
-   adult corrected the error and the child reproduced it six turns later. Changes no signature.
+   adult corrected the error and the child reproduced it **ten child turns later — recounted
+   2026-08-12, this ruling said six**, and `../decisions.md` carries the same correction. Changes no
+   signature.
 5. ~~**Do the two pieces keep the names Notice and Voice?**~~ **RULED 2026-08-12: no.** They are
    `speak` and `tallyIntroduced`, which are verbs on what each is handed, the same test the old names passed.
 6. ~~**Does the child speak your filled pauses and stammers back?**~~ **RULED 2026-08-10: no**, and
@@ -428,7 +430,9 @@ stays open until `decisions.md` closes it.
 
     **(c) It lives in Session, not here.** Ruling 10 already gave Session the row, and Session
     already holds Extract's links for every one of your sentences from the same loop. So
-    `tallyIntroduced(line, said, graph)` is unchanged and **nothing here blocks the oracle.** This becomes a
+    `tallyIntroduced` needs nothing from this ruling and **nothing here blocks the oracle.** (It took
+    three parameters when this was written and takes four now — `transcript` was added by the review
+    later the same day, for an unrelated reason. Section 2 has the signature.) This becomes a
     ticket on the feature's map for whoever builds Session.
 
     **What *engaged* can and cannot mean.** The retired `notice.ts` had this mechanism and its test
