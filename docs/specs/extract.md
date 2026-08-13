@@ -50,8 +50,9 @@ import type { Anchor, Doc } from '../index/anchor'
     own way, thrown away because there is nothing to anchor. So a non-zero `dropped` means
     *we know we lost something real here*, which is the only signal in the whole piece that
     points at a specific sentence. One reader today: `npm run demo` prints it beside the child's
-    line. `resay`, the move that fired on it, is retired with the deterministic child by
-    child-speech.md ruling 11. The count stays, because knowing where we lost something is what it
+    line. `resay`, the move that fired on it, went with the deterministic child under
+    child-speech.md ruling 11 and **came back the same day under its ruling 18**, with a different
+    trigger: an unintelligible turn rather than a dropped link. The count stays, because knowing where we lost something is what it
     is for. **It is never displayed to a user**: invariant 7 bans a count beside a diagnosis, and
     the demo is a developer surface. The day that line reaches a real one it breaks the invariant.
     Ruling 7. */
@@ -97,7 +98,12 @@ type Validation = {
 validate(sentence: Sentence, raw: unknown): Validation
 
 /** The piece. Takes sentences already cut, never raw transcript text — see ruling 3.
-    Total: a model that returns junk or is unreachable is a result, never a throw. */
+    Total: a model that returns junk or is unreachable is a result, never a throw.
+
+    **The code does not do this yet, and says so.** `src/feynman/extract.ts` takes a string and
+    calls `cutSentences` itself, marked SKELETON as a knowing violation of ruling 3 — the
+    adapter Transcribe owes does not exist. Noted here 2026-08-12 because the spec read as
+    though it were describing the code. */
 extract(sentences: readonly Sentence[], model: ModelHandle): Promise<ExtractResult>
 ```
 

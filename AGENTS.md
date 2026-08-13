@@ -6,7 +6,9 @@ Windows and Linux must work for most features.
 **Status: Anchor is built** (`src/index/anchor.ts`, 30 tests, mutation score 100%) — still correct,
 still the right module the moment a quote is shown, but as of 2026-08-07 it is optional
 infrastructure rather than the shape everything a user reads is built from. See *Anchor format*
-below. Everything else is docs, a pre-commit hook, and three skills in `.claude/skills/`.
+below. **Corrected 2026-08-12:** `src/` now holds twelve files — `index/anchor.ts` plus `feynman/`'s
+extract, validate, normalise, cohere, tally, model, words, notice, voice and demo, with three test
+files. The rest is docs, a pre-commit hook, and three skills in `.claude/skills/`.
 
 **Read this before anything else: on 2026-08-07 the notes-only constraint was repealed.** The old
 Law 2 — *every sentence traces to the user, to a quoted passage in their material, or to plain
@@ -92,7 +94,7 @@ finds the repeal where the rule used to be.
    This was the only invariant here that was mechanically checkable and said so: *there must be a
    test*. Whatever governs when the model may speak from its own knowledge should be checkable the
    same way, or the repo loses a check and will not notice, because nothing fails when a check stops
-   existing. Nothing regressed today — `src/` still holds only `anchor.ts` and its test, so the
+   existing. Nothing regressed on 2026-08-07 — `src/` held only `anchor.ts` and its test then, so the
    demanded test was never written. What was repealed is an accepted obligation, and an obligation is
    exactly the kind of thing that disappears without a failure. **The replacement is open and is
    deliberately not designed here.** Do not invent it in passing. Two rulings in

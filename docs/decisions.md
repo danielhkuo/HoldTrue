@@ -419,7 +419,11 @@ knowledge now being specced in [`specs/`](specs/).
 marked as proposed. The owner rules on it; until he does, this list is what a piece cites and the
 proposal binds nothing.
 
-0. **The falsification week.** Three measurements, about a day each, no code. The within-sentence
+0. **The falsification week.** Three measurements, about a day each, no code — **corrected: it needs
+   `measurements/within-sentence/rate.mjs`, which exists.** It also clears two blockers rather than
+   one, added 2026-08-12: it is still the only measurement that can end the project, and it is the
+   gold set the Extract prompt work needs, since three prompt variants were compared that day and the
+   comparison was worthless because each agent built its own test set. The within-sentence
    rate, the false-question rate, and vault eligibility. Kill numbers written down *before* any of
    them run. Details in [`features/feynman.md`](features/feynman.md).
 1. **Anchor.** Everything produces or consumes anchors. *Done.*
@@ -495,8 +499,8 @@ resolved quietly inside it.
    2026-08-06. Under the split above, this entry stops waiting on the labelling; without the split
    it does not.
 
-   **Speak and Audit belong with this entry**, added 2026-08-10 as Notice and Voice, renamed and
-   re-cut 2026-08-12, specced in [`specs/child-speech.md`](specs/child-speech.md). Audit takes an
+   **Speak and Tally belong with this entry**, added 2026-08-10 as Notice and Voice, renamed and
+   re-cut 2026-08-12, specced in [`specs/child-speech.md`](specs/child-speech.md). Tally takes an
    `ExtractResult` and a link set, both of which can be written by hand, so it is still testable
    with no model. What changed is the runtime: the live phase now calls Extract twice per turn,
    once over your sentence and once over the child's line, so neither piece runs before Extract
@@ -512,14 +516,14 @@ resolved quietly inside it.
    by a queue, which makes it the same kind of entry as 7 rather than the same kind as 3. Where it
    belongs *once ruled* is as early as the Extract dependency allows, since the eval skip leaves it
    with no measurement and the owner reading its output by hand is the only signal there is that it
-   works — which is also the argument for ruling on the nine sooner rather than later, because
+   works — which is also the argument for ruling on the ten sooner rather than later, because
    nothing else in this list is waiting on the owner in that way.
 5. **Contradict.** Its second input and the source half of its two-span output both assume a
    document, so it cannot be built until it has the same default-path contract entry 4 is being
    given — which puts it behind entry 4 rather than beside it, even though at runtime the
    contradiction is checked first. **It is under the same ruling as entry 4, and this line used to
    omit that.** [`specs/supply.md`](specs/supply.md)'s ruling 7 asks whether Supply and Contradict
-   are one piece or two, calls itself the least settled of the nine and the one that changes the
+   are one piece or two, calls itself the least settled of the ten and the one that changes the
    return type, and its *"Do not build either until this is ruled"* names **both** of them. If it
    comes back *one piece*, this entry stops being an entry.
 6. **Session, then Interface.** Last, always: both compose the pieces above them, and neither can be
@@ -627,7 +631,8 @@ reason.
   subject when there is no corpus. #20 and #22 are marked *scoped to the optional RAG path* above
   for exactly this reason. What the default path decomposes into instead is unanswered, and nothing
   should be re-cut until it is.
-- **Anchor's role has changed.** `src/index/anchor.ts` — the one piece actually built, 30 tests,
+- **Anchor's role has changed.** `src/index/anchor.ts` — **corrected 2026-08-12: no longer the only
+  piece built.** `validate`, `normalise` and `tally` ship too. Anchor remains the only one at 30 tests,
   mutation score 100% — was the foundation everything else read from. It becomes optional
   infrastructure for the RAG path and for any citation that still gets quoted. It is neither wasted
   nor deleted, and its status line should say what it is now for.

@@ -665,3 +665,41 @@ between 27% and 34% on correct work. The conclusion is the same and the ground u
   genre, so the correct response to a gap in this file is usually to run the count, not to search
   again. **The 2026-08-10 pass is evidence for that rule rather than against it**: it opened
   fourteen sources, refused four figures, corrected three more, and moved the verdict not at all.
+
+---
+
+## Two things that happened on a real machine, 2026-08-12
+
+**Not a measurement**, and the distinction matters more here than anywhere else on this page. These
+are observations from probes run against `muse-glimmer:30b-mlx` over one toilet explanation and one
+transcript of a child's questions. One model, one machine, one genre, tiny n. They are recorded
+because both cut against text elsewhere in this repo that is live and load-bearing, and because a
+finding that contradicts a premise is worth more than one that confirms it.
+
+**1. The 35.70% silence rate did not reproduce. One empty return in twenty-five sentences.**
+
+Section 3 above reads that figure as the design constraint — *at the local floor, on this task, the
+failure mode is silence, not over-assertion* — and `extract.md` calls it the dominant failure. The
+Extract prompt's rule 5, *"Find every link in the sentence. Missing one is worse than being
+unsure,"* exists to fight it.
+
+The loss that did show up was different in kind: under-counting **inside** a sentence — links
+carried by apposition, by purpose (*"to catch as much sun"*), and by a second conjunct sharing a
+subject. **The design's central worry may be aimed at the wrong thing.** What settles it is the
+falsification week's within-sentence count, not this note and not the published figure.
+
+**2. `dropped` has been zero on every probe. The model quotes character for character.**
+
+Across every probe run so far, every phrase the model returned was an exact substring of the
+sentence it read. The paraphrase problem `validate` was built to catch has not appeared once.
+
+`validate` is still right to exist — it is the trust boundary, and a boundary that has never been
+crossed is not the same as one that cannot be. But `dropped` being permanently zero is what got
+`resay` cut from the MVP, and `extract.md`'s `dropped` field currently has one reader in the whole
+repo. Anyone tuning the prompt should know the counter has never moved.
+
+**3. A consequence for the build order.** The falsification week now clears two blockers rather than
+one. It is still the only measurement that can end the project, **and** it is the gold set the
+Extract prompt work needs: three prompt variants were compared on 2026-08-12 and the comparison was
+worthless because each agent built its own test set. `decisions.md` entry 0 records the first job
+only.

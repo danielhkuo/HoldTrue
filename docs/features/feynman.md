@@ -168,7 +168,10 @@ search, and whatever multi-step work replaces it is undesigned. The line that us
 agentic about *what to look for*, never about *what to say* — was Law 2's, and is repealed with
 it. No narrower version has been written.
 
-**No score. No rating. No stored verdict. No shareable result.** A point-coverage readout was
+~~**No score. No rating. No stored verdict. No shareable result.**~~ **AMENDED 2026-08-10, corrected
+here 2026-08-12.** Invariant 7 now admits exactly one score: the catch rate on planted errors, where
+the system knows what it planted. Everything else in this sentence still holds, and the forbidden
+rows below it were always right. A point-coverage readout was
 added on 2026-08-05 and removed the same day after a design panel declined it four ways out of
 four; see [`../decisions.md`](../decisions.md). *Do I need to study this again* remains
 unanswered, and the panel's view is that the contradiction check answers it better than an
@@ -243,7 +246,7 @@ wrong if it is left implicit. Repealed rows stay visible rather than being quiet
 | Delivering a refutation before the probe has tested the gap | Step 6 exists for this | **Stands** |
 | Comparing two extractions of the user's own words | The F1 numbers above | **Stands.** Invariant 9's first half was never touched |
 | Paraphrasing a source instead of quoting it | Paraphrase is authorship | **Stands, narrowed.** *Paraphrase is authorship* was Law 2's reason and is gone. What remains is invariant 2: anything presented as a quote is validated as a literal substring, so a paraphrase dressed as a quotation is still a rejected extraction. Where nothing is presented as a quote, the row no longer reaches |
-| Any assertion in the child's voice | A character may ask, not tell | **Repealed as stated.** *A persona may ask, it may never assert* was Law 2's consequence and fell with it. Whether the child may now assert is step 7's open question; this row is not an answer to it, and must not be cited as one |
+| Any assertion in the child's voice | A character may ask, not tell | **Repealed as stated.** *A persona may ask, it may never assert* was Law 2's consequence and fell with it. **Answered 2026-08-12** by *The child speaks, and the arithmetic keeps the books* in [`../decisions.md`](../decisions.md): the child speaks from the model and everything it introduces is written down. This row is superseded rather than repealed a second time, and must not be cited as one |
 | The child speaking from what the model knows about the world | Invariant 3. It knows your source, and nothing else | **Repealed.** This row is the pivot itself: model knowledge is now the default source of the finding. Invariant 3 went with it, and it was **mechanically checkable and had a test** — whatever replaces it should be too, or the repo loses a check it will not notice losing |
 | Saying an explanation was unclear | No ground truth exists for that | **Stands.** The pivot supplies no ground truth for clarity and never claimed to |
 | Letting a clarity count change an understanding finding | The two are orthogonal, and mixing them lies | **Stands** |
@@ -303,7 +306,7 @@ decision — which is why the row below is marked drafted rather than filled in.
 | **Index** | A folder of documents | Chunks with stable ids and offsets | Deterministic |
 | **Transcribe** | Spoken audio | **Sentences**, plus the full text they are spans into | **Model**, outside the gate — but its per-engine adapter is deterministic and gated normally |
 | **Retrieve** | A set of concepts | Ranked passages from the user's folder | Deterministic |
-| **Extract** | The user's corrected explanation, **or a retrieved source passage** | The concepts named and the links asserted, with spans | **Model** |
+| **Extract** | The user's explanation, sentence by sentence — **corrected 2026-08-12: not "corrected", the correction step was reversed 2026-08-05** — or a retrieved source passage on the optional path | The concepts named and the links asserted, with spans | **Model** |
 | **Cohere** | The extracted graph, alone | Where the chain does not close | Deterministic |
 | **Compare** | Links extracted from the explanation, plus links extracted from the retrieved passages | The link present in the source and absent from the explanation | Deterministic |
 | **Supply** | *Drafted, not settled — see [`../specs/supply.md`](../specs/supply.md)* | *Drafted, not settled — see the spec* | **Model** |
