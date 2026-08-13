@@ -87,6 +87,68 @@ moment an explanation exists the number is frozen, whichever one it is. **The pi
 does not reopen this and does not settle it.** It is the owner's open decision from earlier the
 same day, and it stays open.
 
+## The false-question rate: four kill numbers and how to score it
+
+**Proposed by an agent on 2026-08-12 and accepted by the owner the same day.** Not owner-authored,
+and the distinction is kept because this file demands it two sections up. **Every number below was
+guessed blind, before a single explanation exists.** That is the legitimate direction — a threshold
+fixed before data. A number moved after seeing a result is the other thing, and nothing here
+licenses it.
+
+**What the rate is.** You write an explanation and mark every causal link in it by hand. Those marks
+are the truth, because you wrote it. Then Extract runs, then Cohere. Cohere raises **flags** —
+places where your chain does not close. A flag on something you *did* explain is a **false
+question**: the child asks you about a step you already covered.
+
+**Four kinds, so four numbers.** One combined figure hides a bad branch behind three good ones, or
+condemns three good branches for one bad one. [`../../docs/specs/cohere.md`](../../docs/specs/cohere.md)
+section 2 fixes the list, and changing that list changes what this measures.
+
+| Kind | What a false one costs you | Kill above |
+|---|---|---|
+| **rootless** — you named it and never said what makes it happen | one wasted round trip | **50%** |
+| **dangling** — you named it and never said what it does | one wasted round trip | **50%** |
+| **unlinkedPair** — two things linked to a third, never to each other | the child *guesses*, so it asserts; that is a plant and the ledger owes a closure on it | **25%** |
+| **conflict** — two of your links disagree | the child says you contradicted yourself, which is the closest this design comes to telling rather than asking | **10%** |
+
+**The ladder is the argument, not the digits.** They are ordered by what being wrong costs, not by
+how often each fires. And 50% rather than something stricter because
+[`../../docs/transcripts/`](../../docs/transcripts/) shows real children asking off-target questions
+constantly and reading as children rather than as broken machines. Below half, a dud reads like a
+child not following. Above half, the *typical* question is a dud and the child stops being a
+listener.
+
+**These numbers depend on one unruled thing.** `cohere.md` ruling 2 proposes that the two ends of a
+chain are not gaps. If termini stay flagged, every explanation starts with two false flags on
+`dangling` and `rootless` whatever Extract does, and 50% is unreachable by construction. **Rule 2
+first, or these four numbers mean nothing.**
+
+### How a flag is scored against a hand mark
+
+Mechanical, not by eye. A flag is **false** when a mark contradicts what it claims:
+
+- `rootless C` is false if any mark has **C as its effect** — something does cause it.
+- `dangling C` is false if any mark has **C as its cause** — it does do something.
+- `unlinkedPair A,B` is false if any mark links **A→B** or **B→A**.
+- `conflict` is false if both links are in your marks and they do not actually disagree.
+
+That leaves one question: is the flag's phrase the same concept as the mark's endpoint?
+
+**Do not answer it with Cohere's own matcher.** If you do, a matcher defect hides itself: Cohere
+fails to see that *the flapper lifting* and *the flapper lifts* are one thing, raises a flag, and a
+scorer using the same rule fails identically and calls the flag correct. **The score flatters the
+bug.**
+
+So score with a **more generous** matcher, and give every flag **three** outcomes rather than two:
+
+1. **True question** — no mark contradicts it.
+2. **False question** — a mark contradicts it under both matchers.
+3. **Matcher disagreement** — the generous matcher found the mark and Cohere's did not.
+
+**That third bucket is the whole cost of `cohere.md` ruling 6, made visible.** Large, and the shared
+stemmer is worth building properly. Near zero, and it can wait. With two buckets nobody would ever
+find out.
+
 ## The model floor moved, and the ceiling did not
 
 Also on 2026-08-07: the extraction model is no longer a 4B one. The stack table's *Qwen3.5 4B or

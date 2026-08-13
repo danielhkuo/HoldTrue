@@ -5,7 +5,8 @@
 > skeleton and its own header says so — it was written so the child could speak before Extract could
 > run, and it is not this spec's implementation.
 >
-> **Four rulings below change a signature and block the oracle: 1, 2, 3 and 5.**
+> **Four rulings below change a signature and block the oracle: 1, 2, 3 and 5.** Rulings 9 and 10
+> are settled, and 9 depends on 2 — the kill numbers are unreachable if termini stay flagged.
 >
 > This piece carries a kill number. The **false-question rate** is one of the falsification week's
 > three measurements, it scores Cohere's flags against hand-marked explanations, and it is reported
@@ -194,18 +195,28 @@ have their own rulings 1 to 8; cite the file name.**
    exists. Named here because a spec that stayed silent would let it land in Cohere by default.
    Changes no signature of Cohere's.
 
-9. **The per-predicate kill numbers do not exist.** **OPEN, and only the owner can close it.**
-   `features/feynman.md` requires the false-question rate to be reported per predicate, with each
-   predicate's kill number **written down before the run**. No such number is written anywhere, and no
-   document even names the predicate set — it exists only in the skeleton. Section 2's four kinds are
-   that list. Four numbers are owed before the week runs, and a number chosen after seeing the result
-   is not a kill number.
+9. **The four kill numbers.** **RULED 2026-08-12.** Proposed by an agent, accepted by the owner the
+    same day, and every one guessed blind before an explanation exists — which is the legitimate
+    direction, and the provenance is recorded rather than smoothed over. Ordered by what being wrong
+    costs, not by how often each fires: **rootless 50%, dangling 50%, unlinkedPair 25%, conflict
+    10%.** They live in
+    [`../../measurements/within-sentence/README.md`](../../measurements/within-sentence/README.md)
+    with their reasoning, and this file does not restate them. **They depend on ruling 2**: if the
+    two ends of a chain stay flagged, every explanation starts with two false flags whatever Extract
+    does, and 50% cannot be reached.
 
-10. **The gold join has no written rule.** **OPEN.** The measurement scores a Cohere flag against a
-    hand-marked link, and the gold format is prose: `measurements/within-sentence/` parses which list
-    a line is in and never reads the link text. So *did this flag hit that mark* is a human judgement
-    with nothing written down. It does not block building Cohere; it blocks trusting the number, which
-    is worse. Whoever writes the protocol owes a matching rule.
+10. **How a flag is scored against a hand mark.** **RULED 2026-08-12**, same provenance as ruling 9.
+    Mechanical rather than by eye: a flag is false when a mark contradicts what it claims — a
+    `rootless` on a concept your marks give a cause, a `dangling` on one your marks give an effect, an
+    `unlinkedPair` on two your marks join. The rule is written out in the measurement protocol.
+
+    **The part worth carrying here.** Scoring must **not** use Cohere's own matcher. If it does, a
+    matcher defect hides itself: Cohere fails to see *the flapper lifting* and *the flapper lifts* as
+    one thing, raises a flag, and a scorer using the same rule fails identically and calls the flag
+    correct — the score flatters the bug. So the scorer's matcher is deliberately more generous, and
+    every flag gets three outcomes rather than two: true question, false question, and **matcher
+    disagreement**. That third bucket is the entire cost of ruling 6 made visible, and it is how
+    anyone finds out whether the shared stemmer is worth building.
 
 ## 6. The oracle for `cohere`
 
