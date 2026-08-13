@@ -6,9 +6,11 @@ Windows and Linux must work for most features.
 **Status: Anchor is built** (`src/index/anchor.ts`, 30 tests, mutation score 100%) — still correct,
 still the right module the moment a quote is shown, but as of 2026-08-07 it is optional
 infrastructure rather than the shape everything a user reads is built from. See *Anchor format*
-below. **Corrected 2026-08-12:** `src/` now holds twelve files — `index/anchor.ts` plus `feynman/`'s
-extract, validate, normalise, cohere, tally, model, words, notice, voice and demo, with three test
-files. The rest is docs, a pre-commit hook, and three skills in `.claude/skills/`.
+below. **Corrected 2026-08-12:** `src/` now holds fourteen files — eleven modules and three test files.
+`index/anchor.ts`, plus `feynman/`'s extract, validate, normalise, cohere, tally, model, words,
+notice, voice and demo; `notice`, `voice` and `words` are retired by `child-speech.md` ruling 11 and
+not yet deleted, and `cohere` is a skeleton with no spec and no tests. The rest is docs, a
+pre-commit hook, and three skills in `.claude/skills/`.
 
 **Read this before anything else: on 2026-08-07 the notes-only constraint was repealed.** The old
 Law 2 — *every sentence traces to the user, to a quoted passage in their material, or to plain
@@ -55,8 +57,8 @@ these and split a third, and nothing was renumbered. Ten documents cite invarian
 `measurements/within-sentence/README.md`; `docs/workflow.md` — as do `src/index/anchor.ts`, its test
 file, `src/feynman/validate.ts`, `src/feynman/validate.test.ts`, `src/feynman/tally.ts`,
 `src/feynman/tally.test.ts`, `measurements/within-sentence/rate.mjs` (invariant 8 is its kill number),
-`.claude/skills/holdtrue-workflow/SKILL.md` and the wayfinder archive. **Five entries added
-2026-08-12** by running the grep below, which is what the next paragraph asks of every reader and
+`.claude/skills/holdtrue-workflow/SKILL.md` and the wayfinder archive. **Seven entries added
+2026-08-12**, in two passes, by running the grep below, which is what the next paragraph asks of every reader and
 what nobody had done since the roster was written.
 
 **That roster is the instrument, so keep it complete.** It exists so that whoever repeals, narrows

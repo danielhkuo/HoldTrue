@@ -170,8 +170,8 @@ it. No narrower version has been written.
 
 ~~**No score. No rating. No stored verdict. No shareable result.**~~ **AMENDED 2026-08-10, corrected
 here 2026-08-12.** Invariant 7 now admits exactly one score: the catch rate on planted errors, where
-the system knows what it planted. Everything else in this sentence still holds, and the forbidden
-rows below it were always right. A point-coverage readout was
+the system knows what it planted. Everything else in the struck sentence still holds, and the
+forbidden rows below it were always right. The original continued: a point-coverage readout was
 added on 2026-08-05 and removed the same day after a design panel declined it four ways out of
 four; see [`../decisions.md`](../decisions.md). *Do I need to study this again* remains
 unanswered, and the panel's view is that the contradiction check answers it better than an
@@ -441,7 +441,8 @@ pivot broke. Where the three actually stand:
   `explanations/` directory is empty, so not a word of it has been collected.
 - **The false-question rate — waiting on Extract.** It needs a *runnable* extractor and Cohere's
   set arithmetic over what that extractor returns, and it needs the hand-marked explanations from
-  the measurement above to run over. Anchor is the only piece this repo has built. What it does
+  the measurement above to run over. **Corrected 2026-08-12: Anchor is no longer the only piece
+  built** — `extract`, `validate`, `normalise` and `tally` ship too. What it does
   **not** need is Extract's finished eval set — a working extractor is enough — but a working
   extractor is a great deal more than a day of marking links with a pen.
 

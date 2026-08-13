@@ -43,7 +43,7 @@ Decided 2026-08-03. Feature doc: [`features/feynman.md`](features/feynman.md).
 |---|---|---|
 | **Voice in, not typing** | You do not type at a child sitting in front of you. The role-play is the product, and typing breaks it. That is the whole reason and it is enough. | Typing. Note this is **not** a claim that speech reveals more than writing — that is refuted in the evidence base (D'Mello et al. 2011, no learning difference) and may not appear in this product. The reason is fiction, not diagnosis. |
 | ~~**The child speaks only from your own words**~~ **REVERSED 2026-08-12** | Reversed by the row below, and the reasoning was never refuted — it was outbid. Two designs were built and run against the same explanation on 2026-08-12. The deterministic child produced a non-sequitur every fifth turn and cannot ask a question that points forward; the model-spoken child was better on every turn, and on turn 2 it named *fills up* and *empties*, which the speaker never said. That is the trade in one line: it reads well **because** it holds knowledge this row banned, and that same knowledge can ratify a belief you never held. What survives is the wish for a mechanically checkable rule — the check moves from before the child speaks to after it, and becomes a ledger rather than a guarantee. **The evidence is thin and is recorded as thin:** the non-sequitur comparison has no written protocol and no artifact in the repo. Original reasoning: The pivot repealed *a persona may ask, it may never assert* along with Law 2 and left the child's naivety undefined. This defines it: the child heard you and heard nothing else. Every sentence it says is built from Extract's link set by two deterministic pieces, so it calls no model and can be wrong only where you were. That also gives the repo back a mechanically checkable rule — *no child utterance names a concept absent from the transcript* — which is the shape of check invariant 3 took with it. Consequence: the child cannot deliver the review-phase finding, so step 7 keeps its register switch and now rests on Law 1 alone. | **Model knowledge in the child's voice**, which is more lifelike and puts a confident falsehood in the mouth of the one character the product is built around. Its cost is real and is not argued away: the best question in 18 generated transcripts — *then why does Grandma in Australia have Christmas on the beach?* — runs entirely on world knowledge and this child can never ask it. A child that knows only your words will also ratify your errors and never take it back. |
-| **The child speaks, and the arithmetic keeps the books** — decided 2026-08-12 | A model is handed the conversation so far plus the shapes Cohere found, as context and not as an instruction, and says one line as the child. A second pass runs Extract over that line and writes down every link it holds that your graph does not. The guarantee changes from *it cannot say that* to **it cannot say that without being written down**, which is weaker, honestly weaker, and is the guarantee Law 1 actually asks for — invariant 5 never demanded silence, it demanded that what gets opened gets closed. The part worth noticing is what it does to Supply: instead of finding gaps in an understanding with no ground truth, Supply is handed a list of specific propositions the child introduced and checks each one. Contract and rulings in [`specs/child-speech.md`](specs/child-speech.md). | **The deterministic child**, struck above, which cannot ask forward and reads like a form. **A vocabulary-level audit** — cheaper, no model call, and blind to a reversed chain or a negation built from your own words. Ruling 8 in the spec records that the two checks catch different failures rather than the same one at two depths, and it is open. |
+| **The child speaks, and the arithmetic keeps the books** — decided 2026-08-12 | A model is handed the conversation so far plus the shapes Cohere found, as context and not as an instruction, and says one line as the child. A second pass runs Extract over that line and writes down every link it holds that your graph does not. The guarantee changes from *it cannot say that* to **it cannot say that without being written down**, which is weaker, honestly weaker, and is the guarantee Law 1 actually asks for — invariant 5 never demanded silence, it demanded that what gets opened gets closed. The part worth noticing is what it does to Supply: instead of finding gaps in an understanding with no ground truth, Supply is handed a list of specific propositions the child introduced and checks each one. Contract and rulings in [`specs/child-speech.md`](specs/child-speech.md). | **The deterministic child**, struck above, which cannot ask forward and reads like a form. **A vocabulary-level audit** — cheaper, no model call, and blind to a reversed chain or a negation built from your own words. Ruling 8 in the spec records that the two checks catch different failures rather than the same one at two depths, and it was ruled the same day: both run. |
 | **The child may assert a guess, and every guess is written to a plant ledger** — decided 2026-08-10 | Being wrong is what forces the teacher to correct, and the evidence supports it: [`research/evidence-base.md`](research/evidence-base.md) carries Van Loon et al. 2015 via Metcalfe — hypercorrection occurs on refutation texts and not on texts that merely present correct information. The guess is deterministic, connecting two of your own unlinked concepts, so it needs no world knowledge. **The condition that rides with it:** the same file carries Butler & Roediger 2008, where selecting lures leads students to acquire false knowledge, so every plant must be disclosed and closed before the session ends. That makes the guess unshippable in a live-only release. | **Mirror only**, which is safer and gives up the correction dynamic. **Closing a plant once and retiring it** — refuted by the evolution transcript, where the adult corrected the error and the child reproduced it later. **Count corrected 2026-08-12:** this row said *six turns later*. Counted against [`transcripts/round-2.md`](transcripts/round-2.md), the adult corrects at the giraffe passage, and the child reproduces the teleology — *"Like fish decided to grow legs to walk on land?"* — **ten child turns later**, not six. The refutation is stronger than the row claimed, not weaker. |
 | **The catch score appears beside the finding** — decided 2026-08-10 | The owner's call, taken with the objection in front of him twice. What it buys is a number with real ground truth, which is the one thing the repo otherwise lacks: the system knows what it planted, so whether you caught it is checkable in a way no finding is. **The cost, recorded because the evidence gate has no other slot for it.** This is a decision taken *against* the evidence base rather than around it. [`research/evidence-base.md`](research/evidence-base.md) carries Shute 2008 summarising Wiliam 2007: grades alone produced no learning gains, comments alone produced large gains, and **grades with comments produced no gains** — with the line *a band beside a diagnosis destroys it*. It also amends [`philosophy.md`](philosophy.md)'s third consequence of Law 1, not only invariant 7, so it reaches every feature and not just this one. **Written into `philosophy.md` on 2026-08-10**, with the old text struck and kept visible, and into `AGENTS.md`'s invariant 7. The exception is scoped to a score carrying ground truth the diagnosis lacks, which today admits the catch rate and nothing else. | **A separate surface, never beside a finding**, which keeps the number and stays outside what Wiliam measured. **Engineering measurement only**, which repeals nothing. Both were offered and declined. |
 | ~~**The user corrects the transcript, and the child does the asking**~~ **REVERSED 2026-08-05** | Original reasoning: at 15–25% WER an uncorrected transcript means the user reads words they did not say and is told they are theirs, and Law 2's floor is *"a user reads their own words."* Reversed because it is friction in the one place the session should feel like talking. The reasoning was never refuted — the cost is accepted, not argued away. See the session-shape section below. | Still rejected: a second model reading audio for hesitation — refuted, see the feature doc. |
@@ -343,7 +343,7 @@ another turn, and the earlier one is marked superseded rather than deleted.
 hash identifies well, so the hash stops needing to change and `anchor.md` ruling C gets *more* true
 rather than being repealed. The alternative — keep the session `Doc` and make `doc_id` stable — also
 works for pure appends, since appending moves no earlier offset. It was rejected because it repeals
-ruling C on the only piece that is built and mutation-tested at 100%, and because it holds only
+ruling C on the only piece mutation-tested at 100%, and because it holds only
 while the transcript is append-only forever: rewrite one superseded span and every later offset
 moves at once.
 
@@ -419,13 +419,13 @@ knowledge now being specced in [`specs/`](specs/).
 marked as proposed. The owner rules on it; until he does, this list is what a piece cites and the
 proposal binds nothing.
 
-0. **The falsification week.** Three measurements, about a day each, no code — **corrected: it needs
-   `measurements/within-sentence/rate.mjs`, which exists.** It also clears two blockers rather than
-   one, added 2026-08-12: it is still the only measurement that can end the project, and it is the
-   gold set the Extract prompt work needs, since three prompt variants were compared that day and the
-   comparison was worthless because each agent built its own test set. The within-sentence
+0. **The falsification week.** Three measurements, about a day each: the within-sentence
    rate, the false-question rate, and vault eligibility. Kill numbers written down *before* any of
-   them run. Details in [`features/feynman.md`](features/feynman.md).
+   them run. **Two corrections, 2026-08-12.** It is not codeless —
+   `measurements/within-sentence/rate.mjs` exists. And it now clears two blockers rather than one: it
+   is still the only measurement that can end the project, **and** it is the gold set the Extract
+   prompt work needs, since three prompt variants were compared that day and the comparison was
+   worthless because each agent had built its own test set. Details in [`features/feynman.md`](features/feynman.md).
 1. **Anchor.** Everything produces or consumes anchors. *Done.*
 2. **Extraction harness plus ~100 labelled explanations.** No benchmark exists for the task
    (pulling named concepts and asserted causal links out of a learner's short explanation),
@@ -581,7 +581,11 @@ code-free, since it runs Extract and then Cohere by its own description.
 
 ## Open
 
-- **Which STT engine.** Voice is decided; the engine is not. Constrained by accuracy on
+- ~~**Which STT engine.**~~ **CLOSED 2026-08-12.** Issue 23 resolved it to whisper.cpp behind a
+  `whisper-server` sidecar; what stays open is the model size and whether a second sidecar is
+  acceptable. What that engine can and cannot say about its own errors is in
+  [`research/stt-signals.md`](research/stt-signals.md). The original entry read: Voice is decided;
+  the engine is not. Constrained by accuracy on
   thinking-aloud speech and by the absence of published fairness data on every local option.
   **A third constraint, added and then narrowed on 2026-08-10.** It was briefly written here as
   *the engine must emit punctuation*, because invariant 8 makes extraction per-sentence and
@@ -631,9 +635,10 @@ reason.
   subject when there is no corpus. #20 and #22 are marked *scoped to the optional RAG path* above
   for exactly this reason. What the default path decomposes into instead is unanswered, and nothing
   should be re-cut until it is.
-- **Anchor's role has changed.** `src/index/anchor.ts` — **corrected 2026-08-12: no longer the only
-  piece built.** `validate`, `normalise` and `tally` ship too. Anchor remains the only one at 30 tests,
-  mutation score 100% — was the foundation everything else read from. It becomes optional
+- **Anchor's role has changed.** `src/index/anchor.ts` — 30 tests, mutation score 100% — was the
+  foundation everything else read from. **Corrected 2026-08-12: it is no longer the only piece
+  built.** `extract`, `validate`, `normalise`, `cohere` and `tally` all ship; Anchor is the only one
+  at 100% mutation, and `cohere` is a skeleton with no spec and no tests. It becomes optional
   infrastructure for the RAG path and for any citation that still gets quoted. It is neither wasted
   nor deleted, and its status line should say what it is now for.
 - **Invariant 4 needs a new rationale or a repeal.** `confidence` as brake pressure was a

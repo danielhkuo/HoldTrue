@@ -1,7 +1,11 @@
 # Spec: Extract
 
-> **Status: draft, nothing built, 2026-08-10. Section 5 is ruled and the oracle is unblocked.**
-> Sections 1 to 5 written; 6 comes at the oracle step and 7 when the piece ships. All six rulings
+> **Status: half built, corrected 2026-08-12.** `validate` and `normalise` ship with 56 tests, and
+> `extract.ts` runs — against ruling 3, which it violates knowingly and says so. What is not built is
+> the harness and the ~100 labelled explanations, which is what build-order entry 2 actually is.
+> Sections 1 to 6 are written; section 6 is `validate`'s oracle and section 7 waits on the harness.
+> The line below said *nothing built* for two days after `validate` shipped, and said *six rulings*
+> where section 5 holds **eight** — 1, 2, 4, 5 and 6 open, 3, 7 and 8 ruled. All eight
 > were taken on 2026-08-10 under a delegated call — read section 5's preamble before treating any of
 > them as the owner's own.
 >
@@ -127,7 +131,11 @@ to a model-client module that does not exist yet — governs here too. This spec
   link and the corrected link, both. See ruling 5.
 - **No judgement about you.** Extract reports what was asserted, not whether it was true, clear or
   complete.
-- **No throwing.** One sentence failing costs that sentence. Only a model that cannot be reached at
+- **No throwing.** One sentence failing costs that sentence. **`unavailable` is overloaded and the
+  code is what diverges** — `extract.ts:81` also returns it for an empty input, reason *nothing to
+  read*, which the tally then logs as `unread`: a note saying the model could not read a turn it was
+  never asked to read. Recorded 2026-08-12; the two need separating. As specified, only a model that
+  cannot be reached at
   all produces `unavailable`.
 
 ## 4. Invariants that apply
@@ -269,7 +277,8 @@ a retraction and a genuine self-contradiction are the same event.
 ### 6. Does a failed sentence abort the extraction? OPEN.
 
 **Ruled 2026-08-10:** no. A sentence whose model call fails or returns junk contributes no links, increments
-`dropped`, and the rest continues. Only an unreachable model gives `unavailable`.
+`dropped`, and the rest continues. Only an unreachable model gives `unavailable` — as specified; see
+section 3 for how the code diverges.
 
 **Rejected: aborting the whole extraction**, which is Supply's behaviour and correct there — Supply
 failing means a gap was opened and cannot be closed, which Law 1 forbids. Extract opens nothing. A

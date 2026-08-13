@@ -207,8 +207,8 @@ against each other, they tie. We do not claim that people mistake part-names for
 understanding. That was tested and came out null. We do not claim that speaking reveals
 more than writing. There is no support for it. We do not claim that asking beats telling.
 The direct experiment is an underpowered null, so the honest statement is that nobody has
-shown it. We do not claim that our diagnosis is a measurement. It is not. ~~which is why
-there is no score~~ — **struck 2026-08-12.** Invariant 7 was amended on 2026-08-10 and one score
+shown it. We do not claim that our diagnosis is a measurement. It is not, ~~which is why
+there is no score~~ — **that last clause struck 2026-08-12.** Invariant 7 was amended on 2026-08-10 and one score
 now appears beside a finding: the catch rate on planted errors, which has the ground truth the
 diagnosis lacks. The amendment note below amends the paragraph after this one and left this clause
 standing, which is how a repealed claim goes on reading as live.
