@@ -402,6 +402,50 @@ Extract or Transcribe. The ruling stands; the sentence does not.
 what a unit is for extraction. The retrieval half is untouched, because retrieval has no subject on
 the default path.
 
+### Two models may talk; nothing they produce is a measurement — decided 2026-08-12
+
+**The proposal.** Run a model as the explainer against `speak` as the child, so a full session can be
+simulated without the owner writing an explanation by hand. Every test until now cost him one, which
+is a large part of why build-order entry 0 has never started.
+
+**Legal, and the ban is narrower than it looks.** `AGENTS.md`'s *no LLM judge* appears three times
+and all three are in a **scoring** context — *"No LLM judge: set comparison against gold."* It
+forbids a model grading output. It says nothing about a model producing input, and nothing rules on
+a synthetic corpus at all.
+
+**So it ships as a rig, not an instrument.** `npm run rig`. It emits engineering counts and nothing
+else: crashes, links per sentence, shapes by kind, ledger rows, repetition, silence, latency. **No
+rate, no precision figure, no score.**
+
+**The four kill numbers must never be run on it, and the reason is not squeamishness.** They were
+guessed blind and are **spent the first time they are used**. A model writing clean prose engineers
+out the condition that produces a false question — it has no misconceptions, no disfluency, no
+self-repair and no rambling — so the rate would fall for a reason that says nothing about Cohere, and
+the numbers would be gone.
+
+**Planting the gap is the one thing that yields ground truth**, and it is scoped to one column.
+Author a full causal chain, delete exactly one link, run the loop, and check whether the deleted step
+was flagged. That is not a judgement about anybody's understanding; it is *did it find the thing we
+removed*, which is checkable by machine. It is scored as **recall on the excised link, pass or fail
+per case**, and reported as an Extract-and-Cohere diagnostic. It is **not** the false-question rate
+and it is not the catch rate invariant 7 admits — nobody has ruled whether a deletion from generated
+prose is a "planted error" in that sentence's sense, and this row does not widen it.
+
+**The guard is structural, because the prose version has already failed.**
+[`transcripts/README.md`](transcripts/README.md) says its generated conversations are *"not a
+measurement"* — and this file then argued a constitutional reversal from *"the best question in 18
+generated transcripts"*, and corrected the plant ruling by counting turns in `round-2.md`. The
+disclaimer did not hold. So: **no figure from the rig or from a planted-gap run enters a tracked file
+until `measurements/within-sentence/explanations/` holds fifteen real ones**, and rig fixtures never
+enter Extract's eval set or that directory.
+
+**Undecided, and named rather than assumed.** Whether generated explanations may serve as the fixed
+set for Extract's paired regression — nobody has ruled who writes that set. Whether the
+disclose-and-close condition on a plant reaches plants the harness makes. And there is **no row in
+[`research/evidence-base.md`](research/evidence-base.md)** saying a two-model roleplay reproduces the
+Feynman condition; the nearest row, Roscoe & Chi's 87% knowledge-telling for audience-directed
+explanation, points the other way. The rig is a debugging tool and is defended as one.
+
 ## Build order
 
 **This is the single source.** Corrected 2026-08-06: it previously put the index before the
