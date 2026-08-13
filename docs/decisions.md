@@ -329,6 +329,79 @@ edits. That is a separate stable identifier, and it belongs to Index. Two docume
 byte-identical content will also share a `doc_id`; harmless for Anchor, since the text is the
 same either way, but Index must not assume `doc_id` is unique per path.
 
+### The `Doc` is the turn — decided 2026-08-12
+
+**What was broken.** `asDoc` hashed the whole transcript with a constant `unit_id: 'transcript'`, so
+any append re-hashed the document and every anchor minted before it failed `resolveAnchor`'s first
+gate. That is not a repeat problem, it is an append problem: it fires on every turn. `npm run demo`
+works only because it reads a finished file.
+
+**The decision.** Each turn the user speaks is its own `Doc`, immutable once said. A repeat is
+another turn, and the earlier one is marked superseded rather than deleted.
+
+**Why this shape and not a stable session id.** An immutable turn is exactly the thing a content
+hash identifies well, so the hash stops needing to change and `anchor.md` ruling C gets *more* true
+rather than being repealed. The alternative — keep the session `Doc` and make `doc_id` stable — also
+works for pure appends, since appending moves no earlier offset. It was rejected because it repeals
+ruling C on the only piece that is built and mutation-tested at 100%, and because it holds only
+while the transcript is append-only forever: rewrite one superseded span and every later offset
+moves at once.
+
+**`unit_id` is `${session}:${ordinal}`.** Minted, not derived. The session part is random at session
+start; the ordinal is stored with the turn and **never recomputed from a filtered list**. Rejected:
+deriving the id from the turn's text and its predecessors, which is reproducible and needs no
+storage — it loses on its seed, because a constant seed makes two sessions that open with the same
+sentences produce identical `unit_id` *and* identical `doc_id`, which is the silent cross-session
+wrong resolve the scheme existed to stop. A random seed is a mint, so the derived design becomes the
+minted one carrying an ordered transcript.
+
+**Superseded means marked, and every consumer names its own view.** The tally and Cohere read
+unsuperseded turns only; `speak` and the review phase see both hearings. Rejected: superseded means
+invisible everywhere, which is one correct default instead of a rule each consumer must remember —
+and that objection is real, recorded here rather than argued away.
+
+**What it costs, found by a thirteen-agent sweep and listed because none of it is obvious.**
+
+- **A superseded turn keeps resolving.** Its `Doc` is immutable, so every link minted on it resolves
+  perfectly. Nothing in `src/` filters by supersession, so the graph holds a claim you retracted,
+  the child's re-introduction of it goes unrecorded, and Cohere and the child quote the withdrawn
+  words back verbatim and correctly. **Silent, and the Law 1 direction.**
+- **The child's line goes through `asDoc` too.** With a turn-ordinal `unit_id`, your *"okay"* and
+  the child's *"okay"* in the same round hash identically and carry identical units, so an anchor
+  minted on the child's line resolves against your turn. **Nobody has decided whether the child's
+  line is a `Doc` in the same namespace**, and until somebody does this recreates ruling C's hole one
+  level up.
+- **The misheard turn is never superseded, by construction.** `child-speech.md` ruling 18 says the
+  gate catches unintelligible turns and cannot catch misheard ones, so every supersede filter runs
+  straight past *flopper*. Immutable-once-said also removes in-place repair, so the only route back
+  is a repeat you must first notice. **This is the deepest cost of the decision and it was not
+  visible before the sweep.**
+- **Cross-turn state has no supersede story.** The only state crossing turns keys off concepts, so a
+  question retired by a withdrawn turn stays retired, and a `gotIt` can fire saying you answered
+  something you unsaid. The current holder is retired by `child-speech.md` ruling 11, but its
+  successor inherits the problem.
+- **There is nowhere to put the mark.** `Turn` holds text by value with no id and no anchor, and
+  `src/` performs no writes of any kind. Supersession has no home until something persists.
+- **`asDoc(text)` gains the id**, and `extract` threads it. `src/index/anchor.ts` changes nowhere,
+  which is the point. Note that `demo.ts` never calls `extract` — it calls `asDoc`, `cutSentences`
+  and `validate` itself, so threading the id through `extract` alone leaves the only runnable entry
+  point unconverted.
+
+**Two defects this surfaced, both recorded rather than fixed here.** `validate.ts`'s synthetic `Doc`
+pads with spaces, so a turn beginning with a tab or newline produces padding of the right length and
+the wrong bytes and the `Doc` still lies about its own hash; the real healing condition is one
+sentence, leading whitespace all spaces, no trailing whitespace. And `extract` returns
+`unavailable: 'nothing to read'` for an empty turn, which the tally logs as `unread` — a note saying
+the model could not read the turn when the model was never asked.
+
+**`anchor.md` ruling A has one stale clause.** It says the `unit_id` decision *"lands in Index, which
+mints them."* Index is off the default path and the mint site is `extract.ts`, so minting moves to
+Extract or Transcribe. The ruling stands; the sentence does not.
+
+**Issue [#21](https://github.com/danielhkuo/HoldTrue/issues/21) is halved, not closed.** This answers
+what a unit is for extraction. The retrieval half is untouched, because retrieval has no subject on
+the default path.
+
 ## Build order
 
 **This is the single source.** Corrected 2026-08-06: it previously put the index before the

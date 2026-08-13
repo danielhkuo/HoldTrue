@@ -134,6 +134,13 @@ this piece and never did: the round-trip property holds for any stable string, s
 and compares `unit_id` without ever interpreting it. Whatever #21 decides, no change is needed
 here — the decision lands in Index, which mints them.
 
+**One clause of that went stale on 2026-08-12, and the ruling did not.** *The Doc is the turn* in
+[`../decisions.md`](../decisions.md) makes `unit_id` a per-turn identifier minted in the live phase,
+and Index is off the default path since the 2026-08-07 pivot. So the minting moves to Extract or to
+Transcribe, not to Index. Everything else in this ruling holds exactly as written: `unit_id` is
+still opaque here, still compared and never interpreted, and **no line of `anchor.ts` changes** —
+which is what made a turn-shaped `Doc` affordable at all.
+
 **B. Resolution strategy — DECIDED 2026-08-05: exact offsets only.**
 
 `resolveAnchor` checks `text.slice(char_start, char_end) === quote`. Anything else is `null`.

@@ -491,13 +491,24 @@ stays open until `decisions.md` closes it.
     no parameter is needed, and **logs its counts on every turn** so the falsification week can set
     a bar from real material.
 
-    **OPEN, and it blocks the turn semantics rather than the gate.** When you say it again, the
-    repeat is appended and the first attempt marked superseded — nothing is deleted, and the
-    transcript handed to the tally and the link set handed to Cohere are assembled from unsuperseded
-    turns only. **That cannot be built yet.** `asDoc` hashes the whole transcript with
-    `unit_id: 'transcript'`, so appending re-hashes and nulls every anchor in the session. Somebody
-    has to decide whether the `Doc` is the turn rather than the session before an append is
-    possible. Until then the gate can ask, and nothing can record the answer.
+    **The turn semantics were blocked and are not any more.**
+    [`../decisions.md`](../decisions.md)'s *The `Doc` is the turn*, decided 2026-08-12, makes each
+    turn its own immutable document, so an append costs nothing and superseding is a mark rather
+    than a rewrite. The tally's transcript and Cohere's link set read unsuperseded turns only;
+    `speak` and the review phase see both hearings. That row carries the edge cases, and three of
+    them bear on this ruling directly.
+
+    **A superseded turn keeps resolving**, because its document is immutable. Nothing filters by
+    supersession yet, so the withdrawn claim stays in your graph and the child re-introducing it
+    goes unrecorded — silent, and the Law 1 direction.
+
+    **Nobody has decided whether the child's line is a document in the same namespace.** Extract runs
+    over it, so with a turn-ordinal `unit_id` your *"okay"* and the child's *"okay"* collide.
+
+    **And the deepest one, which is this ruling's own limit restated as a cost.** A misheard turn is
+    never superseded, because the gate cannot see it. So every supersede filter runs past *flopper*,
+    and an immutable turn cannot be repaired in place — the only route back is a repeat you have to
+    notice first.
 
     Rejected: **letting the speaking model decide**, which reads meaning where the gate reads only
     noise and papers over garbage. **An out-of-vocabulary trigger**, above. **And discarding the
