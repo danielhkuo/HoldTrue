@@ -1,8 +1,15 @@
 # Spec: the child's speech
 
-> **Status: specced, not built. 2026-08-12.** Sections 1–5 are written; section 6 is written at the
-> red-team step and section 7 in the same pass. **Every ruling in section 5 is settled**, and the
-> two pieces are `speak` and `tallyIntroduced`.
+> **Status: half built, 2026-08-12.** `tallyIntroduced` and `turn` ship — 41 tests, mutation 96.67%,
+> five survivors dismissed with reasons in section 6. **`speak` is not built**: no code, no prompt,
+> no eval. Every ruling in section 5 is settled. Section 7 says what the piece hands on.
+>
+> **What the loop cost, recorded because it is the argument for running it.** The red team wrote four
+> implementations that passed all fourteen tests and broke the piece; ten holes, none dismissed, two
+> of them defects in the oracle rather than gaps in it. Mutation found that nothing tested the
+> stemmer, which is ruling 14's whole mechanism. The review found the tally comparing against the
+> graph where this spec says transcript, so a sentence Extract found no link in charged you for your
+> own words. **None of those was visible from a green suite.**
 >
 > **Who ruled what.** Rulings 7 to 11, 13 and oracle example 1 are the owner's. Rulings 4, 12
 > and 14 to 17, and the rest of section 6, were ruled by an agent on 2026-08-12 after he
@@ -716,6 +723,56 @@ is a bug report rather than a score:
 guard.** Every guard the runs touched turned out to be load-bearing, which is itself worth knowing:
 the file has no dead defensive code in it.
 
-## 7. What is not closed
+## 7. What this piece hands on
 
-Written when the piece ships.
+**`tallyIntroduced` and `turn` are built.** 41 tests, mutation 96.67%, five survivors dismissed with
+reasons in the mutation record above. **`speak` is not built** — the model half has no code, no
+prompt and no eval, and the eval branch it takes is where that belongs.
+
+Each item below is a ticket on the feature's map, not a paragraph for the next reader to find.
+
+**To whoever builds `speak`.**
+
+1. **`say` still lives in `voice.ts`.** It moves to `speak.ts` when `voice.ts` is deleted, and the
+   five comments citing this file's ruling 6 move with it or they point at nothing.
+2. **`notice.ts`, `voice.ts` and `words.ts` are retired by ruling 11 and not yet deleted**, because
+   `demo.ts` still runs on them. Deleting them is part of building `speak`, not a separate tidy.
+3. **`Spoken` gains `{ kind: 'resay' }`** under ruling 18, and the gate that produces it runs
+   *before* `speak` is called.
+
+**To Cohere.**
+
+4. **Take the stemmer.** It is private to `tally.ts` today, and `conceptOf` has the same defect it
+   fixes: *lifts* and *lifting* are two nodes in your own graph. When Cohere adopts it, it becomes a
+   shared module with its own oracle, which nobody has written.
+
+**To Session.**
+
+5. **The ledger row is yours** — its columns, its persistence and its `closed` predicate. Ruling 10.
+6. **The response pairing is yours.** Ruling 17: mark a row engaged when the concept it waits on
+   appears in the links of the next thing you say. Engaged never means closed.
+7. **Supersession filtering is yours, and nothing does it today.** A superseded turn's links still
+   resolve, so the graph holds claims you retracted. `decisions.md`'s *The `Doc` is the turn* carries
+   the full list.
+
+**To Extract.**
+
+8. **`unavailable` is overloaded.** An empty turn returns `unavailable: 'nothing to read'`, and the
+   tally logs that as `unread` — a note saying the model could not read a turn it was never asked to
+   read. The two need separating.
+9. **`asDoc` needs the turn id**, and `demo.ts` bypasses `extract` entirely, so threading it through
+   `extract` alone leaves the only runnable entry point unconverted.
+
+**Undecided, and each blocks something.**
+
+10. **Is the child's line a `Doc` in the same namespace as yours?** Extract runs over both. With a
+    turn-ordinal `unit_id` your *"okay"* and the child's *"okay"* collide, which is `anchor.md`
+    ruling C's hole one level up.
+11. **Nobody has read `whisper-server`'s `/inference` response body**, so ruling 18's gate does not
+    know whether its signals exist on the route this app uses.
+12. **Ruling 14's subset match is the loosest thing here** and the first place to look when the
+    ledger is wrong. It over-matches, which under-reports, which is the Law 1 direction.
+
+**What nothing measures.** Whether an item the tally writes down is one worth closing. That is
+Supply's judgement and `decisions.md` records the decision to ship it unmeasured. This piece adds
+no measurement and claims none.

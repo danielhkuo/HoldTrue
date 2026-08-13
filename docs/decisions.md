@@ -434,13 +434,15 @@ proposal binds nothing.
    Anchor already resolves spans into arbitrary text, so it can be hand-labelled against pasted
    explanations. Believing otherwise is what put it behind the index in the first place.
 3. **Index, then Retrieve with the abstain in front of it.**
-4. **Feynman.** Cohere, then **Speak** and **Audit**, then Compare, Contradict, then Session and
+4. **Feynman.** Cohere, then **Speak** and **Tally**, then Compare, Contradict, then Session and
    Interface. **Renamed and re-cut 2026-08-12**: they were Notice and Voice, and both were
    deterministic. Speak calls a model, so it is this feature's one model-dependent piece and takes
-   the eval branch. Audit is set arithmetic over what Extract made of the child's line, so it needs
-   no model of its own and is testable against a hand-written result, the same way Anchor was. They
-   sit here rather than earlier because Speak is handed Cohere's shapes, not because anything else
-   waits on them. Specced together in [`specs/child-speech.md`](specs/child-speech.md).
+   the eval branch. Tally is set arithmetic over what Extract made of the child's line, so it needs
+   no model of its own and is testable against a hand-written result, the same way Anchor was.
+   **`tallyIntroduced` is built** — 41 tests, mutation 96.67% — and **`speak` is not started.**
+   Specced together in [`specs/child-speech.md`](specs/child-speech.md), whose section 7 lists what
+   the built half hands on. The name was `Audit` for part of the day; it misled its own owner into
+   reading it as a fact-checker, and ruling 13 records the rename.
 5. Everything else.
 
 ### Proposed re-cut — PROPOSED 2026-08-07, NOT DECIDED

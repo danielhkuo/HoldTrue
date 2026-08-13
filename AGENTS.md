@@ -51,8 +51,8 @@ these and split a third, and nothing was renumbered. Ten documents cite invarian
 `docs/decisions.md`; `docs/features/feynman.md`; `docs/philosophy.md`; `docs/specs/anchor.md`;
 `docs/specs/extract.md`; `docs/specs/child-speech.md`; `docs/research/extraction-benchmarks.md`;
 `measurements/within-sentence/README.md`; `docs/workflow.md` — as do `src/index/anchor.ts`, its test
-file, `src/feynman/validate.ts`, `src/feynman/validate.test.ts`,
-`measurements/within-sentence/rate.mjs` (invariant 8 is its kill number),
+file, `src/feynman/validate.ts`, `src/feynman/validate.test.ts`, `src/feynman/tally.ts`,
+`src/feynman/tally.test.ts`, `measurements/within-sentence/rate.mjs` (invariant 8 is its kill number),
 `.claude/skills/holdtrue-workflow/SKILL.md` and the wayfinder archive. **Five entries added
 2026-08-12** by running the grep below, which is what the next paragraph asks of every reader and
 what nobody had done since the roster was written.

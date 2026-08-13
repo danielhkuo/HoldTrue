@@ -1,5 +1,23 @@
 # Spec: Supply
 
+> ## ⚠ Read this before citing anything below — banner added 2026-08-12
+>
+> **This file is trusted more than it deserves.** It is the heaviest invariant-citing document in the
+> repo and it quotes every invariant it uses in full, which makes it read as the most careful spec
+> here. It was written against a repo that no longer exists.
+>
+> - **Its types are superseded.** `Link`, `ModelHandle` and `Attribution` were guesses made before
+>   the real ones existed. The built types are in `src/feynman/validate.ts`, `src/feynman/model.ts`
+>   and [`extract.md`](extract.md). Where this file and the code disagree, the code is right.
+> - **Its invariant 7 is quoted in its pre-amendment form**, from before 2026-08-10. That is exactly
+>   the failure quoting-in-full is supposed to prevent, and it happened here.
+> - **What Supply is for got smaller on 2026-08-12.** It no longer hunts gaps in an understanding
+>   with no ground truth. It is handed the specific propositions the child introduced — see
+>   [`child-speech.md`](child-speech.md) — and checks each one. Its ten open rulings were written
+>   against the larger job.
+>
+> Its reasoning is kept rather than deleted, because none of it was refuted. It was overtaken.
+>
 > **Status: draft, nothing built, 2026-08-07.** Written the same evening the model-knowledge pivot
 > landed, to fill the hole [`../features/feynman.md`](../features/feynman.md) had left when its model
 > surface read *"Extract, Contradict, and at least one unnamed piece that carries the whole authority
