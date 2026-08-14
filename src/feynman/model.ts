@@ -72,9 +72,14 @@ export const ollama = (model?: string): ModelHandle => {
             model: name,
             stream: false,
             think: false,
-            // Every call, the child's included. Decided 2026-08-12 rather than inherited: a probe
-            // held the prompt fixed and returned byte-identical lines three times out of three at
-            // 0, and three distinct lines at 0.8. Determinism is being bought and is worth it.
+            // Every call, the child's included — see the row in docs/decisions.md.
+            //
+            // **It does not buy byte-determinism on this runner, and an earlier comment here said
+            // it did.** Re-probed 2026-08-12 across sessions: turns 1-4 matched byte for byte and
+            // turns 5-6 did not, and a three-sample repeat gave two identical lines and one
+            // different. Note also that this model ships its own defaults — temperature 1, top_k 64,
+            // top_p 0.95 — and the block below overrides only temperature, so a truncation sampler
+            // stays configured and inert at 0.
             options: { temperature: 0 },
             // Only when the caller asks. `validate` still takes `unknown` and never throws,
             // because a backend that ignores the schema is the case we actually have.

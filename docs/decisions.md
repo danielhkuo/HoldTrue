@@ -446,6 +446,52 @@ disclose-and-close condition on a plant reaches plants the harness makes. And th
 Feynman condition; the nearest row, Roscoe & Chi's 87% knowledge-telling for audience-directed
 explanation, points the other way. The rig is a debugging tool and is defended as one.
 
+### The child's prompt is examples, and temperature stays 0 — decided 2026-08-12
+
+**Two rows, because a council found the second was never written down at all.** A grep for
+*temperature* across `docs/` returned no ruling: it existed only as a comment in `model.ts`, which
+also stated a reopening condition no reader would ever find. That is now here.
+
+**The prompt is five worked examples, not a description of a voice.** The first version described the
+child in rules and quoted the openers it wanted — *wait*, *ohhh*, *how come*, *whoa*. A six-turn rig
+run returned six lines opening *ohhh*, every one a confirmation the adult could answer with *yeah
+exactly*, so the child never made anybody explain more.
+
+**The obvious fix was tested and failed, which is why this row exists.** Deleting the quoted openers
+took *ohhh* to zero and the collapse moved: *So* then opened four of six and the lines stayed
+confirmations. Feeding the child its own recent openers back as a fact did nothing. Forbidding
+*ohhh* moved the token to *whoa*. **Naming the openers was not the cause.** *Sound like a child* is —
+it hands the model a label and lets it fill the label from its own prior, and a prior cannot be
+deleted, only outweighed by a sample. Rejected: rules with a computed forbidden list, which is
+cheaper and which an ablation showed re-collapses.
+
+**The examples come from [`transcripts/`](transcripts/), where the distribution was already on
+disk.** 275 real child lines: *oh\** opens 8% of them and the deployed child ran at 100%. They sit on
+foreign topics so a copied surface is visibly off-topic, and they disagree structurally so there is
+no shared frame to induct.
+
+**What examples did not fix.** They buy the move, not the variation. At temperature 0 the strongest
+exemplar in the prompt is the child's own previous lines, and those compound. A rotating bank of a
+dozen dealt by turn index is the named remedy and is not built.
+
+**Temperature stays 0 on every call, the child included** — but **not for the reason first given.** A
+comment claimed a probe showed byte-identical output three times of three. Re-probed across sessions
+it did not hold: turns 1-4 matched and turns 5-6 did not, and a three-sample repeat gave two
+identical lines and one different. **This runner is not byte-deterministic at 0**, so determinism is
+not what 0 is buying. It stays because nothing has shown a per-call temperature buys fluency the
+prompt cannot, and the prompt just bought a great deal. Note also that the model ships its own
+defaults — temperature 1, `top_k` 64, `top_p` 0.95 — and the request overrides only temperature.
+
+**One model, not two.** Rejected: a small fast model for the child and the large one for Extract.
+`phi4-mini` on the shipped prompt returned *"Whee! Brake works slow bike down. Hot too. Cool?
+Okay."* — four sentences, the one-line rule broken, and no child in it; on the few-shot prompt it
+answered in 50-word paragraphs. **Examples do not buy a smaller model.** The 30-to-50-second turn
+stays, and it is a real cost against a live phase this repo calls cheap.
+
+**A correction to the row above.** *The local floor is the best model the machine can run* estimates
+about 20 GB resident for a 27-32B class model. Measured on this machine, `muse-glimmer:30b-mlx` is
+**about 27 GB** resident. The class is unchanged; the memory figure was optimistic.
+
 ## Build order
 
 **This is the single source.** Corrected 2026-08-06: it previously put the index before the
