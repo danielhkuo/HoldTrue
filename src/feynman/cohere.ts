@@ -16,8 +16,7 @@
  * as evidence about this module — there is nothing in the suite that touches it.
  */
 
-import type { Extraction } from './extract.js'
-import type { Link } from './validate.js'
+import type { Link, Sentence } from './validate.js'
 import { normalise } from './normalise.js'
 import { stem, TOKEN } from './stem.js'
 
@@ -28,11 +27,25 @@ import { stem, TOKEN } from './stem.js'
 export const conceptOf = (text: string): string => normalise(text).text.toLowerCase().trim()
 
 /**
- * A concept, as COMPARED. cohere.md ruling 6: stem every word, so *lifts* and *lifting* are one
- * node in your own graph rather than two. Composed over `conceptOf` rather than folded into it,
- * which is the same arrangement `tally` already uses — the key is stemmed, the value never is.
+ * Words that name nothing. Stripped from the comparison key so that *the yeast* and *that yeast*
+ * are one node, which is the case an eight-turn rig run actually produced.
  */
-const key = (text: string): string => (conceptOf(text).match(TOKEN) ?? []).map(stem).join(' ')
+const DETERMINER: ReadonlySet<string> = new Set(
+  'a an the this that these those my your his her its our their some any each every'.split(' '),
+)
+
+/**
+ * A concept, as COMPARED. cohere.md ruling 6 stems every word; ruling 11 then drops determiners,
+ * because *the yeast* against *that yeast* was leaving the graph in disconnected pairs.
+ *
+ * **This stays an equivalence relation, and that is the whole constraint.** Ruling 11: no
+ * non-transitive test — subset, overlap, similarity — may key `causes`, `effects`, `byEffect`,
+ * `linked` or `termini`. Those decide which nodes ARE the same node, and a non-transitive rule
+ * used there merges A with B and B with C while leaving A and C apart, which manufactures a chain
+ * the speaker never stated. A loose rule may suppress a shape. It may never form one.
+ */
+const key = (text: string): string =>
+  (conceptOf(text).match(TOKEN) ?? []).map(stem).filter(w => !DETERMINER.has(w)).join(' ')
 
 export type Shape =
   /** You named it and never said what it does. Ruling 2 excludes the chain's own last effect. */
@@ -96,8 +109,19 @@ const byConcept = (
   return [...seen.values()].map(v => [v.quote, v.from] as const)
 }
 
-export function cohere(extraction: Extraction): readonly Shape[] {
-  const { links } = extraction
+/**
+ * Takes the links and the sentences, never an `Extraction`.
+ *
+ * An `Extraction` carries one `doc`, and `decisions.md`'s *The `Doc` is the turn* makes each turn
+ * its own document — so a graph spanning several turns cannot be expressed as one. Both callers
+ * that tried invented a different wrong `doc`, and one of them produced anchors that resolved
+ * against the wrong sentence rather than failing. Found by review, 2026-08-12; this corrects
+ * cohere.md ruling 1, which asked for the whole `Extraction`.
+ *
+ * `sentences` is unread until the connective mute lands. It is in the signature because the mute
+ * is a rule about sentences that yielded no link, and a link list cannot see one.
+ */
+export function cohere(links: readonly Link[], _sentences: readonly Sentence[]): readonly Shape[] {
   const shapes: Shape[] = []
   const { heads, tails } = termini(links)
 

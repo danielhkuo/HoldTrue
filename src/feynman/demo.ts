@@ -17,24 +17,12 @@
  */
 
 import { readFileSync } from 'node:fs'
-import { asDoc, cutSentences, type ExtractResult } from './extract.js'
+import { asDoc, cutSentences, SYSTEM, LINK_SCHEMA, type ExtractResult } from './extract.js'
 import { validate, type Link } from './validate.js'
 import { ollama } from './model.js'
 import { cohere } from './cohere.js'
 import { speak } from './speak.js'
 import { tallyIntroduced, turn, type Introduced, type Turn } from './tally.js'
-
-const EXTRACT_SYSTEM = `You find cause-and-effect links inside ONE sentence a person said out loud while explaining how something works.
-
-RULES:
-1. Copy the EXACT words from the sentence. Never reword, shorten, correct or tidy anything. Your words must appear character for character in the sentence.
-2. Copy whole words. Never start or end in the middle of a word.
-3. If a phrase appears more than once in the sentence, copy enough surrounding words to make it unique.
-4. relation is one of: causes, enables, prevents, requires.
-5. Find every link in the sentence. Missing one is worse than being unsure.
-6. If the sentence states no cause and effect, return an empty list.
-
-Answer with JSON: {"links":[{"cause":"...","effect":"...","relation":"..."}]}`
 
 const DEFAULT = [
   'when you push the handle down that pulls the chain and the chain lifts the flapper.',
@@ -62,7 +50,7 @@ const read = async (line: string): Promise<{ result: ExtractResult; links: reado
   if (cut.length === 0) {
     return { result: { kind: 'unavailable', reason: 'nothing to read' }, links: [], dropped: 0 }
   }
-  const answered = await Promise.all(cut.map(s => model.ask(EXTRACT_SYSTEM, s.anchor.quote)))
+  const answered = await Promise.all(cut.map(s => model.ask(SYSTEM, s.anchor.quote, LINK_SCHEMA)))
   if (answered.every(a => a === null)) {
     return { result: { kind: 'unavailable', reason: 'no answer from the model' }, links: [], dropped: 0 }
   }
@@ -89,7 +77,11 @@ for (const [i, sentence] of yourSentences.entries()) {
   const mine = await read(you)
   graph.push(...mine.links)
 
-  const shapes = cohere({ doc: spoken, links: graph, sentences: yourSentences })
+  // Links from every turn so far, and only the sentences actually spoken so far. It used to
+  // hand Cohere a `doc` of the whole explanation beside links minted per sentence, so an anchor
+  // from sentence 2 resolved against sentence 1 rather than failing — an aliased resolve, which
+  // is worse than a null. Found by review, 2026-08-12.
+  const shapes = cohere(graph, yourSentences.slice(0, i + 1))
   const said = await speak(history, you, shapes, model)
 
   const transcript = yourSentences

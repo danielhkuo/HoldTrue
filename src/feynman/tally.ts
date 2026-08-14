@@ -21,6 +21,7 @@
  */
 
 import { conceptOf } from './cohere.js'
+import { stem, TOKEN } from './stem.js'
 import type { ExtractResult } from './extract.js'
 import type { Link, Relation } from './validate.js'
 
@@ -48,8 +49,6 @@ export type Spoken =
   | { readonly kind: 'said'; readonly line: string }
   | { readonly kind: 'silent'; readonly reason: string }
 
-/** A run of word characters, the same class normalise.ts segments on. */
-const TOKEN = /[\p{L}\p{M}\p{N}'’]+/gu
 
 /**
  * Words that carry no content, so a line built out of them introduces nothing.
@@ -84,25 +83,11 @@ const STOP: ReadonlySet<string> = new Set(
 )
 
 /**
- * child-speech.md ruling 14's suffix stripper, private to this file until Cohere adopts it — a shared module
- * owned by neither piece needs its own oracle and nobody has written it. Plural *-s* and
- * *-es*, verb *-ing* and *-ed*, and nothing else: every step past inflection is a judgement
- * about meaning, and a judgement about meaning is what this piece may not make.
- *
- * Two passes, plural then verb, so *things* and *thing* strip to the same root. One pass with
- * an early return gives them two, and a stemmer that disagrees with itself under-reports in
- * silence.
+ * child-speech.md ruling 14's suffix stripper now lives in `stem.ts`, shared with Cohere, which
+ * needs the same answer to the same question. It was private here until 2026-08-12 and a second
+ * copy briefly existed in Cohere; two copies of one rule drift, and a stemmer that disagrees with
+ * itself under-reports in silence.
  */
-const stem = (word: string): string => {
-  let root = word
-  if (root.length > 4 && root.endsWith('ies')) root = `${root.slice(0, -3)}y`
-  else if (root.length > 4 && /(?:s|x|z|ch|sh)es$/.test(root)) root = root.slice(0, -2)
-  else if (root.length > 3 && root.endsWith('s') && !root.endsWith('ss')) root = root.slice(0, -1)
-
-  if (root.length > 4 && root.endsWith('ing')) root = root.slice(0, -3)
-  else if (root.length > 4 && root.endsWith('ed')) root = root.slice(0, -2)
-  return root
-}
 
 /**
  * A phrase as its stemmed words. `conceptOf` is the comparison key the rest of the codebase

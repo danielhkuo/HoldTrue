@@ -25,7 +25,7 @@ import type { ModelHandle } from './model.js'
  * twice. Rule 5 pushes recall because the measured failure mode at this model size is
  * silence — 35.70% missing relations against 0.31% false positives.
  */
-const SYSTEM = `You find cause-and-effect links inside ONE sentence a person said out loud while explaining how something works.
+export const SYSTEM = `You find cause-and-effect links inside ONE sentence a person said out loud while explaining how something works.
 
 RULES:
 1. Copy the EXACT words from the sentence. Never reword, shorten, correct or tidy anything. Your words must appear character for character in the sentence.
@@ -36,6 +36,30 @@ RULES:
 6. If the sentence states no cause and effect, return an empty list.
 
 Answer with JSON: {"links":[{"cause":"...","effect":"...","relation":"..."}]}`
+
+/**
+ * The shape the extraction prompt above promises. Exported beside the prompt it restates, because
+ * the two are one fact: change the JSON line in the prompt and this must change with it. It lived
+ * in `model.ts` until 2026-08-12, where it was applied to every call including the child's.
+ */
+export const LINK_SCHEMA = {
+  type: 'object',
+  properties: {
+    links: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          cause: { type: 'string' },
+          effect: { type: 'string' },
+          relation: { type: 'string', enum: ['causes', 'enables', 'prevents', 'requires'] },
+        },
+        required: ['cause', 'effect', 'relation'],
+      },
+    },
+  },
+  required: ['links'],
+} as const
 
 export type Extraction = {
   readonly doc: Doc
@@ -80,7 +104,7 @@ export async function extract(text: string, model: ModelHandle): Promise<Extract
   const cut = cutSentences(doc)
   if (cut.length === 0) return { kind: 'unavailable', reason: 'nothing to read' }
 
-  const answered = await Promise.all(cut.map(s => model.ask(SYSTEM, s.anchor.quote)))
+  const answered = await Promise.all(cut.map(s => model.ask(SYSTEM, s.anchor.quote, LINK_SCHEMA)))
   if (answered.every(a => a === null)) {
     return { kind: 'unavailable', reason: `no answer from the model at ${(await model.identify()).runtime}` }
   }

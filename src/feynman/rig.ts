@@ -29,24 +29,12 @@
  * Decided 2026-08-12 by a council; the row is in `docs/decisions.md`.
  */
 
-import { asDoc, cutSentences, type ExtractResult } from './extract.js'
-import { validate, type Link } from './validate.js'
+import { asDoc, cutSentences, SYSTEM, LINK_SCHEMA, type ExtractResult } from './extract.js'
+import { validate, type Link, type Sentence } from './validate.js'
 import { ollama, type ModelHandle } from './model.js'
 import { cohere, type Shape } from './cohere.js'
 import { speak } from './speak.js'
 import { tallyIntroduced, turn, type Introduced, type Turn } from './tally.js'
-
-const EXTRACT_SYSTEM = `You find cause-and-effect links inside ONE sentence a person said out loud while explaining how something works.
-
-RULES:
-1. Copy the EXACT words from the sentence. Never reword, shorten, correct or tidy anything. Your words must appear character for character in the sentence.
-2. Copy whole words. Never start or end in the middle of a word.
-3. If a phrase appears more than once in the sentence, copy enough surrounding words to make it unique.
-4. relation is one of: causes, enables, prevents, requires.
-5. Find every link in the sentence. Missing one is worse than being unsure.
-6. If the sentence states no cause and effect, return an empty list.
-
-Answer with JSON: {"links":[{"cause":"...","effect":"...","relation":"..."}]}`
 
 /**
  * The explainer. Deliberately NOT told to hesitate, ramble or make mistakes.
@@ -78,7 +66,7 @@ const read = async (line: string): Promise<{ result: ExtractResult; links: reado
   const doc = asDoc(line)
   const cut = cutSentences(doc)
   if (cut.length === 0) return { result: { kind: 'unavailable', reason: 'nothing to read' }, links: [] }
-  const answered = await Promise.all(cut.map(s => model.ask(EXTRACT_SYSTEM, s.anchor.quote)))
+  const answered = await Promise.all(cut.map(s => model.ask(SYSTEM, s.anchor.quote, LINK_SCHEMA)))
   if (answered.every(a => a === null)) {
     return { result: { kind: 'unavailable', reason: 'no answer from the model' }, links: [] }
   }
@@ -91,11 +79,11 @@ const read = async (line: string): Promise<{ result: ExtractResult; links: reado
 }
 
 const graph: Link[] = []
+const spokenSentences: Sentence[] = []
 const history: Turn[] = []
 const items: Introduced[] = []
 const shapeKinds = new Map<Shape['kind'], number>()
 const childLines: string[] = []
-let sentencesSeen = 0
 let silent = 0
 let unreadable = 0
 
@@ -112,9 +100,11 @@ for (let n = 0; n < maxTurns; n++) {
 
   const mine = await read(you)
   graph.push(...mine.links)
-  sentencesSeen += cutSentences(asDoc(you)).length
 
-  const shapes = cohere({ doc: asDoc(you), links: graph, sentences: cutSentences(asDoc(you)) })
+  // Same correction as demo.ts: the accumulated graph against every sentence said so far, not
+  // one turn's sentences dressed up as the whole run.
+  spokenSentences.push(...cutSentences(asDoc(you)))
+  const shapes = cohere(graph, spokenSentences)
   for (const shape of shapes) shapeKinds.set(shape.kind, (shapeKinds.get(shape.kind) ?? 0) + 1)
 
   const spoken = await speak(history, you, shapes, model)
@@ -138,9 +128,9 @@ const repeats = childLines.length - new Set(childLines).size
 
 console.log(dim('── counts, and they are counts ' + '─'.repeat(30)) + '\n')
 console.log(`  turns                  ${history.length}`)
-console.log(`  your sentences         ${sentencesSeen}`)
+console.log(`  your sentences         ${spokenSentences.length}`)
 console.log(`  links extracted        ${graph.length}`)
-console.log(`  links per sentence     ${sentencesSeen === 0 ? '—' : (graph.length / sentencesSeen).toFixed(2)}`)
+console.log(`  links per sentence     ${spokenSentences.length === 0 ? '—' : (graph.length / spokenSentences.length).toFixed(2)}`)
 console.log(`  shapes by kind         ${[...shapeKinds].map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}`)
 console.log(`  ledger debts           ${items.filter(i => i.kind === 'link').length}`)
 console.log(`  ledger notes           ${items.filter(i => i.kind === 'word').length}`)

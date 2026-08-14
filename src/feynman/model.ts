@@ -20,8 +20,20 @@ export type Attribution = {
 
 export type ModelHandle = {
   readonly identify: () => Promise<Attribution>
-  /** Returns whatever came back, as a string. Never throws; an unreachable model is null. */
-  readonly ask: (system: string, user: string) => Promise<string | null>
+  /**
+   * Returns whatever came back, as a string. Never throws; an unreachable model is null.
+   *
+   * `schema` is a property of the REQUEST, not of the client. Omit it and no `format` key is sent
+   * at all. It used to be baked in, so every call — the child's line included — asked for
+   * link-extraction JSON; that was inert only because this backend ignores `format` entirely. Five
+   * probes on 2026-08-12: the schema was ignored, `"json"` was ignored, and a bogus format value
+   * returned HTTP 200 rather than an error. Do not rely on that.
+   */
+  readonly ask: (
+    system: string,
+    user: string,
+    schema?: Readonly<Record<string, unknown>>,
+  ) => Promise<string | null>
 }
 
 type TagList = { models?: { name?: string }[] }
@@ -49,7 +61,7 @@ export const ollama = (model?: string): ModelHandle => {
       calibration: 'uncalibrated',
     }),
 
-    ask: async (system, user) => {
+    ask: async (system, user, schema) => {
       const name = await resolve()
       if (name === null) return null
       try {
@@ -60,11 +72,13 @@ export const ollama = (model?: string): ModelHandle => {
             model: name,
             stream: false,
             think: false,
+            // Every call, the child's included. Decided 2026-08-12 rather than inherited: a probe
+            // held the prompt fixed and returned byte-identical lines three times out of three at
+            // 0, and three distinct lines at 0.8. Determinism is being bought and is worth it.
             options: { temperature: 0 },
-            // Asked for, and honoured only some of the time — one probe returned prose and
-            // the next returned JSON from the same call at temperature 0. That is why
-            // `validate` takes `unknown` and never throws.
-            format: LINK_SCHEMA,
+            // Only when the caller asks. `validate` still takes `unknown` and never throws,
+            // because a backend that ignores the schema is the case we actually have.
+            ...(schema === undefined ? {} : { format: schema }),
             messages: [
               { role: 'system', content: system },
               { role: 'user', content: user },
@@ -81,21 +95,3 @@ export const ollama = (model?: string): ModelHandle => {
   }
 }
 
-const LINK_SCHEMA = {
-  type: 'object',
-  properties: {
-    links: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          cause: { type: 'string' },
-          effect: { type: 'string' },
-          relation: { type: 'string', enum: ['causes', 'enables', 'prevents', 'requires'] },
-        },
-        required: ['cause', 'effect', 'relation'],
-      },
-    },
-  },
-  required: ['links'],
-} as const
