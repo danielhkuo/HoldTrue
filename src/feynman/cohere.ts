@@ -31,7 +31,13 @@ export const conceptOf = (text: string): string => normalise(text).text.toLowerC
  * are one node, which is the case an eight-turn rig run actually produced.
  */
 const DETERMINER: ReadonlySet<string> = new Set(
-  'a an the this that these those my your his her its our their some any each every'.split(' '),
+  // Stemmed, because the filter runs after `stem` — unstemmed, `this` survives as `thi` and still
+  // splits *this yeast* from *the yeast*, which is the exact split the list exists to close. Found
+  // by review, 2026-08-12, with a reproduction: it emitted an unlinkedPair of a concept with
+  // itself, which is ruling 4's own named failure.
+  'a an the this that these those my your his her its our their some any each every'
+    .split(' ')
+    .map(stem),
 )
 
 /**
@@ -74,19 +80,20 @@ const effectOf = (l: Link): string => key(l.effect.quote)
  * false questions before Extract has made a single mistake. This is the single largest input to the
  * false-question rate, which is why it is computed first and applied to both guards.
  *
- * The head is a cause nothing leads into; the tail is an effect nothing leads out of. On a chain
- * that forks or joins there may be several of each, and all of them are termini.
+ * **Position, not topology, and the first implementation got this catastrophically wrong.** It
+ * defined the head as *any cause nothing leads into* — which is the definition of `rootless`
+ * itself, so subtracting it made both guards mathematically impossible and Cohere returned nothing
+ * on every input ever run. Found by review 2026-08-12, after three rig runs of zero shapes were
+ * blamed on the matcher.
+ *
+ * The chain has **one** head and **one** tail: the cause of the first link you stated and the
+ * effect of the last. A concept with nothing leading into it in the *middle* of your explanation is
+ * a hole, not a beginning — that distinction is the whole of ruling 2, and it needs the order you
+ * said things in, which topology alone cannot supply.
  */
-const termini = (links: readonly Link[]): { readonly heads: ReadonlySet<string>; readonly tails: ReadonlySet<string> } => {
-  const causes = new Set(links.map(causeOf))
-  const effects = new Set(links.map(effectOf))
-  const heads = new Set<string>()
-  const tails = new Set<string>()
-  for (const link of links) {
-    if (!effects.has(causeOf(link))) heads.add(causeOf(link))
-    if (!causes.has(effectOf(link))) tails.add(effectOf(link))
-  }
-  return { heads, tails }
+const termini = (links: readonly Link[]): { readonly head: string | null; readonly tail: string | null } => {
+  if (links.length === 0) return { head: null, tail: null }
+  return { head: causeOf(links[0]!), tail: effectOf(links[links.length - 1]!) }
 }
 
 /**
@@ -123,7 +130,7 @@ const byConcept = (
  */
 export function cohere(links: readonly Link[], _sentences: readonly Sentence[]): readonly Shape[] {
   const shapes: Shape[] = []
-  const { heads, tails } = termini(links)
+  const { head, tail } = termini(links)
 
   // An effect nothing leads out of, and a cause nothing leads into — minus the chain's own ends.
   const dangling: (readonly [string, string, Link])[] = []
@@ -134,8 +141,8 @@ export function cohere(links: readonly Link[], _sentences: readonly Sentence[]):
   for (const link of links) {
     const effect = effectOf(link)
     const cause = causeOf(link)
-    if (!causes.has(effect) && !tails.has(effect)) dangling.push([effect, link.effect.quote, link])
-    if (!effects.has(cause) && !heads.has(cause)) rootless.push([cause, link.cause.quote, link])
+    if (!causes.has(effect) && effect !== tail) dangling.push([effect, link.effect.quote, link])
+    if (!effects.has(cause) && cause !== head) rootless.push([cause, link.cause.quote, link])
   }
 
   for (const [concept, from] of byConcept(dangling)) shapes.push({ kind: 'dangling', concept, from })

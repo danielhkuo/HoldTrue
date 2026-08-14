@@ -5,8 +5,9 @@
 > skeleton and its own header says so — it was written so the child could speak before Extract could
 > run, and it is not this spec's implementation.
 >
-> **Four rulings below change a signature and block the oracle: 1, 2, 3 and 5.** Rulings 9 and 10
-> are settled, and 9 depends on 2 — the kill numbers are unreachable if termini stay flagged.
+> **Rulings 1, 2, 9, 10 and 11 are settled.** 3 and 5 change a signature and still block the oracle.
+> A demo-grade implementation exists in `src/feynman/cohere.ts` built to 1, 2, 4, 5, 6 and 11 — it has
+> no test file, no oracle and no mutation run, and its header says so.
 >
 > This piece carries a kill number. The **false-question rate** is one of the falsification week's
 > three measurements, it scores Cohere's flags against hand-marked explanations, and it is reported
@@ -36,8 +37,7 @@ section 5 is about not inflating it.
 ```ts
 // src/feynman/cohere.ts
 
-import type { Extraction } from './extract.js'
-import type { Link } from './validate.js'
+import type { Link, Sentence } from './validate.js'
 
 /** A place your chain does not close. Never a question, never a finding. */
 export type Shape =
@@ -50,13 +50,18 @@ export type Shape =
   /** Two links of yours that disagree. */
   | { readonly kind: 'conflict'; readonly a: Link; readonly b: Link }
 
-export function cohere(extraction: Extraction): readonly Shape[]
+export function cohere(links: readonly Link[], sentences: readonly Sentence[]): readonly Shape[]
 ```
 
-**It takes the whole `Extraction`, not a link list.** A sentence that yielded no link contributes no
-`Link`, so a link list cannot see it — and ruling 1's mute is a rule *about* such sentences.
-`extract.md` already says this: *"Every sentence read, in order — including those that yielded no
-link. Cohere needs the ones that yielded nothing as much as the ones that did."*
+**It takes the links and the sentences separately — corrected 2026-08-12, see ruling 1.** It asked
+for the whole `Extraction` until a review found that an `Extraction` carries one `doc`, and
+`decisions.md`'s *The `Doc` is the turn* makes each turn its own document, so a graph spanning
+several turns cannot be expressed as one. Both callers that tried invented a different wrong `doc`,
+and one produced anchors that resolved against the **wrong sentence** rather than failing.
+
+`sentences` is unread until the connective mute lands, and it is in the signature because the mute
+is a rule about sentences that yielded no link — which a link list cannot see. `extract.md` says the
+same: *"Cohere needs the ones that yielded nothing as much as the ones that did."*
 
 **Every string in a `Shape` is a verbatim quote of your words.** `from` carries the links a shape was
 computed from, so any flag can be traced to a span, to a sentence, and to a hand mark. That
@@ -125,7 +130,13 @@ Cohere diffs nothing; it reads one extraction once.
 that dies keeps its number and its strikethrough. **Note that `extract.md` and `child-speech.md` each
 have their own rulings 1 to 8; cite the file name.**
 
-1. **What is Cohere's input?** **PROPOSED: the whole `Extraction`.** The skeleton takes
+1. **What is Cohere's input?** **RULED 2026-08-12: the links and the sentences, as two arguments.**
+   **The first answer was the whole `Extraction`, and it was wrong.** An `Extraction` carries one
+   `doc`; each turn is its own `Doc`; so a multi-turn graph is not an `Extraction` and every caller
+   forced to supply one invents a `doc` that does not describe the links beside it. `demo.ts`
+   invented the whole explanation and `rig.ts` invented the current turn — and `demo.ts`'s version
+   made a link from sentence 2 resolve cleanly against sentence 1, which is worse than failing. The
+   original reasoning, which stands and is why `sentences` is still a parameter: The skeleton takes
    `readonly Link[]`, and that signature **silently repealed a decided ruling.**
    `decisions.md`'s *The connective table is a mute, never a joiner* requires that when a sentence
    opens with a causal connective and Extract returned no cause for it, Cohere must not flag that
@@ -135,7 +146,16 @@ have their own rulings 1 to 8; cite the file name.**
    a decision by omission, and that is how the repeal happened in the first place.
    **Changes a signature. Blocks the oracle.**
 
-2. **Is a terminus a gap?** **PROPOSED: no.** Every chain has a first cause and a last effect. The
+2. **Is a terminus a gap?** **RULED 2026-08-12: no — and *terminus* means position, not topology.**
+   **The first implementation of this was catastrophic and shipped.** It defined a head as *any
+   cause nothing leads into*, which is the definition of `rootless` itself, so subtracting the
+   termini made both guards mathematically impossible: `dangling` and `rootless` **could not fire on
+   any input**, and three rig runs of zero shapes were blamed on the matcher for half a day.
+
+   The chain has **one** head and **one** tail — the cause of the first link you stated and the
+   effect of the last. A concept with nothing leading into it in the **middle** of your explanation
+   is a hole, not a beginning, and telling those apart needs the order you said things in. Topology
+   alone cannot supply it. The original reasoning, unchanged: Every chain has a first cause and a last effect. The
    skeleton flags both — on a single link `X→Y` it emits `rootless X` *and* `dangling Y`, so a
    perfectly closed explanation is flagged twice — which contradicts section 1's *where the chain does
    not close*. So `rootless` excludes the chain's own head and `dangling` excludes its own tail;
@@ -217,6 +237,28 @@ have their own rulings 1 to 8; cite the file name.**
     every flag gets three outcomes rather than two: true question, false question, and **matcher
     disagreement**. That third bucket is the entire cost of ruling 6 made visible, and it is how
     anyone finds out whether the shared stemmer is worth building.
+
+11. **What may decide that two mentions are the same node.** **RULED 2026-08-12.** The comparison
+    key stems every word and then **drops determiners** — *a, an, the, this, that, these, those*, and
+    the possessives — because *the yeast* against *that yeast* was leaving the graph in disconnected
+    pairs on every rig run. The list is stored stemmed, since the filter runs after stemming and an
+    unstemmed *this* survives as *thi*.
+
+    **And the constraint that outlives the fix: node identity must be an equivalence relation.** No
+    non-transitive test — subset, overlap, similarity — may key `causes`, `effects`, `byEffect`,
+    `linked` or `termini`. Those decide which nodes *are* the same node, and a non-transitive rule
+    used there merges A with B and B with C while leaving A and C apart, **manufacturing a chain the
+    speaker never stated.** A loose rule may suppress a shape. It may never form one.
+
+    **Rejected: giving Cohere the subset matcher `child-speech.md` ruling 14 gives the tally**, which
+    was proposed twice and refuted by experiment. Re-run against the rig's real links it merged
+    **nothing** — those phrases differ by whole content words, not by extent — and on a terser
+    extraction it merged a node with its own effect, closed transitively, and emitted an
+    `unlinkedPair` the speaker never said, plus a self-edge.
+
+    **Still open underneath it.** Determiner stripping did not make Cohere fire on the bread
+    transcript either, because Extract returns **whole clauses** as concepts and two mentions of one
+    thing are never the same string. That is Extract's prompt, not this piece's arithmetic.
 
 ## 6. The oracle for `cohere`
 

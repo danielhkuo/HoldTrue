@@ -18,6 +18,12 @@
 >
 > Its reasoning is kept rather than deleted, because none of it was refuted. It was overtaken.
 >
+> **`ModelHandle` has diverged twice and ruling 8 is still open.** This file declares
+> `generate: (prompt: string) => Promise<string>`. `src/feynman/model.ts` — which claims to be the
+> model-client module ruling 8 asks for — exports `ask(system, user, schema?)` returning
+> `string | null`. Two arguments became three, a throw became a null, and a response schema was added
+> on 2026-08-12. Nobody amended this file, and ruling 8 has not decided who is allowed to.
+>
 > **Status: draft, nothing built, 2026-08-07.** Written the same evening the model-knowledge pivot
 > landed, to fill the hole [`../features/feynman.md`](../features/feynman.md) had left when its model
 > surface read *"Extract, Contradict, and at least one unnamed piece that carries the whole authority

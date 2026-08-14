@@ -18,7 +18,7 @@
 
 import { readFileSync } from 'node:fs'
 import { asDoc, cutSentences, SYSTEM, LINK_SCHEMA, type ExtractResult } from './extract.js'
-import { validate, type Link } from './validate.js'
+import { validate, type Link, type Sentence } from './validate.js'
 import { ollama } from './model.js'
 import { cohere } from './cohere.js'
 import { speak } from './speak.js'
@@ -44,15 +44,15 @@ const who = await model.identify()
 console.log(`\n${dim(`${who.model_id} · ${who.runtime} · ${who.calibration}`)}\n`)
 
 /** Extract over one line, minted as its own document. Returns exactly what the tally consumes. */
-const read = async (line: string): Promise<{ result: ExtractResult; links: readonly Link[]; dropped: number }> => {
+const read = async (line: string): Promise<{ result: ExtractResult; links: readonly Link[]; dropped: number; sentences: readonly Sentence[] }> => {
   const doc = asDoc(line)
   const cut = cutSentences(doc)
   if (cut.length === 0) {
-    return { result: { kind: 'unavailable', reason: 'nothing to read' }, links: [], dropped: 0 }
+    return { result: { kind: 'unavailable', reason: 'nothing to read' }, links: [], dropped: 0, sentences: [] }
   }
   const answered = await Promise.all(cut.map(s => model.ask(SYSTEM, s.anchor.quote, LINK_SCHEMA)))
   if (answered.every(a => a === null)) {
-    return { result: { kind: 'unavailable', reason: 'no answer from the model' }, links: [], dropped: 0 }
+    return { result: { kind: 'unavailable', reason: 'no answer from the model' }, links: [], dropped: 0, sentences: [] }
   }
   const links: Link[] = []
   let dropped = 0
@@ -62,10 +62,11 @@ const read = async (line: string): Promise<{ result: ExtractResult; links: reado
     links.push(...outcome.links)
     dropped += outcome.dropped
   }
-  return { result: { kind: 'extraction', extraction: { doc, links, sentences: cut } }, links, dropped }
+  return { result: { kind: 'extraction', extraction: { doc, links, sentences: cut } }, links, dropped, sentences: cut }
 }
 
 const graph: Link[] = []
+const spokenSentences: Sentence[] = []
 const history: Turn[] = []
 const ledger: { readonly turn: number; readonly item: Introduced }[] = []
 const spoken = asDoc(text)
@@ -77,11 +78,12 @@ for (const [i, sentence] of yourSentences.entries()) {
   const mine = await read(you)
   graph.push(...mine.links)
 
-  // Links from every turn so far, and only the sentences actually spoken so far. It used to
-  // hand Cohere a `doc` of the whole explanation beside links minted per sentence, so an anchor
-  // from sentence 2 resolved against sentence 1 rather than failing — an aliased resolve, which
-  // is worse than a null. Found by review, 2026-08-12.
-  const shapes = cohere(graph, yourSentences.slice(0, i + 1))
+  // Links and sentences from the same documents. `read` mints each line as its own `Doc`, so the
+  // sentences must come from there too — taking them from a whole-explanation `asDoc` is what made
+  // a link from sentence 2 resolve against sentence 1 rather than failing, which is worse than a
+  // null. Found by review, 2026-08-12.
+  spokenSentences.push(...mine.sentences)
+  const shapes = cohere(graph, spokenSentences)
   const said = await speak(history, you, shapes, model)
 
   const transcript = yourSentences
