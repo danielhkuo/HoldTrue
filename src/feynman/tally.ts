@@ -25,9 +25,27 @@ import { stem, TOKEN } from './stem.js'
 import type { ExtractResult } from './extract.js'
 import type { Link, Relation } from './validate.js'
 
+/**
+ * A link the child asserted that your graph does not hold. child-speech.md ruling 7.
+ *
+ * **Named on 2026-08-16 so that `supply.ts` can take one of these and nothing else.**
+ * `child-speech.md` ruling 15 already says a link row is a debt and a word row is a note owed
+ * nothing; giving the member a name makes that true at the type level rather than by convention,
+ * so a caller cannot hand a note to a piece that only settles debts. No behaviour changes.
+ *
+ * Note what it does not carry: no anchor, no span, no provenance. Three strings and a relation.
+ * That is deliberate — the child's line is not your document — and it is the concrete reason the
+ * piece downstream of this can never mint a quote.
+ */
+export type Debt = {
+  readonly kind: 'link'
+  readonly cause: string
+  readonly effect: string
+  readonly relation: Relation
+}
+
 export type Introduced =
-  /** A link the child asserted that your graph does not hold. child-speech.md ruling 7. */
-  | { readonly kind: 'link'; readonly cause: string; readonly effect: string; readonly relation: Relation }
+  | Debt
   /**
    * A content word in the child's line that your transcript does not contain. child-speech.md ruling 8.
    * `within` names the link this word sits inside, when one was also flagged, so anything

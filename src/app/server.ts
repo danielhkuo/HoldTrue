@@ -22,13 +22,20 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ollama } from '../feynman/model.js'
 import { Session, type TurnReport } from './session.js'
+import { SAMPLES } from './samples.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const PORT = Number(process.env.PORT ?? 4517)
 
 const model = ollama()
 const who = await model.identify()
-const session = new Session(model)
+
+/**
+ * One session in memory. Starting a new topic throws the old one away entirely, which is the only
+ * honest option while nothing persists — `decisions.md`'s *The `Doc` is the turn* records that
+ * supersession has nowhere to live until something writes, and nothing here writes.
+ */
+let session = new Session(model, 'how something works')
 
 /** Anchors do not survive JSON usefully. Send the quotes the page actually renders. */
 const plain = (report: TurnReport) => ({
@@ -69,6 +76,70 @@ createServer(async (req, res) => {
     if (req.method === 'GET' && req.url === '/who') {
       res.writeHead(200, { 'content-type': 'application/json' })
       res.end(JSON.stringify(who))
+      return
+    }
+
+    if (req.method === 'GET' && req.url === '/samples') {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify(SAMPLES))
+      return
+    }
+
+    if (req.method === 'POST' && req.url === '/start') {
+      const { topic } = JSON.parse(await body(req)) as { topic?: unknown }
+      // The topic is not decoration: the child speaks in ellipsis, so a debt reading
+      // "it empties causes the toilet fills up" has no referent for "it" without it.
+      session = new Session(model, typeof topic === 'string' && topic.trim() !== '' ? topic.trim() : 'how something works')
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ started: true }))
+      return
+    }
+
+    // Step 5 of the review. Slow — one model call per debt — so the review screen renders its
+    // bookkeeping first and asks for this second.
+    if (req.method === 'POST' && req.url === '/settle') {
+      const settled = await session.settleDebts()
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(
+        JSON.stringify(
+          settled.map(s => ({
+            claim: `${s.debt.cause} —${s.debt.relation}→ ${s.debt.effect}`,
+            kind: s.verdict.kind,
+            text: s.verdict.kind === 'unsettled' ? s.verdict.reason : s.verdict.closing,
+            by: `${s.attribution.model_id} · ${s.attribution.calibration}`,
+          })),
+        ),
+      )
+      return
+    }
+
+    if (req.method === 'GET' && req.url === '/review') {
+      const r = session.review()
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(
+        JSON.stringify({
+          transcript: r.transcript,
+          turns: r.turns,
+          links: r.links,
+          standing: r.standing.map(s => {
+            if (s.kind === 'dangling' || s.kind === 'rootless') return { kind: s.kind, text: s.concept }
+            if (s.kind === 'unlinkedPair') return { kind: s.kind, text: `${s.a} · ${s.b}` }
+            return { kind: s.kind, text: `${s.a.cause.quote} ${s.a.relation} ${s.a.effect.quote}` }
+          }),
+          debts: r.ledger
+            .filter(x => x.item.kind === 'link')
+            .map(x => {
+              const i = x.item as Extract<typeof x.item, { kind: 'link' }>
+              return { turn: x.turn, text: `${i.cause} —${i.relation}→ ${i.effect}` }
+            }),
+          notes: r.ledger
+            .filter(x => x.item.kind === 'word')
+            .map(x => {
+              const i = x.item as Extract<typeof x.item, { kind: 'word' }>
+              return { turn: x.turn, text: i.word }
+            }),
+        }),
+      )
       return
     }
 

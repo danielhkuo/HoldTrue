@@ -23,7 +23,8 @@ import { validate, type Link, type Sentence } from '../feynman/validate.js'
 import type { ModelHandle } from '../feynman/model.js'
 import { cohere, type Shape } from '../feynman/cohere.js'
 import { speak } from '../feynman/speak.js'
-import { tallyIntroduced, turn, type Introduced, type Turn } from '../feynman/tally.js'
+import { tallyIntroduced, turn, type Debt, type Introduced, type Turn } from '../feynman/tally.js'
+import { settle, type Settled } from '../feynman/supply.js'
 
 export type TurnReport = {
   readonly you: string
@@ -75,8 +76,27 @@ export class Session {
   readonly #ledger: { readonly turn: number; readonly item: Introduced }[] = []
   #said: string[] = []
 
-  constructor(model: ModelHandle) {
+  readonly #topic: string
+
+  constructor(model: ModelHandle, topic: string) {
     this.#model = model
+    this.#topic = topic
+  }
+
+  /**
+   * Step 5 of the review, for real: every debt the child opened, checked against model knowledge.
+   *
+   * One model call per debt, in parallel — `settle` is stateless by design, so there is no order
+   * to preserve. Nothing is dropped: a debt that could not be settled comes back `unsettled` and
+   * stays open, because dropping it would be silence about something the child introduced.
+   *
+   * This does NOT close the ledger. `child-speech.md` ruling 10 gives the row and its `closed`
+   * predicate to Session-the-piece, which is unbuilt; what this returns is the answer a closure
+   * would need, presented to the user so they can close it themselves.
+   */
+  async settleDebts(): Promise<readonly Settled[]> {
+    const debts = this.#ledger.filter(r => r.item.kind === 'link').map(r => r.item as Debt)
+    return Promise.all(debts.map(d => settle(d, this.#topic, this.#model)))
   }
 
   get ledger(): readonly { readonly turn: number; readonly item: Introduced }[] {
@@ -85,6 +105,38 @@ export class Session {
 
   get graphSize(): number {
     return this.#graph.length
+  }
+
+  get turns(): number {
+    return this.#history.length
+  }
+
+  /**
+   * What the review phase is handed. **Not the review phase.**
+   *
+   * `features/feynman.md` numbers the review 4 to 8, and steps 4 and 5 — where the subject says
+   * otherwise, and where the mechanism connects something you did not — are Contradict and Supply.
+   * Both are unbuilt and both are frozen: `specs/supply.md` ruling 7 asks whether they are one
+   * piece or two, calls itself the one that changes the return type, and says in as many words
+   * *"Do not build either until this is ruled."* So this returns the inputs those steps would
+   * consume and makes no finding of its own.
+   *
+   * What is genuinely here is bookkeeping that already exists: the links you stated, the shapes
+   * still standing at the end, and every debt the child opened. Law 1 wants those closed. Nothing
+   * closes them.
+   */
+  review() {
+    return {
+      transcript: this.#said.join(' '),
+      turns: this.#history.length,
+      links: this.#graph.map(l => ({
+        cause: l.cause.quote,
+        relation: l.relation,
+        effect: l.effect.quote,
+      })),
+      standing: cohere(this.#graph, this.#sentences),
+      ledger: this.#ledger,
+    }
   }
 
   /**

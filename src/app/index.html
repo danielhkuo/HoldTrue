@@ -6,183 +6,295 @@
     <title>HoldTrue — Feynman</title>
     <style>
       :root {
-        --bg: #fbfaf8;
-        --panel: #f3f1ed;
-        --ink: #1c1b19;
-        --dim: #75726c;
-        --line: #e2ded7;
-        --you: #ffffff;
-        --child: #eef4f8;
-        --accent: #8a6a2f;
-        --flag: #9a5b3c;
+        --bg: #fbfaf8; --panel: #f3f1ed; --ink: #1c1b19; --dim: #75726c; --line: #e2ded7;
+        --you: #ffffff; --child: #eef4f8; --accent: #8a6a2f; --flag: #9a5b3c; --ok: #4a7c59;
       }
       @media (prefers-color-scheme: dark) {
         :root:not([data-theme='light']) {
-          --bg: #17171a;
-          --panel: #1e1e22;
-          --ink: #e8e6e2;
-          --dim: #8d8a85;
-          --line: #2c2c31;
-          --you: #232328;
-          --child: #1b2830;
-          --accent: #d4ad63;
-          --flag: #d08a68;
+          --bg: #17171a; --panel: #1e1e22; --ink: #e8e6e2; --dim: #8d8a85; --line: #2c2c31;
+          --you: #232328; --child: #1b2830; --accent: #d4ad63; --flag: #d08a68; --ok: #7fb08c;
         }
       }
       * { box-sizing: border-box; }
       body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--ink);
+        margin: 0; background: var(--bg); color: var(--ink);
         font: 15px/1.55 ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
-        height: 100vh;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 340px;
+        height: 100vh; overflow: hidden;
       }
-      @media (max-width: 860px) { body { grid-template-columns: 1fr; } aside { display: none; } }
+      .screen { display: none; height: 100vh; }
+      .screen.on { display: grid; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
+      /* ---------- step 1: pick ---------- */
+      #pick { grid-template-rows: 1fr; place-items: center; overflow-y: auto; }
+      .pickwrap { max-width: 620px; padding: 40px 24px; width: 100%; }
+      .lede { font-size: 22px; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 8px; }
+      .sub { color: var(--dim); margin: 0 0 26px; }
+      .card {
+        display: block; width: 100%; text-align: left; background: var(--panel); color: inherit;
+        border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+        cursor: pointer; font: inherit;
+      }
+      .card:hover { border-color: var(--accent); }
+      .card b { display: block; margin-bottom: 3px; font-weight: 600; }
+      .card span { color: var(--dim); font-size: 13px; }
+      .own { background: none; border-style: dashed; }
+      .caveat { margin-top: 26px; font-size: 12px; color: var(--dim); line-height: 1.6; }
+
+      /* ---------- step 2-3: live ---------- */
+      #live { grid-template-columns: minmax(0, 1fr) 340px; }
+      @media (max-width: 860px) { #live { grid-template-columns: 1fr; } #live aside { display: none; } }
       main { display: flex; flex-direction: column; min-width: 0; }
       header {
-        padding: 14px 22px;
-        border-bottom: 1px solid var(--line);
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: 12px;
-        flex-wrap: wrap;
+        padding: 13px 22px; border-bottom: 1px solid var(--line);
+        display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
       }
       h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
-      .meta { font-size: 12px; color: var(--dim); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-
-      #log { flex: 1; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+      .meta { font-size: 12px; color: var(--dim); }
+      #log { flex: 1; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 13px; }
       .row { max-width: 66ch; padding: 11px 15px; border-radius: 12px; border: 1px solid var(--line); }
       .you { background: var(--you); align-self: flex-start; }
       .child { background: var(--child); align-self: flex-start; margin-left: 26px; }
       .who { font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--dim); margin-bottom: 4px; }
-      .note { font-size: 12px; color: var(--dim); margin-left: 26px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .note { font-size: 12px; color: var(--dim); margin-left: 26px; }
       .err { color: var(--flag); }
-
-      form { border-top: 1px solid var(--line); padding: 14px 22px; display: flex; gap: 10px; align-items: flex-end; }
+      form { border-top: 1px solid var(--line); padding: 13px 22px; display: flex; gap: 10px; align-items: flex-end; }
       textarea {
-        flex: 1; resize: none; font: inherit; color: inherit;
-        background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
-        padding: 10px 12px; min-height: 46px; max-height: 180px;
+        flex: 1; resize: none; font: inherit; color: inherit; background: var(--panel);
+        border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 46px; max-height: 180px;
       }
       textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-      button {
+      button.go {
         font: inherit; font-weight: 550; padding: 11px 18px; border-radius: 10px;
         border: 1px solid var(--line); background: var(--accent); color: var(--bg); cursor: pointer;
       }
-      button:disabled { opacity: 0.45; cursor: default; }
+      button.go:disabled { opacity: 0.45; cursor: default; }
+      button.quiet {
+        font: inherit; font-size: 13px; padding: 7px 13px; border-radius: 9px;
+        border: 1px solid var(--line); background: none; color: var(--dim); cursor: pointer;
+      }
+      button.quiet:hover:not(:disabled) { color: var(--ink); border-color: var(--accent); }
+      button.quiet:disabled { opacity: 0.4; cursor: default; }
 
       aside { border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 18px; }
       h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--dim); margin: 0 0 9px; font-weight: 600; }
       .section + .section { margin-top: 22px; }
       .item { font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--line); }
       .item:last-child { border-bottom: 0; }
-      .kind { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; color: var(--flag); }
+      .kind { font-size: 11px; color: var(--flag); }
       .empty { font-size: 13px; color: var(--dim); font-style: italic; }
-      footer { padding: 14px 18px; font-size: 11px; line-height: 1.5; color: var(--dim); border-top: 1px solid var(--line); }
-      .dots::after { content: '·'; animation: d 1.2s steps(4, end) infinite; }
-      @keyframes d { 0% { content: '·'; } 33% { content: '· ·'; } 66% { content: '· · ·'; } }
+      footer { margin-top: 22px; padding-top: 14px; font-size: 11px; line-height: 1.55; color: var(--dim); border-top: 1px solid var(--line); }
+
+      /* ---------- steps 4-8: review ---------- */
+      #review { grid-template-rows: 1fr; overflow-y: auto; }
+      .revwrap { max-width: 760px; margin: 0 auto; padding: 34px 24px 60px; width: 100%; }
+      .revwrap h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--dim); margin: 30px 0 10px; }
+      .quote { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 13px 15px; }
+      .link { font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+      .arrow { color: var(--dim); }
+      .gap {
+        border: 1px solid var(--line); border-left: 3px solid var(--flag); border-radius: 8px;
+        padding: 12px 15px; margin-bottom: 9px; background: var(--panel);
+      }
+      .missing {
+        border: 1px dashed var(--line); border-radius: 10px; padding: 16px 18px; margin-top: 14px;
+        color: var(--dim); font-size: 13px; line-height: 1.65;
+      }
+      .missing b { color: var(--ink); }
+      .claim { font-size: 13px; color: var(--dim); }
+      .closing { margin-top: 7px; }
+      .by { margin-top: 7px; font-size: 11px; color: var(--dim); }
+      .gap .kind { text-transform: uppercase; letter-spacing: 0.06em; }
     </style>
   </head>
   <body>
-    <main>
-      <header>
-        <h1>Explain it to the child</h1>
-        <span class="meta" id="who">…</span>
-      </header>
-      <div id="log">
-        <div class="row you">
-          <div class="who">skeleton</div>
-          Say one step at a time, the way you would out loud. Each turn takes about half a minute —
-          three model calls. Nothing here is saved.
-        </div>
+    <!-- step 1 -->
+    <section id="pick" class="screen on">
+      <div class="pickwrap">
+        <p class="lede">Explain it to the child.</p>
+        <p class="sub">Pick something that works by a <em>mechanism</em> — not a fact, not a procedure. Say it from memory, one step at a time. The child will stop you where your chain breaks.</p>
+        <div id="cards"></div>
+        <button class="card own" id="own"><b>Write your own</b><span>Start with an empty box.</span></button>
+        <p class="caveat">
+          Skeleton: typed input rather than voice, no persistence, and nothing closes what the child
+          opens. The samples are canned prose for looking at the loop — they are not measurement data
+          and never become any.
+        </p>
       </div>
-      <form id="f">
-        <textarea id="t" placeholder="when you push the handle down that pulls the chain…" rows="1"></textarea>
-        <button id="b">Say it</button>
-      </form>
-    </main>
+    </section>
 
-    <aside>
-      <div class="section">
-        <h2>Where your chain does not close</h2>
-        <div id="shapes"><div class="empty">nothing yet</div></div>
+    <!-- steps 2 and 3 -->
+    <section id="live" class="screen">
+      <main>
+        <header>
+          <h1 id="topic">Explaining</h1>
+          <span style="display:flex;gap:10px;align-items:center">
+            <span class="meta mono" id="who">…</span>
+            <button class="quiet" id="done">Done explaining →</button>
+          </span>
+        </header>
+        <div id="log"></div>
+        <form id="f">
+          <textarea id="t" rows="1" placeholder="say the next step…"></textarea>
+          <button class="go" id="b">Say it</button>
+        </form>
+      </main>
+      <aside>
+        <div class="section">
+          <h2>Where your chain does not close</h2>
+          <div id="shapes"><div class="empty">nothing yet</div></div>
+        </div>
+        <div class="section">
+          <h2>Debts — it asserted this, you did not</h2>
+          <div id="debts"><div class="empty">nothing yet</div></div>
+        </div>
+        <div class="section">
+          <h2>New words it used</h2>
+          <div id="notes"><div class="empty">nothing yet</div></div>
+        </div>
+        <footer>
+          Shapes are places a question could be asked — not findings. A <strong>debt</strong> is a
+          causal link the child asserted that you never said, and the review phase owes a closure on
+          each. The words below it are a second, cheaper check that reads vocabulary rather than
+          structure — the two catch different failures, so both run, but only the debts are claims.
+        </footer>
+      </aside>
+    </section>
+
+    <!-- steps 4 to 8 -->
+    <section id="review" class="screen">
+      <div class="revwrap">
+        <p class="lede">What you said, and what is still open.</p>
+        <p class="sub mono" id="revmeta"></p>
+
+        <h3>Your explanation</h3>
+        <div class="quote" id="revtext"></div>
+
+        <h3>The chain you stated</h3>
+        <div id="revlinks"></div>
+
+        <h3>Where it does not close</h3>
+        <div id="revgaps"></div>
+
+        <h3>What the child opened, and what the mechanism says</h3>
+        <div id="revdebts"></div>
+
+        <div class="missing">
+          <b>What is checked here, and what is not.</b> Everything above the debts is bookkeeping
+          over your own words — no model judgement in it — so an empty list there means
+          <b>nothing in your chain failed to close</b>, never <b>you understand this</b>. The
+          verdicts on the debts <em>are</em> model judgement, and
+          <b>nothing measures whether they are right</b>: the eval for a model-knowledge finding is
+          skipped by a recorded decision, so each one names the model that produced it and says
+          <span class="mono">uncalibrated</span>. Contradict — <em>where the subject says otherwise
+          about what you said</em> — is still unbuilt, so nothing here checks <b>your</b> claims.
+        </div>
+
+        <p style="margin-top:26px"><button class="quiet" id="again">← Start another</button></p>
       </div>
-      <div class="section">
-        <h2>What the child introduced</h2>
-        <div id="ledger"><div class="empty">nothing yet</div></div>
-      </div>
-      <footer>
-        Shapes are places a question could be asked — not findings. The ledger is what the child said
-        that you did not. <strong>Nothing closes it yet</strong>; the review phase does not exist.
-      </footer>
-    </aside>
+    </section>
 
     <script type="module">
-      const log = document.getElementById('log')
-      const shapesEl = document.getElementById('shapes')
-      const ledgerEl = document.getElementById('ledger')
-      const form = document.getElementById('f')
-      const input = document.getElementById('t')
-      const btn = document.getElementById('b')
+      const $ = id => document.getElementById(id)
+      const show = which => {
+        for (const s of document.querySelectorAll('.screen')) s.classList.toggle('on', s.id === which)
+      }
 
-      fetch('/who')
+      let queue = []
+
+      fetch('/who').then(r => r.json()).then(w => ($('who').textContent = `${w.model_id}`)).catch(() => {})
+
+      // ---- step 1
+      fetch('/samples')
         .then(r => r.json())
-        .then(w => (document.getElementById('who').textContent = `${w.model_id} · ${w.runtime}`))
-        .catch(() => {})
+        .then(list => {
+          for (const s of list) {
+            const b = document.createElement('button')
+            b.className = 'card'
+            b.innerHTML = '<b></b><span></span>'
+            b.querySelector('b').textContent = s.title
+            b.querySelector('span').textContent = `${s.text.split(/(?<=[.!?])\s+/).length} steps · you say them one at a time`
+            b.addEventListener('click', () => begin(s.title, s.text))
+            $('cards').appendChild(b)
+          }
+        })
 
+      $('own').addEventListener('click', () => begin('Explaining', ''))
+      $('again').addEventListener('click', () => location.reload())
+
+      const begin = async (title, text) => {
+        await fetch('/start', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ topic: title }),
+        })
+        queue = text === '' ? [] : text.split(/(?<=[.!?])\s+/).filter(Boolean)
+        $('topic').textContent = title
+        $('log').innerHTML = ''
+        $('shapes').innerHTML = '<div class="empty">nothing yet</div>'
+        $('debts').innerHTML = '<div class="empty">nothing yet</div>'
+        $('notes').innerHTML = '<div class="empty">nothing yet</div>'
+        debts.length = 0
+        notes.length = 0
+        seen.clear()
+        show('live')
+        next()
+        $('t').focus()
+      }
+
+      const next = () => {
+        $('t').value = queue.shift() ?? ''
+        $('t').style.height = 'auto'
+        $('t').style.height = `${Math.min($('t').scrollHeight, 180)}px`
+      }
+
+      // ---- steps 2 and 3
       const add = (cls, who, text) => {
         const el = document.createElement('div')
         el.className = `row ${cls}`
-        el.innerHTML = `<div class="who"></div><div class="body"></div>`
+        el.innerHTML = '<div class="who"></div><div class="body"></div>'
         el.querySelector('.who').textContent = who
         el.querySelector('.body').textContent = text
-        log.appendChild(el)
-        log.scrollTop = log.scrollHeight
+        $('log').appendChild(el)
+        $('log').scrollTop = $('log').scrollHeight
         return el
       }
-
       const note = text => {
         const el = document.createElement('div')
-        el.className = 'note'
+        el.className = 'note mono'
         el.textContent = text
-        log.appendChild(el)
-        log.scrollTop = log.scrollHeight
-        return el
+        $('log').appendChild(el)
+        $('log').scrollTop = $('log').scrollHeight
       }
-
       const fill = (el, items, empty) => {
         el.innerHTML = ''
-        if (items.length === 0) {
-          el.innerHTML = `<div class="empty">${empty}</div>`
-          return
-        }
+        if (items.length === 0) { el.innerHTML = `<div class="empty">${empty}</div>`; return }
         for (const it of items) {
           const d = document.createElement('div')
           d.className = 'item'
-          d.innerHTML = `<span class="kind"></span> <span class="txt"></span>`
+          d.innerHTML = '<span class="kind mono"></span> <span class="txt"></span>'
           d.querySelector('.kind').textContent = it.kind
           d.querySelector('.txt').textContent = it.text
           el.appendChild(d)
         }
       }
+      // Debts and notes are different things and are never mixed. A word note repeats every turn
+      // the child uses it, because the tally reads one line at a time against your transcript and
+      // your transcript never gains the child's words — so the panel dedups, rather than showing
+      // "i'm" once per turn forever.
+      const debts = []
+      const notes = []
+      const seen = new Set()
 
-      const ledger = []
-
-      form.addEventListener('submit', async e => {
+      $('f').addEventListener('submit', async e => {
         e.preventDefault()
-        const line = input.value.trim()
+        const line = $('t').value.trim()
         if (line === '') return
-
-        input.value = ''
-        input.style.height = 'auto'
-        btn.disabled = true
+        $('t').value = ''
+        $('b').disabled = true
+        $('done').disabled = true
         add('you', 'you', line)
-        const pending = add('child', 'child', '')
-        pending.querySelector('.body').className = 'body dots'
+        const pending = add('child', 'child', '…')
 
         try {
           const res = await fetch('/turn', {
@@ -192,39 +304,101 @@
           })
           const data = await res.json()
           if (!res.ok) throw new Error(data.error ?? 'turn failed')
-
-          pending.querySelector('.body').className = 'body'
           pending.querySelector('.body').textContent = data.child === '' ? '(silent)' : data.child
-
           const bits = [`${data.links} link${data.links === 1 ? '' : 's'}`, `${data.shapes.length} shape${data.shapes.length === 1 ? '' : 's'}`]
           if (data.dropped > 0) bits.push(`${data.dropped} dropped`)
           if (data.introduced.length > 0) bits.push(`${data.introduced.length} introduced`)
           bits.push(`${data.seconds}s`)
           note(bits.join('  ·  '))
-
-          fill(shapesEl, data.shapes, 'your chain closes')
-          ledger.push(...data.introduced)
-          fill(ledgerEl, ledger, 'the child introduced nothing')
+          fill($('shapes'), data.shapes, 'your chain closes')
+          for (const i of data.introduced) {
+            if (i.kind === 'link') { debts.push(i); continue }
+            if (seen.has(i.text)) continue
+            seen.add(i.text)
+            notes.push(i)
+          }
+          fill($('debts'), debts, 'it asserted nothing you had not said')
+          fill($('notes'), notes, 'no new words')
         } catch (err) {
           pending.querySelector('.body').className = 'body err'
           pending.querySelector('.body').textContent = String(err.message ?? err)
         } finally {
-          btn.disabled = false
-          input.focus()
+          $('b').disabled = false
+          $('done').disabled = false
+          next()
+          $('t').focus()
         }
       })
 
-      input.addEventListener('input', () => {
-        input.style.height = 'auto'
-        input.style.height = `${Math.min(input.scrollHeight, 180)}px`
+      $('t').addEventListener('input', () => {
+        $('t').style.height = 'auto'
+        $('t').style.height = `${Math.min($('t').scrollHeight, 180)}px`
       })
-      input.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault()
-          form.requestSubmit()
+      $('t').addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('f').requestSubmit() }
+      })
+
+      // ---- steps 4 to 8
+      $('done').addEventListener('click', async () => {
+        const r = await (await fetch('/review')).json()
+        $('revmeta').textContent = `${r.turns} turn${r.turns === 1 ? '' : 's'} · ${r.links.length} link${r.links.length === 1 ? '' : 's'} · ${r.standing.length} still open · ${r.debts.length} debt${r.debts.length === 1 ? '' : 's'}`
+        $('revtext').textContent = r.transcript || '(you said nothing)'
+
+        $('revlinks').innerHTML = ''
+        if (r.links.length === 0) $('revlinks').innerHTML = '<div class="empty">no causal links were extracted</div>'
+        for (const l of r.links) {
+          const d = document.createElement('div')
+          d.className = 'link'
+          d.innerHTML = '<span class="c"></span> <span class="arrow mono"></span> <span class="e"></span>'
+          d.querySelector('.c').textContent = l.cause
+          d.querySelector('.arrow').textContent = `—${l.relation}→`
+          d.querySelector('.e').textContent = l.effect
+          $('revlinks').appendChild(d)
+        }
+
+        $('revgaps').innerHTML = ''
+        if (r.standing.length === 0) $('revgaps').innerHTML = '<div class="empty">your chain closes everywhere it was read</div>'
+        for (const s of r.standing) {
+          const d = document.createElement('div')
+          d.className = 'gap'
+          d.innerHTML = '<span class="kind mono"></span> <span class="txt"></span>'
+          d.querySelector('.kind').textContent = s.kind
+          d.querySelector('.txt').textContent = s.text
+          $('revgaps').appendChild(d)
+        }
+
+        $('revdebts').innerHTML = ''
+        if (r.debts.length === 0) {
+          $('revdebts').innerHTML = '<div class="empty">the child introduced no link you had not said</div>'
+        } else {
+          $('revdebts').innerHTML = `<div class="empty">checking ${r.debts.length} against the mechanism…</div>`
+        }
+
+        show('review')
+
+        // Step 5, for real. One model call per debt, so it lands after the page does.
+        if (r.debts.length > 0) {
+          try {
+            const settled = await (await fetch('/settle', { method: 'POST' })).json()
+            $('revdebts').innerHTML = ''
+            for (const s of settled) {
+              const d = document.createElement('div')
+              d.className = 'gap'
+              d.innerHTML =
+                '<div><span class="kind mono"></span> <span class="claim"></span></div>' +
+                '<div class="closing"></div><div class="by mono"></div>'
+              d.querySelector('.kind').textContent = s.kind
+              d.querySelector('.claim').textContent = s.claim
+              d.querySelector('.closing').textContent = s.text
+              d.querySelector('.by').textContent = `said by ${s.by}`
+              $('revdebts').appendChild(d)
+            }
+          } catch (err) {
+            $('revdebts').innerHTML = '<div class="empty err"></div>'
+            $('revdebts').firstChild.textContent = String(err.message ?? err)
+          }
         }
       })
-      input.focus()
     </script>
   </body>
 </html>

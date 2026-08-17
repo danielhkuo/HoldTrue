@@ -1,5 +1,38 @@
 # Spec: Supply
 
+> ## RULING 7 IS SPENT, AND `src/feynman/supply.ts` IS BUILT — 2026-08-16
+>
+> **Ruling 7 said "do not build either until this is ruled." It is ruled, and the answer is that
+> the question dissolved rather than resolved.** Decided by a three-voice council on 2026-08-16,
+> after the owner delegated the decision.
+>
+> Ruling 7 asked whether Supply and Contradict are one piece or two. It was comparing a **gap
+> hunter** against a **contradiction finder**. The 2026-08-12 re-scope in the banner below deleted
+> the gap hunter: this piece is now handed the propositions the child introduced and checks each
+> one, so there are no omission findings left in it. What was built settles claims the **child**
+> made. Contradict's subject is the **user's** own explanation, and its input carries anchors where
+> this one carries none. Two pieces about two speakers, not two views of one list.
+>
+> **The argument worth keeping, which no document in this repo had made.** The strongest case
+> against merging is that this piece's only mechanical check — section 6's *no finding names a link
+> already present in the explanation* — **inverts its sign for a contradiction**, which by
+> definition names a link that *is* present. Merged, the check can only be applied behind a
+> discriminator the model chooses, which hands the model the switch for its own guard rail and lets
+> a mislabelled finding escape silently in the Law 1 direction. In the built piece that cannot
+> happen: `tally.ts`'s `alreadyYours` runs the comparison in arithmetic before the model is called,
+> which is precisely why a row is a debt. The guard sits upstream and the model never reaches it.
+>
+> **What the build settled for free, and what it did not.** Rulings 2, 3 and 9 are spent under the
+> re-scope — the child already asked, so no `probe` is minted here; the ledger row already has
+> identity, so no `finding_id`; and one debt per call leaves no batch for a `none` variant to
+> describe. Ruling 8 is answered by the banner's own code-wins rule: the built piece imports
+> `ask` and `Attribution` from `src/feynman/model.ts` and declares neither. **Rulings 1, 5, 6 and
+> 10 are untouched and still open.**
+>
+> **What has no test.** `supply.ts` ships with no test file and no oracle, like `cohere` and
+> `speak` before it. Section 7's account of what nobody measures is unchanged and is the thing to
+> read before trusting any verdict it returns.
+>
 > ## ⚠ Read this before citing anything below — banner added 2026-08-12
 >
 > **This file is trusted more than it deserves.** It is the heaviest invariant-citing document in the

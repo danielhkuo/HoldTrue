@@ -510,7 +510,41 @@ knowledge now being specced in [`specs/`](specs/).
 marked as proposed. The owner rules on it; until he does, this list is what a piece cites and the
 proposal binds nothing.
 
-0. **The falsification week.** Three measurements, about a day each: the within-sentence
+0. ~~**The falsification week.**~~ **DROPPED 2026-08-16, by the owner.** Not deferred, not
+   blocked — dropped, and recorded here because a measurement that quietly stops being mentioned
+   reads as an oversight and this one is a choice. What the project gives up, stated plainly and
+   not argued away:
+
+   - **The only measurement that could end the project.** The within-sentence rate was the one
+     number that could have said *stop*. Nothing replaces it, so no measurement can now retire
+     this design.
+   - **Invariant 8 is unwarranted permanently.** Its stated warrant, the 97/5 pair, was traced to
+     PubMed abstracts and falsified on 2026-08-07. The measurement in
+     [`measurements/within-sentence/`](../measurements/within-sentence/) was what would have
+     replaced it. The invariant stays in force on nothing, and the open question *what warrants
+     invariant 8* below can no longer be closed.
+   - **The 75% kill number, ruled earlier the same day, is moot.** It was frozen against a
+     collection that will not happen. Left recorded rather than deleted, because the reasoning
+     about which direction the error runs is still the right reasoning if anybody restarts this.
+   - **Cohere's four kill numbers can never fire.** Ruling 9 in [`specs/cohere.md`](specs/cohere.md)
+     scored the false-question rate against hand marks. There are no hand marks. Cohere ships
+     unmeasured, and its spec's claim that the rate "can retire this piece" is now false.
+   - **Extract's prompt work loses its gold set, and that is the sharpest cost.** Three prompt
+     variants were compared on 2026-08-12 and the comparison was worthless because each agent
+     built its own test set. The week was the fix. Without it every future prompt change is judged
+     by eye on generated prose — which is exactly the condition
+     [*Two models may talk*](#two-models-may-talk-nothing-they-produce-is-a-measurement) says
+     produces no measurement.
+   - **The structural guard loses its release condition.** That row says no figure from the rig
+     enters a tracked file "until `measurements/within-sentence/explanations/` holds fifteen real
+     ones." That directory will now never fill, so the guard is permanent rather than temporary.
+     Read it that way: **no rig figure ever enters a tracked file.**
+
+   **What this does not touch.** Vault eligibility was finished on 2026-08-06 and is banked in
+   [#26](https://github.com/danielhkuo/HoldTrue/issues/26). Extract's eval set is a separate effort
+   and is not cancelled by this row, only deprived of its first fifteen to twenty items.
+
+   The original entry read: Three measurements, about a day each: the within-sentence
    rate, the false-question rate, and vault eligibility. Kill numbers written down *before* any of
    them run. **Two corrections, 2026-08-12.** It is not codeless —
    `measurements/within-sentence/rate.mjs` exists. And it now clears two blockers rather than one: it
