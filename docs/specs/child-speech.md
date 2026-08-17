@@ -446,8 +446,11 @@ stays open until `decisions.md` closes it.
     true one** — the last being a misconception of yours, surfaced by your own teaching. That cross
     is Supply's output and is not this piece's to license. Note where it lands:
     [`../features/feynman.md`](../features/feynman.md)'s step 7 *"kept its shape and lost its
-    speaker"*, and `decisions.md` says relaxing *the child asks, never tells* is a constitutional
-    change rather than a tuning decision.
+    speaker"*. **This used to add that `decisions.md` calls relaxing *the child asks, never tells* a
+    constitutional change rather than a tuning decision. That row was struck on 2026-08-16 and
+    nothing replaces it as a bar**, so the sentence is corrected rather than deleted: what binds
+    here now is Law 1 and invariant 5 — whatever the child opens, something closes — plus the ledger
+    that records what it opened.
 
     **The evidence gate, and this is the part to read twice.** `AGENTS.md` requires a claim about how
     people learn to already be in [`../research/evidence-base.md`](../research/evidence-base.md).
@@ -475,9 +478,11 @@ stays open until `decisions.md` closes it.
     cut; it comes back with a different trigger.
 
     **It is legal because it claims nothing.** Asking someone to repeat asserts no correction and
-    makes no claim about their words, so it does not touch [`../decisions.md`](../decisions.md)'s
-    *the child asks, never tells*. A misfire costs one round trip, which is the asymmetry that row
-    turns on. And it is the most natural thing a child says.
+    makes no claim about their words. **The row this cited — [`../decisions.md`](../decisions.md)'s
+    *the child asks, never tells* — was struck on 2026-08-16, and the ruling never needed it:** a
+    gate that asserts nothing was never within reach of a rule about asserting. The engineering
+    asymmetry that row turned on survives the strike, and a misfire here still costs one round trip.
+    And it is the most natural thing a child says.
 
     **The gate is arithmetic and runs before `speak`.** `Spoken` gains a third kind,
     `{ kind: 'resay' }`, so the refusal is a defined result rather than an exception and `turn`

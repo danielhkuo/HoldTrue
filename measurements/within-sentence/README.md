@@ -45,17 +45,17 @@ second-hand and give the same ratio as the verified 1,751 against 3,727.
 This is a fact about how you explain things, not about the model. That is why it is measured
 before anything is built on top of it, and why an agent cannot produce the data.
 
-## The kill number, and why it is under review
+## The kill number — RULED 2026-08-16: below 75%
 
-**The standing line is still below 60%**: under that, invariant 8 needs renegotiating rather than
-obeying. It was fixed before any data existed, which is the part that matters and the part that is
-not changing.
+**The line is below 75%**: under that, invariant 8 needs renegotiating rather than obeying. It was
+~~60%~~ and it moved once, on 2026-08-16, before a single explanation existed. **It is frozen
+now.**
 
-**What is happening here is a revision of a threshold whose premise was falsified, made before a
-single explanation has been written.** That is legitimate. Adjusting a threshold after seeing a
-result is not, and nothing below licenses it — a line chosen after the fact, by the person who
-wants the feature to exist, is not a gate. The distinction is the whole discipline, so say in
-writing which of the two you are doing, and date it.
+**Which of the two acts that was, stated in writing because this section demands it.** It is a
+revision of a threshold whose premise was falsified, made before any data. That is legitimate.
+Adjusting a threshold after seeing a result is not, and nothing below licenses it — a line chosen
+after the fact, by the person who wants the feature to exist, is not a gate. The distinction is
+the whole discipline. The first file in `explanations/` closes this section permanently.
 
 The falsified premise: 60% was chosen when extraction across a sentence boundary looked hopeless,
 so the within-sentence share was very nearly the whole of what Extract could ever recover and the
@@ -69,23 +69,28 @@ also records that reproductions of those baselines vary by about ±5 F1. They ar
 BERT-class systems on news; nothing here was measured on speech.) Obeying invariant 8 therefore
 gives up links a wider read would have caught, which is a higher cost than 60% was priced against.
 
-**No defensible replacement number follows from that correction, so the choice is the owner's, and
-it has to be made before the first file lands in `explanations/`.** Three options, none free:
+**The ruling: 75%.** The reason is the asymmetry, not the digit, and the digit is admitted to be a
+judgement — 75 has no more derivation from the literature than 60 had, because a share that swings
+32%–97% by genre implies nothing about this one.
 
-1. **Keep 60%**, re-justified as a product judgement rather than a figure derived from the
-   literature: below it, two of every five links you assert are invisible to Extract. Cheapest,
-   and honest so long as it is labelled a judgement.
-2. **Raise it, to somewhere around 75–80%**, on the correction above: per-sentence extraction now
-   forgoes recoverable links rather than unrecoverable ones, so the bar for *per-sentence is fine*
-   should sit higher than it did when the alternative looked futile.
-3. **Retire the kill number from this measurement** and move the gate to the false-question rate,
-   which watches the failure happen instead of predicting it from a ceiling. This measurement
-   stays either way, as the thing that sizes that ceiling.
+The asymmetry carries it. Set the line too low and you measure 62%, obey invariant 8, and lose
+four links in every ten permanently and silently: no later run tells you they were there. Set it
+too high and you measure 70%, renegotiate, and take the widening option that is already written
+down in [`../../docs/decisions.md`](../../docs/decisions.md) — hand the model a window of
+surrounding sentences while it still emits one link set per sentence, so the schema, the anchors
+and Compare's set arithmetic are all unchanged. One failure is permanent and invisible. The other
+costs building a thing somebody has already designed. **A gate whose consequence is cheap should
+sit high.**
 
-`rate.mjs` still reports against 60% and says on every run that the line is under review. The
-moment an explanation exists the number is frozen, whichever one it is. **The pivot of 2026-08-07
-does not reopen this and does not settle it.** It is the owner's open decision from earlier the
-same day, and it stays open.
+**Rejected, and both were live.** *Keep 60%, relabelled a product judgement* — cheapest and
+honest, and it prices per-sentence extraction as though the links it forgoes were unrecoverable,
+which the correction above shows they are not. *Retire the number here and move the gate to the
+false-question rate* — that instrument watches the failure happen instead of predicting it from a
+ceiling, which is genuinely better, and it leaves this measurement with no gate at all during the
+window when it is the only one that has run. Neither is refuted. Both stay on the record.
+
+`rate.mjs` reports against 75% from this ruling. **The moment an explanation exists the number is
+frozen.**
 
 ## The false-question rate: four kill numbers and how to score it
 

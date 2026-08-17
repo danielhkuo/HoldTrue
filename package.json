@@ -17,7 +17,8 @@
     "check": "npm run typecheck && npm run test",
     "mutate": "stryker run",
     "mutate:incremental": "stryker run --incremental",
-    "rig": "npx --yes tsx src/feynman/rig.ts"
+    "rig": "npx --yes tsx src/feynman/rig.ts",
+    "app": "npx --yes tsx src/app/server.ts"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^9.2.0",

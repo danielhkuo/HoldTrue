@@ -5,7 +5,10 @@
 > skeleton and its own header says so — it was written so the child could speak before Extract could
 > run, and it is not this spec's implementation.
 >
-> **Rulings 1, 2, 9, 10 and 11 are settled.** 3 and 5 change a signature and still block the oracle.
+> **Rulings 1, 2, 3, 5, 9, 10 and 11 are settled.** 3 and 5 were ruled on 2026-08-16 and no longer
+> block the oracle. **Ruling 12 now does, and it is the one thing 3 and 5 create between them** —
+> dedupe by concept while every emitted string stays a quote, and something has to say *which*
+> mention is quoted. It changes behaviour the oracle asserts.
 > A demo-grade implementation exists in `src/feynman/cohere.ts` built to 1, 2, 4, 5, 6 and 11 — it has
 > no test file, no oracle and no mutation run, and its header says so.
 >
@@ -169,14 +172,16 @@ have their own rulings 1 to 8; cite the file name.**
    the head only, which is `notice`'s asymmetry and nobody has argued for it.
    **Changes behaviour the oracle asserts. Blocks the oracle.**
 
-3. **One shape per concept, or one per link?** **PROPOSED: per concept.** The skeleton pushes a
+3. **One shape per concept, or one per link?** **RULED 2026-08-16: per concept.** The skeleton pushes a
    `dangling` for every link whose effect is that concept, so a concept with three links into it
    yields three flags. A rate counting those separately reports the graph's fan-in rather than
    Cohere's error. The links move into `from`, which is also what makes a flag traceable to a hand
    mark. Rejected: per link with the consumer deduplicating, which is what happens today — `notice`
    absorbed it with its `asked` keys, so every future consumer inherits the burden and each invents
    its own key.
-   **Changes a signature. Blocks the oracle.**
+   **Signature settled; section 2 was already written to it. What it opens is ruling 12** — a
+   concept deduplicated across two differently spelled mentions still emits one string, and nothing
+   here says which.
 
 4. **`unlinkedPair` compares the wrong things.** **PROPOSED: fix, and it is a defect rather than a
    design question.** `linked` holds `cause→effect` keys, but the guards ask whether one *cause* links
@@ -186,13 +191,13 @@ have their own rulings 1 to 8; cite the file name.**
    that into the child asking whether X causes itself. Silent.
    Changes no signature.
 
-5. **`via` must be a quote.** **PROPOSED: yes**, and `unlinkedPair` gains `from` with the rest.
+5. **`via` must be a quote.** **RULED 2026-08-16: yes**, and `unlinkedPair` gains `from` with the rest.
    `via` is currently the `conceptOf` key — normalised, lowercased, filler-stripped — and it is the
    only field in the type you never said aloud. `speak` puts shape phrases into the prompt, so a
    normalised key would enter as though it were your words. `unlinkedPair` is also the only shape
    carrying no link, which makes it the one kind the measurement cannot trace — and it is the kind
    where the child plants a guess, which is the kind that most needs tracing.
-   **Changes a signature. Blocks the oracle.**
+   **Signature settled; section 2 was already written to it. Ruling 12 says which quote.**
 
 6. **Take the stemmer.** **PROPOSED: yes.** `conceptOf` does no inflection stripping, so *lifts* and
    *lifting* are two nodes in your own graph, and a chain you closed reads as one `dangling` plus one
@@ -257,8 +262,65 @@ have their own rulings 1 to 8; cite the file name.**
     `unlinkedPair` the speaker never said, plus a self-edge.
 
     **Still open underneath it.** Determiner stripping did not make Cohere fire on the bread
-    transcript either, because Extract returns **whole clauses** as concepts and two mentions of one
-    thing are never the same string. That is Extract's prompt, not this piece's arithmetic.
+    transcript either, because two mentions of one thing are never the same string. That is
+    Extract's prompt, not this piece's arithmetic.
+
+    **The stated cause was *whole clauses*, and a probe on 2026-08-16 says that is wrong — or at
+    least not the binding one.** Run over the toilet explanation `demo.ts` ships, Extract returns
+    concepts averaging four words, not clauses. The chain still fails to close, and the reason is
+    visible in the output:
+
+    ```
+    causes   "push the handle down"  ->  "pulls the chain"
+    causes   "the chain"             ->  "lifts the flapper"
+    enables  "the flapper lifting"   ->  "the tank water rush into the bowl"
+    ```
+
+    **Extract writes an effect as a verb phrase and a cause as a noun phrase**, so the effect of one
+    link and the cause of the next are the same node in three different forms — `pulls the chain`
+    against `the chain`, `lifts the flapper` against `the flapper lifting`. A perfectly closed
+    three-link chain yields two `dangling` and two `rootless`, every one of them false. Stemming does
+    not reach it, because the words that differ are the head noun against the head verb, not an
+    inflection. This is **the largest single input to the false-question rate** and it is upstream of
+    every arithmetic ruling in this file.
+
+    **The obvious fix was tried in the same probe and failed**, which is why this paragraph records
+    it rather than proposing it again. A prompt variant asking for *the shortest run of words that
+    names one thing* — the move `HANDOFF.md` proposed as the first thing worth doing — returned
+    **byte-identical output** on two passes. It changed nothing. What that suggests, untested, is
+    that the fix is not about length at all but about **grammatical form**: requiring both sides of a
+    link to be a noun phrase naming a thing. Nobody has run that, and the probe was an engineering
+    count on generated input, so no figure from it enters this file as a measurement.
+
+12. **Which mention gets quoted?** **RULED 2026-08-16: the earliest, by sentence order.** Proposed
+    by an agent and **delegated** by the owner — *"whatever is the best design decision"* — rather
+    than authored by him. Recorded that way because rulings 9 and 10 set the precedent and a
+    delegated call is weaker evidence than a considered one: if this turns out wrong, it was nobody's
+    conviction. This is what
+    rulings 3 and 5 create between them and neither answers. Ruling 3 collapses every mention of a
+    concept into one shape. Ruling 11 makes the collapsing key stemmed and determiner-stripped, so
+    *the yeast* and *that yeast* are one node. Ruling 5 and section 3 then say the emitted string is
+    a quote of your words. You said two things; the shape carries one field. **Nothing says which,
+    and an implementation that picks silently is picking.**
+
+    Take the earliest mention by sentence order, tie-broken by link order inside the sentence —
+    which is simply the first entry in `from`. It is deterministic, it needs no new data, and it
+    quotes the concept back in the words you introduced it with, which is the phrasing a question
+    should use.
+
+    **The consequence, and it is the part to check in review: `from` becomes ordered, and its order
+    is load-bearing.** Section 2 describes `from` as the links a shape was computed from and says
+    nothing about sequence. Under this ruling the sequence decides an emitted string, so the spec
+    has to require it: `from` is in transcript order. An implementation that builds `from` by
+    iterating a `Map` satisfies every word of section 2 today and emits a different quote run to
+    run.
+
+    Rejected: **the longest mention**, on the theory that it is the most informative — it is not,
+    it is the one most likely to be the whole clause, which is the defect ruling 11 records as still
+    open underneath it, so this would bake that defect into the output. **The most frequent
+    mention**, which needs a count and still needs a tie-break, so it is this rule with extra steps.
+    **The normalised key**, which is ruling 5 and is already refused.
+    **Settled. It no longer blocks the oracle.**
 
 ## 6. The oracle for `cohere`
 

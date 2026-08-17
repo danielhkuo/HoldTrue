@@ -474,8 +474,10 @@ Mark every causal link by hand. Count what fraction have cause, effect and relat
 single sentence. Invariant 8 mandates per-sentence extraction, so a link whose halves straddle a
 full stop — *"the pressure drops. So the valve opens"* — is structurally invisible, and that
 fraction is therefore the ceiling on everything Extract can ever see. A fact about how you speak,
-not about the model. **Suggested kill number: below 60%, invariant 8 needs renegotiating rather
-than obeying.**
+not about the model. **The kill number belongs to
+[`measurements/within-sentence/README.md`](../../measurements/within-sentence/README.md)**, which
+ruled it on 2026-08-16 and froze it. This page cites it and does not restate it — the figure sat
+here as a second copy and went stale, which is the failure the one-source rule exists to stop.
 
 Until 2026-08-07 this paragraph borrowed a justification — *"causal extraction runs ~97% F1
 within a sentence and roughly 5% across one"* — and that borrowing does not hold. The pair is
@@ -495,11 +497,13 @@ covers spoken, from-memory explanation by a learner, which is this product's onl
 is a better reason to run the measurement than the one it replaces, not a worse one: this week is
 now the only evidence there is, rather than a confirmation of somebody else's corpus.
 
-The kill number stays at 60% and has not been moved. What changed is that it is now a line
-someone drew rather than one the literature implied, since a share that swings 32%–97% by genre
-implies nothing about this one. If it is to be revised, it must be revised **now, before any
-explanation is written, and recorded as a premise falsification** — which is a different act from
-adjusting a threshold after seeing a result, and the second remains forbidden.
+**The kill number moved on 2026-08-16, and this paragraph used to say it had not.** It was revised
+before any explanation was written and recorded as a premise falsification, which is the one
+legitimate direction; adjusting a threshold after seeing a result remains forbidden. What made the
+revision necessary is above: the figure was a line someone drew rather than one the literature
+implied, since a share that swings 32%–97% by genre implies nothing about this one. The number
+itself, the reasoning and the two options it turned down live in
+[`measurements/within-sentence/README.md`](../../measurements/within-sentence/README.md).
 
 **Two extra columns, free.** For every cross-sentence link you mark, record two more facts: was
 there a causal connective opening the effect sentence, and was the cause in the immediately

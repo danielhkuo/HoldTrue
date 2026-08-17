@@ -4,16 +4,16 @@
 // Reads every explanation in ./explanations, counts the links you marked as within one
 // sentence against those you marked as split, and reports the fraction.
 //
-// Kill number, fixed before any data existed: below 60% and invariant 8 needs renegotiating
-// rather than obeying. Still 60%, but under review — the premise it was chosen against was
-// falsified on 2026-08-07, before any data existed. README.md lays out the options and the rule:
-// settle it before the first explanation is written, then never touch it again.
+// Kill number: below 75% and invariant 8 needs renegotiating rather than obeying. It was 60%,
+// and it moved once — on 2026-08-16, before a single explanation existed, because the premise
+// behind 60% was falsified on 2026-08-07. That is a revision, not an adjustment. README.md holds
+// the reasoning and the two options it turned down. It is frozen: never touch it again.
 
 import { readdir, readFile } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const KILL = 0.6
+const KILL = 0.75
 const DIR = join(dirname(fileURLToPath(import.meta.url)), 'explanations')
 
 const WITHIN = '## Links — within one sentence'
@@ -140,7 +140,7 @@ console.log('')
 console.log(rate >= KILL
   ? `  ABOVE the ${KILL * 100}% kill number. Invariant 8 stands; per-sentence extraction is viable.`
   : `  BELOW the ${KILL * 100}% kill number. Invariant 8 needs renegotiating rather than obeying —\n  most of how you explain things would be structurally invisible to a per-sentence extractor.`)
-console.log(`\n  The ${KILL * 100}% line is under review: the premise it was chosen against was falsified\n  before any data existed. See README.md. If it was not settled before these explanations\n  were written, it is frozen now — a threshold moved after the data is not a gate.`)
+console.log(`\n  The ${KILL * 100}% line was ruled on 2026-08-16, before any explanation existed, and is\n  frozen. See README.md for the reasoning. A threshold moved after the data is not a gate.`)
 
 if (problems.length) {
   console.log('\n  Problems:')
