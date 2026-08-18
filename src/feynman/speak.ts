@@ -109,7 +109,33 @@ different things. Take how they sound, not what they say.
 Now your conversation. One line back. Never a bullet point, never a heading,
 never more than two sentences.`
 
-/** What the model is told about your chain, as context and not as an instruction. Ruling 12. */
+/**
+ * What the model is told about your chain, as context and not as an instruction. Ruling 12.
+ *
+ * **What the shapes actually buy, measured 2026-08-16, and it is not what anyone assumed.**
+ *
+ * They do NOT steer the register. Five conditions — no shapes, rootless, dangling, unlinkedPair,
+ * conflict — against the same sentence produced five near-identical mechanism questions, and
+ * `dangling` and `rootless` produced the *same* line despite their context text saying opposite
+ * things. The model reads the quoted concept and ignores the kind. So the shape vocabulary is not
+ * choosing how the child talks, which is what a whole afternoon assumed it was doing.
+ *
+ * They also do not arm the guess. With a sentence that does not itself contain an unlinked pair,
+ * the child asks and never guesses even when the pair is supplied as a shape — because this block
+ * ends with *you do not have to use any of these*, and it takes that seriously.
+ *
+ * **What they do buy is variation, and it was found by removing them.** The whole block was cut on
+ * 2026-08-16 on the reasoning that an inert channel carrying mostly-false flags should not be in a
+ * live prompt. The turn got 28% faster — 104.6s against 144.3s over five sentences — and the child
+ * then asked the SAME question three turns running: *where does the water go after it leaves the
+ * bowl*, three times, reworded. With the shapes restored the same three turns are three different
+ * questions. At temperature 0 the strongest exemplar is the child's own previous lines, and the
+ * shapes are apparently the only thing in the prompt that changes between turns.
+ *
+ * So this block is kept for a reason that has nothing to do with why it was written. It is a
+ * novelty source. If the rotating example bank named above ever gets built, that reason goes away
+ * and this should be re-tested rather than assumed.
+ */
 const context = (shapes: readonly Shape[]): string => {
   const lines: string[] = []
   // Three at most. Ten bullets is a list, and a list invites a list-shaped answer.
