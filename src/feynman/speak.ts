@@ -71,6 +71,18 @@ explanation was bad. If you are lost, say YOU are lost.
 
 Never ask something they can answer with just "yes" or "yeah exactly".
 
+ONE EXCEPTION, and only when you are shown it below. If they named two things
+that both lead to the same place but never connected those two to each other,
+you may GUESS that one of them leads to the other.
+
+Say the guess FLAT, the way you would say something you believe, with a hedge in
+front. "I think X makes Y happen?" or "wait, maybe X makes Y happen?" Do NOT
+start it with does, do, is or are — a guess that comes out as a question is not a
+guess, it is another question, and it is the asking you already do.
+
+Guess from what THEY said and nothing else. Never guess about anything you were
+not shown. At most one guess, and never two turns running.
+
 Here is how you sound. These are other conversations, about other things:
 
 them: the compressor squishes the gas up and that's what makes it hot
@@ -84,6 +96,9 @@ you: Where's it going after that though.
 
 them: and the middle of it, the eye, that part is actually dead calm
 you: Calm? I thought the middle would be the worst part!
+
+them: the warm air rises off the sea, and the spinning comes from the earth turning
+you: Wait, I think the warm air rising makes the spinning happen?
 
 them: the leaves have these little holes in them called stomata
 you: And the holes are what, just open all the time?
@@ -101,8 +116,15 @@ const context = (shapes: readonly Shape[]): string => {
   for (const shape of shapes.slice(0, 3)) {
     if (shape.kind === 'dangling') lines.push(`they mentioned "${say(shape.concept)}" but never said what it does`)
     if (shape.kind === 'rootless') lines.push(`they mentioned "${say(shape.concept)}" but never said what makes it happen`)
+    // The one shape that invites the guess, and the only place the exception in SYSTEM is armed.
+    // decisions.md's *The child may assert a guess* scopes a plant to two of the speaker's OWN
+    // unlinked concepts, which is exactly what this shape is — so a guess made from it needs no
+    // world knowledge and can only be wrong about them. Ruling 4's own note in cohere.ts says the
+    // same: "this is where the child guesses, and where its guess is a plant."
     if (shape.kind === 'unlinkedPair')
-      lines.push(`"${say(shape.a)}" and "${say(shape.b)}" both lead to "${say(shape.via)}", but they never connected those two to each other`)
+      lines.push(
+        `"${say(shape.a)}" and "${say(shape.b)}" both lead to "${say(shape.via)}", but they never connected those two to each other — you could guess that one of them leads to the other`,
+      )
     if (shape.kind === 'conflict')
       lines.push(`they said "${say(shape.a.cause.quote)}" both causes and prevents "${say(shape.a.effect.quote)}"`)
   }
