@@ -116,6 +116,12 @@
       }
       .missing b { color: var(--fg); font-weight: 500; }
       .claim { font-size: 13px; color: var(--muted); }
+      .chain { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; }
+      .chain.solo { border-style: dashed; }
+      .node { font-size: 13.5px; padding: 2px 0; }
+      .rel { font-size: 11px; color: var(--muted); padding: 1px 0 1px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .chainhead { font-size: 11px; color: var(--muted); margin-bottom: 7px; letter-spacing: .04em; text-transform: uppercase; }
+      .brk { font-size: 12px; color: var(--muted); margin: 9px 0 0; padding-top: 8px; border-top: 1px dashed var(--border); }
       #again-text { width: 100%; resize: vertical; }
       .probe { margin-top: 8px; font-weight: 500; }
       .answer { width: 100%; margin-top: 10px; }
@@ -168,7 +174,7 @@
           <div id="debts"><div class="empty">nothing yet</div></div>
         </div>
         <div class="section">
-          <h2>New words it used</h2>
+          <h2>Words</h2>
           <div id="notes"><div class="empty">nothing yet</div></div>
         </div>
         <footer>
@@ -190,6 +196,7 @@
         <div class="quote" id="revtext"></div>
 
         <h3>The chain you stated</h3>
+        <p class="sub" id="chainsum"></p>
         <div id="revlinks"></div>
 
         <h3>Where the mechanism says otherwise</h3>
@@ -344,7 +351,20 @@
             notes.push(i)
           }
           fill($('debts'), debts, 'it asserted nothing you had not said')
-          fill($('notes'), notes, 'no new words')
+          // A COUNT, not a list. The word check flags any token the child used that you had not,
+          // minus a ~180-word stop list — so "water" and "actually" leave it identical and a reader
+          // has to redo the discrimination by eye on every row. That is not a signal, it is a list.
+          // The review screen already renders none of these; this makes the live panel agree.
+          // Still COMPUTED, because on a turn where Extract returns no links the word check is the
+          // only thing that observes the child at all, and Law 1 wants that written down.
+          $('notes').innerHTML = ''
+          const nEl = document.createElement('div')
+          nEl.className = 'empty'
+          nEl.textContent =
+            notes.length === 0
+              ? 'none'
+              : `${notes.length} word${notes.length === 1 ? '' : 's'} you had not used — nothing is owed on them`
+          $('notes').appendChild(nEl)
         } catch (err) {
           pending.querySelector('.body').className = 'body err'
           pending.querySelector('.body').textContent = String(err.message ?? err)
@@ -371,15 +391,49 @@
         $('revtext').textContent = r.transcript || '(you said nothing)'
 
         $('revlinks').innerHTML = ''
-        if (r.links.length === 0) $('revlinks').innerHTML = '<div class="empty">no causal links were extracted</div>'
-        for (const l of r.links) {
-          const d = document.createElement('div')
-          d.className = 'link'
-          d.innerHTML = '<span class="c"></span> <span class="arrow mono"></span> <span class="e"></span>'
-          d.querySelector('.c').textContent = l.cause
-          d.querySelector('.arrow').textContent = `—${l.relation}→`
-          d.querySelector('.e').textContent = l.effect
-          $('revlinks').appendChild(d)
+        const chains = r.chains ?? []
+        if (r.links.length === 0) {
+          $('revlinks').innerHTML = '<div class="empty">no causal links were extracted</div>'
+          $('chainsum').textContent = ''
+        } else {
+          const joined = chains.filter(c => c.length > 1).length
+          $('chainsum').textContent =
+            chains.length === 1
+              ? `${r.links.length} links, and they join into one chain.`
+              : `${r.links.length} links in ${chains.length} separate pieces` +
+                (joined === 0 ? ' — none of them join up.' : `, ${joined} of which join up.`)
+          for (const chain of chains) {
+            const box = document.createElement('div')
+            box.className = chain.length > 1 ? 'chain' : 'chain solo'
+            const head = document.createElement('div')
+            head.className = 'chainhead'
+            head.textContent = chain.length > 1 ? `${chain.length} steps` : 'on its own'
+            box.appendChild(head)
+            chain.forEach((l, i) => {
+              if (i === 0) {
+                const n = document.createElement('div')
+                n.className = 'node'
+                n.textContent = l.cause
+                box.appendChild(n)
+              }
+              const rel = document.createElement('div')
+              rel.className = 'rel'
+              rel.textContent = `↓ ${l.relation}`
+              box.appendChild(rel)
+              const n2 = document.createElement('div')
+              n2.className = 'node'
+              n2.textContent = l.effect
+              box.appendChild(n2)
+            })
+            $('revlinks').appendChild(box)
+          }
+          if (chains.length > 1) {
+            const note = document.createElement('div')
+            note.className = 'brk'
+            note.textContent =
+              'A piece stands alone when its wording does not match the next step exactly. That is usually the extractor, not you — the same thing named two ways reads as two things.'
+            $('revlinks').appendChild(note)
+          }
         }
 
         $('revgaps').innerHTML = ''

@@ -174,6 +174,12 @@ createServer(async (req, res) => {
           transcript: r.transcript,
           turns: r.turns,
           links: r.links,
+          // The graph as connected components, so a person can see whether their chain actually
+          // joins up or arrives in pieces. Same node identity Cohere reasons over, not a
+          // friendlier approximation of it.
+          chains: session.chains().map(chain =>
+            chain.map(l => ({ cause: l.cause.quote, relation: l.relation, effect: l.effect.quote })),
+          ),
           standing: r.standing.map(s => {
             if (s.kind === 'dangling' || s.kind === 'rootless') return { kind: s.kind, text: s.concept }
             if (s.kind === 'unlinkedPair') return { kind: s.kind, text: `${s.a} · ${s.b}` }

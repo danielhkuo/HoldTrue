@@ -21,9 +21,36 @@ import type { ModelHandle } from './model.js'
  *
  * Rule 1 is the paraphrase problem: a model asked to find something writes an answer in its
  * own words, and a reworded phrase has no position to anchor to, so it is a total loss here
- * even when its meaning is right. Rule 6 is extract.md example 2's mitigation for a phrase that
- * appears twice. Rule 8 pushes recall because the measured failure mode at this model size is
- * silence — 35.70% missing relations against 0.31% false positives.
+ * even when its meaning is right. Rule 3 is extract.md example 2's mitigation for a phrase that
+ * appears twice. Rule 5 pushes recall because the measured failure mode at this model size is
+ * silence — 35.70% missing relations against 0.31% false positives. (Those numbers were stale
+ * for part of 2026-08-16, pointing at rules 6 and 8, which is the numbering of a variant that was
+ * reverted. Corrected.)
+ *
+ * **Rules 6 and 7 landed 2026-08-16, from a real session rather than a sample.** A user explained a
+ * toilet in ordinary speech and Extract returned ZERO links on two of four turns:
+ *
+ *     "The flapper is holding back water"
+ *     "I think it goes down and up into the toilet bowl then kind of fills the bowl with more water"
+ *
+ * The raw payload was `{"links":[]}` with `dropped: 0` on every run, which settles a question
+ * nobody had asked: **the gate was innocent.** Nothing failed to anchor because nothing was
+ * offered. It is a recall defect, and the two turns fail for different reasons — one clause each.
+ * Rule 6 buys the second sentence, where hedges and a bare pronoun subject mask a real pair. Rule 7
+ * buys the first, where the model does not count a stative verb as causal.
+ *
+ * Replicated independently before shipping, because two earlier prompt changes that day looked
+ * good once and failed on re-run: two passes over all four live turns and one over the three
+ * samples. Both zero-link turns recovered on both passes, the two turns that already worked were
+ * unchanged, and the samples went 12 links to 13 with `dropped: 0` throughout. Gains only.
+ *
+ * **A schema limit this exposed, which no prompt reaches.** *"The flapper is holding back water"*
+ * asserts `prevents`, but the thing prevented — water flowing out of the tank — is never spoken,
+ * so the only effect available to copy verbatim is the bare noun *water*. Rule 1 forbids supplying
+ * the missing words. The best this pipeline can emit is a verb tail pointing at a bare noun. People
+ * state mechanisms as **states** rather than events all the time, and for that whole class the four
+ * relations can represent only half of what was said. That is architectural and belongs in a
+ * decision row, not a prompt rule.
  *
  * **A noun-phrase rewrite was tried three times on 2026-08-16 and is NOT shipped. Read this
  * before trying it a fourth time, because it looks like a clear win on every first number.**
@@ -79,7 +106,9 @@ RULES:
 3. If a phrase appears more than once in the sentence, copy enough surrounding words to make it unique.
 4. relation is one of: causes, enables, prevents, requires.
 5. Find every link in the sentence. Missing one is worse than being unsure.
-6. If the sentence states no cause and effect, return an empty list.
+6. People speak informally. Ignore hedges ("I think", "kind of", "maybe") and copy the words around them. A pronoun ("it", "that", "they") is a fine cause or effect — copy the pronoun exactly as it appears.
+7. A state one thing holds another in — holding, blocking, keeping, sealing, stopping — is a link. Use prevents or requires.
+8. If the sentence states no cause and effect, return an empty list.
 
 Answer with JSON: {"links":[{"cause":"...","effect":"...","relation":"..."}]}`
 

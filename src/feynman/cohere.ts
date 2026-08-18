@@ -53,7 +53,7 @@ const DETERMINER: ReadonlySet<string> = new Set(
  * used there merges A with B and B with C while leaving A and C apart, which manufactures a chain
  * the speaker never stated. A loose rule may suppress a shape. It may never form one.
  */
-const key = (text: string): string =>
+export const nodeKey = (text: string): string =>
   (conceptOf(text).match(TOKEN) ?? []).map(stem).filter(w => !DETERMINER.has(w)).join(' ')
 
 export type Shape =
@@ -72,8 +72,8 @@ export type Shape =
   /** Two links of yours that disagree. */
   | { readonly kind: 'conflict'; readonly a: Link; readonly b: Link }
 
-const causeOf = (l: Link): string => key(l.cause.quote)
-const effectOf = (l: Link): string => key(l.effect.quote)
+const causeOf = (l: Link): string => nodeKey(l.cause.quote)
+const effectOf = (l: Link): string => nodeKey(l.effect.quote)
 
 /**
  * The chain's own two ends, which are not gaps. Ruling 2.
@@ -241,8 +241,8 @@ export function cohere(links: readonly Link[], _sentences: readonly Sentence[]):
   // guesses — and where its guess is a plant, because you did not say it.
   const byEffect = new Map<string, Link[]>()
   for (const link of links) {
-    const key = effectOf(link)
-    byEffect.set(key, [...(byEffect.get(key) ?? []), link])
+    const k = effectOf(link)
+    byEffect.set(k, [...(byEffect.get(k) ?? []), link])
   }
   const linked = new Set(links.map(l => `${causeOf(l)}→${effectOf(l)}`))
 

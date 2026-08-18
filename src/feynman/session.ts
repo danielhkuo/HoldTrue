@@ -21,7 +21,7 @@
 import { asDoc, cutSentences, SYSTEM, LINK_SCHEMA } from './extract.js'
 import { validate, type Link, type Sentence } from './validate.js'
 import type { ModelHandle } from './model.js'
-import { cohere, type Shape } from './cohere.js'
+import { cohere, nodeKey, type Shape } from './cohere.js'
 import { speak } from './speak.js'
 import { tallyIntroduced, turn, type Debt, type Introduced, type Turn } from './tally.js'
 import { settle, type Settled } from './supply.js'
@@ -149,6 +149,53 @@ export class Session {
    * still standing at the end, and every debt the child opened. Law 1 wants those closed. Nothing
    * closes them.
    */
+  /**
+   * The graph as CHAINS, which is the thing nobody could see.
+   *
+   * A flat list of links hides the only question that matters about a graph: do the pieces join?
+   * Two links join when the first one's effect and the second one's cause are the same node under
+   * `nodeKey` — the exact identity Cohere uses, so what this draws is what Cohere reasons over,
+   * not a friendlier approximation of it.
+   *
+   * **Expect fragments, and expect that to be the honest answer.** Extract writes an effect as a
+   * verb phrase and a cause as a noun phrase, so `pulls the chain` and `the chain` are two nodes
+   * and a chain that closes in the speaker's head arrives here in pieces. Showing one long list
+   * made that invisible; showing components makes it the first thing you see.
+   *
+   * Order within a chain is the order you said it. Links left over after every head is walked are
+   * emitted as their own single-link chains rather than dropped.
+   */
+  chains(): readonly (readonly Link[])[] {
+    const byCause = new Map<string, Link[]>()
+    for (const l of this.#graph) {
+      const k = nodeKey(l.cause.quote)
+      byCause.set(k, [...(byCause.get(k) ?? []), l])
+    }
+    const effects = new Set(this.#graph.map(l => nodeKey(l.effect.quote)))
+    const used = new Set<Link>()
+    const out: Link[][] = []
+
+    const walk = (start: Link): Link[] => {
+      const path: Link[] = []
+      let cur: Link | undefined = start
+      while (cur !== undefined && !used.has(cur)) {
+        used.add(cur)
+        path.push(cur)
+        cur = (byCause.get(nodeKey(cur.effect.quote)) ?? []).find(x => !used.has(x))
+      }
+      return path
+    }
+
+    // Heads first — a link whose cause nothing leads into — so a chain reads in the direction it
+    // was spoken rather than starting from wherever the loop happened to reach.
+    for (const l of this.#graph) {
+      if (used.has(l) || effects.has(nodeKey(l.cause.quote))) continue
+      out.push(walk(l))
+    }
+    for (const l of this.#graph) if (!used.has(l)) out.push(walk(l))
+    return out
+  }
+
   review() {
     return {
       transcript: this.#said.join(' '),
