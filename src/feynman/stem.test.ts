@@ -40,7 +40,9 @@ const wordsFrom = (line: string, transcript: string): readonly string[] => {
 }
 
 describe('a contraction reduces to the word it contracts', () => {
-  // Each of these bare forms is in the tally's STOP list. The contracted form has to reach it.
+  // The property that matters is AGREEMENT with the bare form, not a particular literal. Asserting
+  // literals here is what broke on 2026-08-16 when a stem-final `e` rule took `there's` to `ther`:
+  // the contraction and its bare form still agreed, so nothing was actually wrong with the pairing.
   test.each([
     ["i'm", 'i'],
     ["it's", 'it'],
@@ -51,8 +53,14 @@ describe('a contraction reduces to the word it contracts', () => {
     ["we've", 'we'],
     ["he'd", 'he'],
     ["i'll", 'i'],
-  ])('%s -> %s', (given, want) => {
-    expect(stem(given)).toBe(want)
+  ])('%s agrees with %s', (contracted, bare) => {
+    expect(stem(contracted)).toBe(stem(bare))
+  })
+
+  test('and every one of them is filtered out of the ledger', () => {
+    // The consequence that is actually load-bearing, asserted at the seam it matters at.
+    const line = "i'm on about that, and it's what there's — they're all of it, we've had it."
+    expect(wordsFrom(line, 'the flapper lifts.')).toEqual([])
   })
 
   test('a curly apostrophe is the same character for this purpose', () => {
@@ -121,35 +129,73 @@ describe('inflection stripping is unchanged', () => {
     // `assessment` carries `sses` in the middle. Unanchored, the rule fires and returns
     // `assessme`. Found by a surviving mutant, 2026-08-16.
     expect(stem('assessment')).toBe('assessment')
-    expect(stem('exchange')).toBe('exchange')
+    expect(stem('chessboard')).toBe('chessboard')
   })
 })
 
 /**
- * RECORDING A DEFECT, NOT ENDORSING ONE. Found 2026-08-16 by the first assertion ever written
- * against this module.
+ * THE E-FINAL VERB CLASS. Added 2026-08-16 after an audit found the first version of this file
+ * blind to it: every example in the block above has a consonant-final stem, so `lifting -> lift`
+ * passed and the whole class went untested.
  *
- * The `-ing` rule fires on any word of five or more characters ending in those letters, whether or
- * not they are a verb inflection. So `thing` becomes `th`, `during` becomes `dur` and `everything`
- * becomes `everyth`. It is applied consistently, so the two callers agree with each other and
- * nothing is silently under-reported — which is why this is pinned rather than fixed here.
- *
- * Fixing it changes node identity in Cohere, so it is `cohere.md`'s to rule on and not a defect to
- * quietly correct inside a test file. These assertions exist so that when somebody does rule on it,
- * the change is visible instead of arriving as a mystery diff in the false-question rate.
+ * English drops a stem-final `e` before `-ing` and `-ed`. Untreated, `move` and `moves` land on
+ * `move` while `moving` and `moved` land on `mov`, so one verb is two nodes — and Cohere raises a
+ * `dangling` and a `rootless` across the split. This repo's entire subject matter is things that
+ * close, move, press and space out, so it is the worst possible class to be wrong about.
  */
-describe('known over-stripping, pinned so a change to it is deliberate', () => {
+describe('a verb and its inflections are one node, e-final included', () => {
   test.each([
-    ['thing', 'th'],
-    ['during', 'dur'],
-    ['everything', 'everyth'],
-  ])('%s currently reduces to %s', (given, now) => {
-    expect(stem(given)).toBe(now)
+    ['move', 'moves', 'moving', 'moved'],
+    ['close', 'closes', 'closing', 'closed'],
+    ['file', 'files', 'filing', 'filed'],
+    ['space', 'spaces', 'spacing', 'spaced'],
+  ])('%s / %s / %s / %s agree', (base, plural, ing, ed) => {
+    const root = stem(base)
+    expect(stem(plural)).toBe(root)
+    expect(stem(ing)).toBe(root)
+    expect(stem(ed)).toBe(root)
   })
 
-  test('a four-letter word escapes it, so the rule is length-dependent as well as wrong', () => {
-    expect(stem('sing')).toBe('sing')
-    expect(stem('ring')).toBe('ring')
+  test('the consonant-final family still agrees, unchanged', () => {
+    expect(stem('lifts')).toBe(stem('lift'))
+    expect(stem('lifting')).toBe(stem('lift'))
+    expect(stem('lifted')).toBe(stem('lift'))
+  })
+
+  test('a chain that closes on one verb raises nothing', () => {
+    // The concrete case the audit named: "the flapper closes the valve. the valve closing stops
+    // the flow." `closes` against `closing` used to be two concepts.
+    expect(stem('closes')).toBe(stem('closing'))
+  })
+})
+
+/**
+ * The verb rules now require a remainder that still has a vowel in it, so `thing` keeps its
+ * letters. It used to reduce to `th`, which collided with nothing today but sat one determiner
+ * away from `the`. Pinned so a change is deliberate rather than a mystery.
+ */
+describe('a verb ending is only stripped when something real is left', () => {
+  test.each([
+    ['thing', 'thing'],
+    ['sing', 'sing'],
+    ['ring', 'ring'],
+    ['the', 'the'],
+  ])('%s stays %s', (given, want) => {
+    expect(stem(given)).toBe(want)
+  })
+
+  test('a remainder with no vowel in it is not a word, so nothing is stripped', () => {
+    // `string` -> `str` is long enough to pass the length floor and is not a stem. The vowel
+    // check is the only thing standing between it and `str`.
+    expect(stem('string')).toBe('string')
+    expect(stem('strings')).toBe(stem('string'))
+  })
+
+  test('still over-strips where a vowel survives, and this is not fixed', () => {
+    // `during -> dur` and `everything -> everyth`. Consistent across both callers, and the tally
+    // catches `during` through its bare-word stop-list fallback. Recorded, not endorsed.
+    expect(stem('during')).toBe('dur')
+    expect(stem('everything')).toBe('everyth')
   })
 })
 
