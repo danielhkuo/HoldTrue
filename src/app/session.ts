@@ -25,6 +25,7 @@ import { cohere, type Shape } from '../feynman/cohere.js'
 import { speak } from '../feynman/speak.js'
 import { tallyIntroduced, turn, type Debt, type Introduced, type Turn } from '../feynman/tally.js'
 import { settle, type Settled } from '../feynman/supply.js'
+import { contradict, type Checked } from '../feynman/contradict.js'
 
 export type TurnReport = {
   readonly you: string
@@ -94,6 +95,21 @@ export class Session {
    * predicate to Session-the-piece, which is unbuilt; what this returns is the answer a closure
    * would need, presented to the user so they can close it themselves.
    */
+  /**
+   * Step 4 of the review: every link YOU stated, checked against model knowledge.
+   *
+   * **Runs before `settleDebts` at every call site, and that ordering is a decided row rather than
+   * a preference.** `decisions.md`'s *Contradiction is a distinct finding from omission* says
+   * contradiction is checked first, "because being told about a skipped step is strange if the
+   * surrounding explanation is mistaken."
+   *
+   * One model call per link, in parallel — `contradict` is stateless. No latency budget here; the
+   * review runs after the talking stops.
+   */
+  async checkClaims(): Promise<readonly Checked[]> {
+    return Promise.all(this.#graph.map(l => contradict(l, this.#topic, this.#model)))
+  }
+
   async settleDebts(): Promise<readonly Settled[]> {
     const debts = this.#ledger.filter(r => r.item.kind === 'link').map(r => r.item as Debt)
     return Promise.all(debts.map(d => settle(d, this.#topic, this.#model)))
@@ -114,12 +130,20 @@ export class Session {
   /**
    * What the review phase is handed. **Not the review phase.**
    *
-   * `features/feynman.md` numbers the review 4 to 8, and steps 4 and 5 — where the subject says
-   * otherwise, and where the mechanism connects something you did not — are Contradict and Supply.
-   * Both are unbuilt and both are frozen: `specs/supply.md` ruling 7 asks whether they are one
-   * piece or two, calls itself the one that changes the return type, and says in as many words
-   * *"Do not build either until this is ruled."* So this returns the inputs those steps would
-   * consume and makes no finding of its own.
+   * `features/feynman.md` numbers the review 4 to 8. **Corrected 2026-08-16 — this comment
+   * contradicted the file it sits in.** It said steps 4 and 5 were both unbuilt and frozen while
+   * `settle` was imported at the top of this same file. What is true now:
+   *
+   *   - **Step 5's debt half is built.** `settleDebts` below checks every proposition the child
+   *     introduced. Ruling 7 was ruled spent on 2026-08-16.
+   *   - **Step 5's omission half is not, and the ruling did not reassign it.** *Where the mechanism
+   *     connects something you did not* — a gap the user never mentioned at all — is still named as
+   *     Supply's job in `features/feynman.md` and in `decisions.md`'s build order. Nothing produces
+   *     it. Calling ruling 7 spent renamed past that rather than answering it.
+   *   - **Step 4 is genuinely unbuilt.** Contradict, *where the subject says otherwise about what
+   *     YOU said*, has no spec and no code. Nothing here checks the user's own claims.
+   *
+   * So this returns the bookkeeping, and `settleDebts` returns the one finding that exists.
    *
    * What is genuinely here is bookkeeping that already exists: the links you stated, the shapes
    * still standing at the end, and every debt the child opened. Law 1 wants those closed. Nothing

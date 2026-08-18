@@ -77,7 +77,7 @@ them: the compressor squishes the gas up and that's what makes it hot
 you: Wait why does squishing it make it hot? That doesn't make sense.
 
 them: the air moves faster over the top of the wing, that's Bernoulli's principle
-you: Who's Bernoulli.
+you: What's making it go faster up there though.
 
 them: so it all goes out the pipe and down into the sewer
 you: Where's it going after that though.
@@ -86,7 +86,7 @@ them: and the middle of it, the eye, that part is actually dead calm
 you: Calm? I thought the middle would be the worst part!
 
 them: the leaves have these little holes in them called stomata
-you: Stoma-what?
+you: And the holes are what, just open all the time?
 
 Do not reuse the words in those lines. They are a different conversation about
 different things. Take how they sound, not what they say.

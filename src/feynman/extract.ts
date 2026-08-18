@@ -17,13 +17,59 @@ import { validate, type Link, type Sentence } from './validate.js'
 import type { ModelHandle } from './model.js'
 
 /**
- * The prompt. Three of its six rules exist because of a measured failure.
+ * The prompt. Every rule in it exists because of a measured failure.
  *
  * Rule 1 is the paraphrase problem: a model asked to find something writes an answer in its
  * own words, and a reworded phrase has no position to anchor to, so it is a total loss here
- * even when its meaning is right. Rule 3 is ruling 2's mitigation for a phrase that appears
- * twice. Rule 5 pushes recall because the measured failure mode at this model size is
+ * even when its meaning is right. Rule 6 is extract.md example 2's mitigation for a phrase that
+ * appears twice. Rule 8 pushes recall because the measured failure mode at this model size is
  * silence — 35.70% missing relations against 0.31% false positives.
+ *
+ * **A noun-phrase rewrite was tried three times on 2026-08-16 and is NOT shipped. Read this
+ * before trying it a fourth time, because it looks like a clear win on every first number.**
+ *
+ * The defect is real and is still here. The model writes an effect as a VERB PHRASE and a cause as
+ * a NOUN PHRASE, so consecutive links never share a string and a chain that closes perfectly looks
+ * broken at every seam:
+ *
+ *     causes  "push the handle down" -> "pulls the chain"
+ *     causes  "the chain"            -> "lifts the flapper"
+ *
+ * The candidate added *name a thing, never an action*, a chain framing, and a worked example whose
+ * sentence yields three links.
+ *
+ * **What happened, in order, because the order is the lesson.**
+ *
+ *   1. Scored on join rate over three explanations, it looked decisive: endpoint joins 2/12 to
+ *      7/17, shapes-per-link 1.17 to 0.76.
+ *   2. Scored on a PLANTED GAP — author a chain, excise one link, check the deleted step is
+ *      flagged, which is the one ground truth `decisions.md` permits — a near-identical variant
+ *      collapsed to two links and found nothing. The join win had come from extracting LESS.
+ *   3. The exact candidate then scored 2/2 planted gaps against the shipped prompt's 1/2, which
+ *      looked like a genuine win and was applied.
+ *   4. **One replication later it returned the identical three links for three different input
+ *      texts**, put a false `dangling` on a control that closes, and found neither gap.
+ *
+ * Step 4 also names the likely mechanism: **the worked example carries three links and the model
+ * emits three links whatever the sentence says.** The example anchors output length, which is a
+ * recall failure — and recall is already where Extract fails, 35.70% missing relations against
+ * 0.31% false positives.
+ *
+ * So the honest state is: no variant has beaten this prompt under replication, and every variant
+ * that looked better was measured once. Judge the next one on planted-gap recall across several
+ * passes, never on how tidy the panel looks.
+ *
+ * **What no prompt can fix, established alongside the above.** Within a sentence the noun-phrase
+ * framing does join. Across a sentence boundary nothing can, because the speaker renames the thing
+ * — *the tank water* becomes *the rushing water*, *carbon dioxide* becomes *that gas* becomes *the
+ * trapped bubbles*. Rule 1 needs a verbatim span and the joining string is not in the later
+ * sentence to copy. That is coreference. `cohere.md` ruling 11 forbids the non-transitive tests
+ * that would close it downstream, and the obvious alternative — a canonical label the model
+ * asserts beside the span — closed 3 of 7 such seams against 0 today, then merged a concept
+ * appearing on both sides of one link and manufactured a chain the speaker never stated.
+ *
+ * All engineering counts on generated prose. Not measurements, and no figure here belongs in a
+ * tracked file as one.
  */
 export const SYSTEM = `You find cause-and-effect links inside ONE sentence a person said out loud while explaining how something works.
 

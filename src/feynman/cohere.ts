@@ -35,7 +35,10 @@ const DETERMINER: ReadonlySet<string> = new Set(
   // splits *this yeast* from *the yeast*, which is the exact split the list exists to close. Found
   // by review, 2026-08-12, with a reproduction: it emitted an unlinkedPair of a concept with
   // itself, which is ruling 4's own named failure.
-  'a an the this that these those my your his her its our their some any each every'
+  // `it` joined the list on 2026-08-16. `its` stems to `its` and `it's` stems to `it`, so without
+  // both entries the commonest apostrophe error in transcribed speech splits one node in two —
+  // and decisions.md decides the transcript is never corrected, so that error arrives uncorrected.
+  'a an the this that these those my your his her it its our their some any each every'
     .split(' ')
     .map(stem),
 )
@@ -104,6 +107,88 @@ const termini = (links: readonly Link[]): { readonly head: string | null; readon
  * links that produced it travel in `from`, which is also what lets a flag be traced back to a span,
  * a sentence, and a hand mark when the falsification week scores it.
  */
+/**
+ * THE SEAM MUTE — added 2026-08-16, and it is a suppressor, never a joiner.
+ *
+ * Extract writes an effect as a verb phrase and a cause as a noun phrase, so consecutive links
+ * never share a node string and a chain that closes perfectly looks broken at every seam:
+ *
+ *     causes  "push the handle down" -> "pulls the chain"
+ *     causes  "the chain"            -> "lifts the flapper"
+ *
+ * `pulls the chain` and `the chain` are one node. Unmuted, that yields a `dangling` and a
+ * `rootless` per seam, all false. Three turns of the toilet explanation produced six flags and
+ * every one was wrong — far past the 50% that ruling 9 says retires this piece.
+ *
+ * **Why this is legal where the 2026-08-12 matcher was not.** Ruling 11 forbids a non-transitive
+ * test keying `causes`, `effects`, `byEffect`, `linked` or `termini`, because those decide which
+ * nodes ARE the same node and a loose rule there manufactures a chain nobody stated. This runs
+ * afterwards, over the two flag lists, and only ever deletes. It forms no edge, no pair and no
+ * self-loop. Ruling 11's own last line: *a loose rule may suppress a shape, it may never form one.*
+ *
+ * **Two conditions, and the second was earned by a probe.** Subset in either direction, AND the two
+ * flags came off consecutive links. Subset alone is the best of the three overlap tests tried;
+ * *any shared content word* was refuted outright, because it muted a true `dangling` on
+ * *wets the floor* against a true `rootless` on *the floor drain*, which are different things that
+ * share a word. Adjacency rescues that case completely, on the reasoning that a split node shows up
+ * at ONE seam rather than anywhere in the output.
+ *
+ * **What it still gets wrong, recorded rather than discovered later.** A short concept is a subset
+ * of a longer one that elaborates it, so a true `dangling` on *the water* and a true `rootless` on
+ * *the water pressure* are muted when their links are adjacent. That is a real false negative and
+ * it is the price. It is the cheaper direction: an unasked question costs a question, where the
+ * flag it replaces asks the user about a step they just explained. And pairwise suppression only
+ * cancels a split that shows on both sides at once — where the other half was consumed as a cause
+ * elsewhere, the survivor stays. Both limits are engineering counts on hand-built input, not a
+ * measurement, and no figure here belongs in a spec as one.
+ */
+const wordsOf = (comparisonKey: string): ReadonlySet<string> =>
+  new Set(comparisonKey.split(' ').filter(Boolean))
+
+const subsetEither = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean => {
+  // An empty set is a subset of everything, so without this guard a concept that normalises away
+  // mutes every flag it is compared against. The tally paid for this exact hole once — its
+  // red-team hole 4 is the same shape.
+  if (a.size === 0 || b.size === 0) return false
+  const [small, large] = a.size <= b.size ? [a, b] : [b, a]
+  for (const word of small) if (!large.has(word)) return false
+  return true
+}
+
+/**
+ * Drop the `dangling`/`rootless` pairs that are one node seen from both sides of a seam.
+ * Returns the surviving entries of each list, in order.
+ */
+const muteSeams = (
+  dangling: readonly (readonly [string, string, Link])[],
+  rootless: readonly (readonly [string, string, Link])[],
+  order: ReadonlyMap<Link, number>,
+): {
+  readonly dangling: readonly (readonly [string, string, Link])[]
+  readonly rootless: readonly (readonly [string, string, Link])[]
+} => {
+  const deadD = new Set<number>()
+  const deadR = new Set<number>()
+
+  for (const [di, d] of dangling.entries()) {
+    for (const [ri, r] of rootless.entries()) {
+      if (deadR.has(ri)) continue
+      const a = order.get(d[2])
+      const b = order.get(r[2])
+      if (a === undefined || b === undefined || Math.abs(a - b) !== 1) continue
+      if (!subsetEither(wordsOf(d[0]), wordsOf(r[0]))) continue
+      deadD.add(di)
+      deadR.add(ri)
+      break
+    }
+  }
+
+  return {
+    dangling: dangling.filter((_, i) => !deadD.has(i)),
+    rootless: rootless.filter((_, i) => !deadR.has(i)),
+  }
+}
+
 const byConcept = (
   entries: readonly (readonly [string, string, Link])[],
 ): readonly (readonly [string, readonly Link[]])[] => {
@@ -145,8 +230,12 @@ export function cohere(links: readonly Link[], _sentences: readonly Sentence[]):
     if (!effects.has(cause) && cause !== head) rootless.push([cause, link.cause.quote, link])
   }
 
-  for (const [concept, from] of byConcept(dangling)) shapes.push({ kind: 'dangling', concept, from })
-  for (const [concept, from] of byConcept(rootless)) shapes.push({ kind: 'rootless', concept, from })
+  // Before dedup, so a concept muted at its seam does not survive on another link's copy of it.
+  const order = new Map(links.map((l, i) => [l, i] as const))
+  const kept = muteSeams(dangling, rootless, order)
+
+  for (const [concept, from] of byConcept(kept.dangling)) shapes.push({ kind: 'dangling', concept, from })
+  for (const [concept, from] of byConcept(kept.rootless)) shapes.push({ kind: 'rootless', concept, from })
 
   // Two causes of one effect that you never connected to each other. This is where the child
   // guesses — and where its guess is a plant, because you did not say it.

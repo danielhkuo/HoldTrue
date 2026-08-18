@@ -37,6 +37,9 @@ const who = await model.identify()
  */
 let session = new Session(model, 'how something works')
 
+/** Held between /claims and /refute so a correction is never shipped before its probe is answered. */
+let claims: readonly import('../feynman/contradict.js').Checked[] = []
+
 /** Anchors do not survive JSON usefully. Send the quotes the page actually renders. */
 const plain = (report: TurnReport) => ({
   you: report.you,
@@ -86,12 +89,62 @@ createServer(async (req, res) => {
     }
 
     if (req.method === 'POST' && req.url === '/start') {
+      claims = []
       const { topic } = JSON.parse(await body(req)) as { topic?: unknown }
       // The topic is not decoration: the child speaks in ellipsis, so a debt reading
       // "it empties causes the toilet fills up" has no referent for "it" without it.
       session = new Session(model, typeof topic === 'string' && topic.trim() !== '' ? topic.trim() : 'how something works')
       res.writeHead(200, { 'content-type': 'application/json' })
       res.end(JSON.stringify({ started: true }))
+      return
+    }
+
+    /**
+     * Step 4 of the review: your own claims, checked.
+     *
+     * The response deliberately does NOT carry `correction` on a contradicted item. Step 7 is
+     * *correct by refutation, not by exposition* — your claim, then the probe, then the answer —
+     * so the correction is fetched separately, after a person has actually answered. Shipping both
+     * in one payload would let any careless render turn a refutation into a lecture.
+     */
+    if (req.method === 'POST' && req.url === '/claims') {
+      const checked = await session.checkClaims()
+      claims = checked
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(
+        JSON.stringify(
+          checked.map((c, i) => ({
+            id: i,
+            said: `${c.link.cause.quote} —${c.link.relation}→ ${c.link.effect.quote}`,
+            quote: c.link.sentence.quote,
+            kind: c.standing.kind,
+            // holds -> the note. contradicted -> the probe ONLY. unsettled -> the reason.
+            text:
+              c.standing.kind === 'holds'
+                ? c.standing.note
+                : c.standing.kind === 'contradicted'
+                  ? c.standing.probe
+                  : c.standing.reason,
+            by: `${c.attribution.model_id} · ${c.attribution.calibration}`,
+          })),
+        ),
+      )
+      return
+    }
+
+    // Step 7: the refutation, released only once the person has answered the probe. `answer` is
+    // read but not stored — nothing persists yet, and the catch score that would consume it is
+    // invariant 7's exception and is not built.
+    if (req.method === 'POST' && req.url === '/refute') {
+      const { id } = JSON.parse(await body(req)) as { id?: unknown }
+      const c = typeof id === 'number' ? claims[id] : undefined
+      if (c === undefined || c.standing.kind !== 'contradicted') {
+        res.writeHead(404, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ error: 'no contradiction under that id' }))
+        return
+      }
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ correction: c.standing.correction }))
       return
     }
 

@@ -4,6 +4,12 @@
 // Reads every explanation in ./explanations, counts the links you marked as within one
 // sentence against those you marked as split, and reports the fraction.
 //
+// THE FALSIFICATION WEEK WAS DROPPED ON 2026-08-16, BY THE OWNER. This program still runs and
+// still counts correctly, but nothing is scheduled to fill `explanations/` and no decision now
+// waits on the number it prints. Read the cost sheet in docs/decisions.md, build order entry 0,
+// before spending a week on this. Kept rather than deleted because the protocol is sound and the
+// reasoning is worth having if anybody restarts it.
+//
 // Kill number: below 75% and invariant 8 needs renegotiating rather than obeying. It was 60%,
 // and it moved once — on 2026-08-16, before a single explanation existed, because the premise
 // behind 60% was falsified on 2026-08-07. That is a revision, not an adjustment. README.md holds

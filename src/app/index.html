@@ -102,6 +102,14 @@
       }
       .missing b { color: var(--ink); }
       .claim { font-size: 13px; color: var(--dim); }
+      #again-text { width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; font: inherit; color: inherit; resize: vertical; }
+      #again-text:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+      .probe { margin-top: 8px; font-weight: 550; }
+      .answer { width: 100%; margin-top: 9px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; font: inherit; color: inherit; }
+      .answer:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+      .reveal { margin-top: 9px; }
+      .correction { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+      .holds { border-left-color: var(--ok); }
       .closing { margin-top: 7px; }
       .by { margin-top: 7px; font-size: 11px; color: var(--dim); }
       .gap .kind { text-transform: uppercase; letter-spacing: 0.06em; }
@@ -173,11 +181,18 @@
         <h3>The chain you stated</h3>
         <div id="revlinks"></div>
 
-        <h3>Where it does not close</h3>
-        <div id="revgaps"></div>
+        <h3>Where the mechanism says otherwise</h3>
+        <div id="revclaims"></div>
 
         <h3>What the child opened, and what the mechanism says</h3>
         <div id="revdebts"></div>
+
+        <h3>Where your chain does not close</h3>
+        <div id="revgaps"></div>
+
+        <h3>Say it again, with the step in</h3>
+        <p class="sub">The last move, and the one that makes the rest worth doing.</p>
+        <textarea id="again-text" rows="4" placeholder="explain it again, this time including what you just worked out…"></textarea>
 
         <div class="missing">
           <b>What is checked here, and what is not.</b> Everything above the debts is bookkeeping
@@ -374,7 +389,73 @@
           $('revdebts').innerHTML = `<div class="empty">checking ${r.debts.length} against the mechanism…</div>`
         }
 
+        $('revclaims').innerHTML =
+          r.links.length === 0
+            ? '<div class="empty">no claims to check</div>'
+            : `<div class="empty">checking ${r.links.length} against the mechanism…</div>`
+
         show('review')
+
+        // Step 4, and it runs BEFORE step 5 because decisions.md says contradiction is checked
+        // first — being told about a skipped step is strange if the surrounding explanation is
+        // mistaken.
+        if (r.links.length > 0) {
+          try {
+            const claims = await (await fetch('/claims', { method: 'POST' })).json()
+            $('revclaims').innerHTML = ''
+            const wrong = claims.filter(c => c.kind === 'contradicted')
+            const rest = claims.filter(c => c.kind !== 'contradicted')
+
+            for (const c of wrong) {
+              const d = document.createElement('div')
+              d.className = 'gap'
+              d.innerHTML =
+                '<div class="claim"></div><div class="probe"></div>' +
+                '<input class="answer" placeholder="your answer — then show me" />' +
+                '<div class="reveal"><button class="quiet">Show me</button></div>' +
+                '<div class="correction" hidden></div><div class="by mono"></div>'
+              d.querySelector('.claim').textContent = `you said: ${c.said}`
+              d.querySelector('.probe').textContent = c.text
+              d.querySelector('.by').textContent = `asked by ${c.by}`
+              // Step 7's ordering, enforced rather than trusted: the correction is not in the page
+              // until it is asked for, and it is asked for after the person has written something.
+              d.querySelector('button').addEventListener('click', async ev => {
+                const btn = ev.currentTarget
+                btn.disabled = true
+                btn.textContent = '…'
+                const out = d.querySelector('.correction')
+                try {
+                  const res = await fetch('/refute', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ id: c.id }),
+                  })
+                  const j = await res.json()
+                  out.textContent = j.correction ?? j.error
+                } catch (err) {
+                  out.textContent = String(err.message ?? err)
+                }
+                out.hidden = false
+                d.querySelector('.reveal').remove()
+              })
+              $('revclaims').appendChild(d)
+            }
+
+            for (const c of rest) {
+              const d = document.createElement('div')
+              d.className = c.kind === 'holds' ? 'gap holds' : 'gap'
+              d.innerHTML = '<span class="kind mono"></span> <span class="claim"></span><div class="closing"></div>'
+              d.querySelector('.kind').textContent = c.kind
+              d.querySelector('.claim').textContent = c.said
+              d.querySelector('.closing').textContent = c.text
+              $('revclaims').appendChild(d)
+            }
+            if (claims.length === 0) $('revclaims').innerHTML = '<div class="empty">nothing to check</div>'
+          } catch (err) {
+            $('revclaims').innerHTML = '<div class="empty err"></div>'
+            $('revclaims').firstChild.textContent = String(err.message ?? err)
+          }
+        }
 
         // Step 5, for real. One model call per debt, so it lands after the page does.
         if (r.debts.length > 0) {
