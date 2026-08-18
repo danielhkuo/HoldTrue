@@ -65,7 +65,24 @@ export const stem = (word: string): string => {
   else if (root.length > 4 && /(?:s|x|z|ch|sh)es$/.test(root)) root = root.slice(0, -2)
   else if (root.length > 3 && root.endsWith('s') && !root.endsWith('ss')) root = root.slice(0, -1)
 
-  if (root.length > 4 && root.endsWith('ing')) root = root.slice(0, -3)
-  else if (root.length > 4 && root.endsWith('ed')) root = root.slice(0, -2)
+  // Strip a verb ending only when something real is left behind. The old rule cut three letters
+  // off anything over four long, so `thing` became `th` and `during` became `dur` — and `th`
+  // collided with the determiner list. Requiring a remainder that still has a vowel in it keeps
+  // `lifting -> lift` and leaves `thing` alone. Found 2026-08-16 by an audit of this file's own
+  // oracle, which had pinned `thing -> th` as acceptable.
+  const verbless =
+    root.endsWith('ing') ? root.slice(0, -3) : root.endsWith('ed') ? root.slice(0, -2) : root
+  if (verbless !== root && verbless.length >= 3 && /[aeiouy]/.test(verbless)) root = verbless
+
+  // Then drop a stem-final `e`, because English drops it before -ing and -ed. Without this,
+  // `move`/`moves` land on `move` while `moving`/`moved` land on `mov`, and the two halves of one
+  // verb are two nodes. That is the false-question inflation ruling 6 exists to remove, and it
+  // survived the 2026-08-16 clitic fix untouched because every example in the oracle happened to
+  // have a consonant-final stem. `close`, `move`, `file`, `wire`, `space` are the shape, and this
+  // repo's whole subject matter is things that close, move and press.
+  //
+  // The length floor keeps `the` off it: `the -> th` would collide with the determiner list.
+  if (root.length >= 4 && root.endsWith('e')) root = root.slice(0, -1)
+
   return root
 }

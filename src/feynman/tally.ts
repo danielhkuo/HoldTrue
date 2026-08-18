@@ -84,8 +84,7 @@ export type Spoken =
  * under finding 45: nothing is stripped from anyone's speech, the word is only not counted as
  * content.
  */
-const STOP: ReadonlySet<string> = new Set(
-  `a about above across after again against all along also am an and another any anything are
+const STOP_WORDS = `a about above across after again against all along also am an and another any anything are
    around as at be because been before behind being below beside besides between both but by
    can could did do does doing done down during each either else even ever every everyone
    everything for from had has have having he her here hers him his how i if in inside into is
@@ -96,9 +95,20 @@ const STOP: ReadonlySet<string> = new Set(
    thus to too toward under until up upon us very wait was we well were what when where whether
    which while who whom whose why will with within without would yeah yes yet you your yours
    ah hm hmm huh hey oops ooh ow uh um wow whoa`
-    .split(/\s+/)
-    .filter(Boolean),
-)
+  .split(/\s+/)
+  .filter(Boolean)
+
+/**
+ * Held in BOTH forms, raw and stemmed, and that is not belt-and-braces.
+ *
+ * The check below tests the surface word and its stem against this set, so a list of raw forms
+ * only works while `stem` happens to leave them alone. On 2026-08-16 it stopped: a stem-final `e`
+ * rule took `there's` to `ther`, which is in neither the raw list nor the surface form, and the
+ * word leaked into the ledger. `cohere.ts` had already learned this and stores its determiner list
+ * pre-stemmed for the same reason. Storing both makes the list survive the next change to `stem`
+ * rather than silently springing a leak.
+ */
+const STOP: ReadonlySet<string> = new Set([...STOP_WORDS, ...STOP_WORDS.map(stem)])
 
 /**
  * child-speech.md ruling 14's suffix stripper now lives in `stem.ts`, shared with Cohere, which
