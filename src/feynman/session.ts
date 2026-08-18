@@ -18,14 +18,14 @@
  * third copy appearing.
  */
 
-import { asDoc, cutSentences, SYSTEM, LINK_SCHEMA } from '../feynman/extract.js'
-import { validate, type Link, type Sentence } from '../feynman/validate.js'
-import type { ModelHandle } from '../feynman/model.js'
-import { cohere, type Shape } from '../feynman/cohere.js'
-import { speak } from '../feynman/speak.js'
-import { tallyIntroduced, turn, type Debt, type Introduced, type Turn } from '../feynman/tally.js'
-import { settle, type Settled } from '../feynman/supply.js'
-import { contradict, type Checked } from '../feynman/contradict.js'
+import { asDoc, cutSentences, SYSTEM, LINK_SCHEMA } from './extract.js'
+import { validate, type Link, type Sentence } from './validate.js'
+import type { ModelHandle } from './model.js'
+import { cohere, type Shape } from './cohere.js'
+import { speak } from './speak.js'
+import { tallyIntroduced, turn, type Debt, type Introduced, type Turn } from './tally.js'
+import { settle, type Settled } from './supply.js'
+import { contradict, type Checked } from './contradict.js'
 
 export type TurnReport = {
   readonly you: string

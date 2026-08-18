@@ -5,7 +5,9 @@
  *     npm run rig -- "a bicycle brake" 8
  *
  * One model plays somebody explaining a mechanism out loud from memory. `speak` plays the child.
- * They go back and forth, and the real loop runs underneath exactly as it does in `demo.ts`.
+ * They go back and forth, and the real loop runs underneath exactly as it does in `demo.ts` and in
+ * the app — literally the same loop as of 2026-08-16, since all three now drive `session.ts`
+ * rather than each keeping a copy.
  *
  * WHAT THIS IS FOR. Every test until now cost the owner writing an explanation by hand, which is why
  * `measurements/within-sentence/explanations/` still holds nothing but a `.gitkeep`. This runs fifty
@@ -29,12 +31,8 @@
  * Decided 2026-08-12 by a council; the row is in `docs/decisions.md`.
  */
 
-import { asDoc, cutSentences, SYSTEM, LINK_SCHEMA, type ExtractResult } from './extract.js'
-import { validate, type Link, type Sentence } from './validate.js'
 import { ollama, type ModelHandle } from './model.js'
-import { cohere, type Shape } from './cohere.js'
-import { speak } from './speak.js'
-import { tallyIntroduced, turn, type Introduced, type Turn } from './tally.js'
+import { Session } from './session.js'
 
 /**
  * The explainer. Deliberately NOT told to hesitate, ramble or make mistakes.
@@ -62,82 +60,67 @@ const model: ModelHandle = ollama()
 const who = await model.identify()
 console.log(`\n${dim(`${who.model_id} · ${who.runtime} · rig, not an instrument`)}\n`)
 
-const read = async (line: string): Promise<{ result: ExtractResult; links: readonly Link[] }> => {
-  const doc = asDoc(line)
-  const cut = cutSentences(doc)
-  if (cut.length === 0) return { result: { kind: 'unavailable', reason: 'nothing to read' }, links: [] }
-  const answered = await Promise.all(cut.map(s => model.ask(SYSTEM, s.anchor.quote, LINK_SCHEMA)))
-  if (answered.every(a => a === null)) {
-    return { result: { kind: 'unavailable', reason: 'no answer from the model' }, links: [] }
-  }
-  const links: Link[] = []
-  for (const [i, sentence] of cut.entries()) {
-    const raw = answered[i]
-    if (raw !== null) links.push(...validate(sentence, raw).links)
-  }
-  return { result: { kind: 'extraction', extraction: { doc, links, sentences: cut } }, links }
-}
-
-const graph: Link[] = []
-const spokenSentences: Sentence[] = []
-const history: Turn[] = []
-const items: Introduced[] = []
-const shapeKinds = new Map<Shape['kind'], number>()
+const session = new Session(model, subject)
+const shapeKinds = new Map<string, number>()
 const childLines: string[] = []
+const spoken: { you: string; child: string }[] = []
+let sentences = 0
 let silent = 0
 let unreadable = 0
+let dropped = 0
 
 const started = Date.now()
 
 for (let n = 0; n < maxTurns; n++) {
-  const conversation = history
-    .flatMap(t => [`you: ${t.you}`, t.child === '' ? [] : [`child: ${t.child}`]].flat())
+  const conversation = spoken
+    .flatMap(t => [`you: ${t.you}`, ...(t.child === '' ? [] : [`child: ${t.child}`])])
     .join('\n')
   const said = await model.ask(EXPLAINER(subject), `${conversation}\nyou:`)
   if (said === null) break
   const you = said.trim().split('\n').filter(l => l.trim().length > 0).join(' ').trim()
   if (you === '') break
 
-  const mine = await read(you)
-  graph.push(...mine.links)
+  const report = await session.take(you)
 
-  // Same correction as demo.ts: the accumulated graph against every sentence said so far, not
-  // one turn's sentences dressed up as the whole run.
-  spokenSentences.push(...cutSentences(asDoc(you)))
-  const shapes = cohere(graph, spokenSentences)
-  for (const shape of shapes) shapeKinds.set(shape.kind, (shapeKinds.get(shape.kind) ?? 0) + 1)
+  for (const shape of report.shapes) shapeKinds.set(shape.kind, (shapeKinds.get(shape.kind) ?? 0) + 1)
+  unreadable += report.introduced.filter(i => i.kind === 'unread').length
+  dropped += report.dropped
+  sentences += you.split(/(?<=[.!?])\s+/).filter(s => s.trim() !== '').length
+  spoken.push({ you: report.you, child: report.child })
+  if (report.child === '') silent++
+  else childLines.push(report.child.toLowerCase().trim())
 
-  const spoken = await speak(history, you, shapes, model)
-  const transcript = [...history.map(t => t.you), you].join(' ')
-  const introduced = spoken.kind === 'said' ? tallyIntroduced(spoken.line, (await read(spoken.line)).result, graph, transcript) : []
-
-  const built = turn(you, spoken, introduced)
-  history.push(built)
-  items.push(...introduced)
-  if (built.child === '') silent++
-  else childLines.push(built.child.toLowerCase().trim())
-  unreadable += introduced.filter(i => i.kind === 'unread').length
-
-  console.log(`  ${dim('them')}   ${you}`)
-  console.log(`  ${dim('child')}  ${cyan(built.child === '' ? '(silent)' : built.child)}`)
-  console.log(`         ${dim(`${mine.links.length} links · ${shapes.length} shapes · ${introduced.length} introduced`)}\n`)
+  console.log(`  ${dim('them')}   ${report.you}`)
+  console.log(`  ${dim('child')}  ${cyan(report.child === '' ? '(silent)' : report.child)}`)
+  console.log(
+    `         ${dim(`${report.links} links · ${report.shapes.length} shapes · ${report.introduced.length} introduced`)}\n`,
+  )
 }
 
 const took = (Date.now() - started) / 1000
 const repeats = childLines.length - new Set(childLines).size
 
+// The distinction this rig exists to watch, split out because they are not the same thing: a debt
+// is a causal claim the child asserted and the review owes a closure on, a note is a word it used
+// that nothing settles. If debts stay at zero across long runs, the child is asking and never
+// asserting, and the machinery guarding assertions is guarding something that is not happening.
+const debts = session.ledger.filter(r => r.item.kind === 'link').length
+const notes = session.ledger.filter(r => r.item.kind === 'word')
+const distinctNotes = new Set(notes.map(r => (r.item as { word: string }).word)).size
+
 console.log(dim('── counts, and they are counts ' + '─'.repeat(30)) + '\n')
-console.log(`  turns                  ${history.length}`)
-console.log(`  your sentences         ${spokenSentences.length}`)
-console.log(`  links extracted        ${graph.length}`)
-console.log(`  links per sentence     ${spokenSentences.length === 0 ? '—' : (graph.length / spokenSentences.length).toFixed(2)}`)
+console.log(`  turns                  ${spoken.length}`)
+console.log(`  your sentences         ${sentences}`)
+console.log(`  links extracted        ${session.graphSize}`)
+console.log(`  links per sentence     ${sentences === 0 ? '—' : (session.graphSize / sentences).toFixed(2)}`)
+console.log(`  links dropped          ${dropped}`)
 console.log(`  shapes by kind         ${[...shapeKinds].map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}`)
-console.log(`  ledger debts           ${items.filter(i => i.kind === 'link').length}`)
-console.log(`  ledger notes           ${items.filter(i => i.kind === 'word').length}`)
+console.log(`  LEDGER DEBTS           ${debts}`)
+console.log(`  ledger notes           ${notes.length} rows, ${distinctNotes} distinct words`)
 console.log(`  turns the tally could not read  ${unreadable}`)
 console.log(`  child repeated itself  ${repeats}`)
 console.log(`  child said nothing     ${silent}`)
-console.log(`  seconds per turn       ${history.length === 0 ? '—' : (took / history.length).toFixed(1)}`)
+console.log(`  seconds per turn       ${spoken.length === 0 ? '—' : (took / spoken.length).toFixed(1)}`)
 
 console.log(
   `\n${dim('These are engineering counts about a machine talking to itself. They are not a rate, not a')}` +

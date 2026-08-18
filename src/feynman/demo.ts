@@ -1,28 +1,28 @@
 /**
- * The walking skeleton. Run it:
+ * The walking skeleton, in a terminal. Run it:
  *
  *     npm run demo                     -- the built-in explanation
  *     npm run demo -- path/to/file.txt -- your own
  *
  * A sentence at a time, the way the session actually works. You say something; Extract reads it;
  * Cohere finds where your chain does not close; a model says one line as the child; then Extract
- * runs again over that line and the tally writes down anything the child said that you did not.
+ * runs again over the child's line and the tally writes down anything the child said that you did
+ * not.
  *
- * Three model calls per turn. Everything between them is arithmetic.
+ * **This file is a PRINTER and nothing else, as of 2026-08-16.** The loop lives in `session.ts` and
+ * is shared with `rig.ts` and the app. It used to hold its own copy — three copies existed, each
+ * with its own `read` helper — and they drifted: the app learned to separate debts from notes and
+ * to deduplicate, and this file did not, so the terminal kept showing a ledger of function words
+ * long after the app had stopped. One loop, three printers.
  *
- * What is still missing, and it is the half that matters: **nothing closes what the child opens.**
- * The ledger it prints at the end is a work list for a review phase that does not exist, and Law 1
- * says a session that ends on a question is a worse failure than one that never asked. This ends on
- * questions, and now it also ends on a list of them.
+ * The review phase is not printed here. It exists — `npm run app` runs steps 4 through 8 — and a
+ * terminal is the wrong shape for a probe you are meant to answer before the correction appears.
  */
 
 import { readFileSync } from 'node:fs'
-import { asDoc, cutSentences, SYSTEM, LINK_SCHEMA, type ExtractResult } from './extract.js'
-import { validate, type Link, type Sentence } from './validate.js'
+import { asDoc, cutSentences } from './extract.js'
 import { ollama } from './model.js'
-import { cohere } from './cohere.js'
-import { speak } from './speak.js'
-import { tallyIntroduced, turn, type Introduced, type Turn } from './tally.js'
+import { Session } from './session.js'
 
 const DEFAULT = [
   'when you push the handle down that pulls the chain and the chain lifts the flapper.',
@@ -43,69 +43,23 @@ const model = ollama()
 const who = await model.identify()
 console.log(`\n${dim(`${who.model_id} · ${who.runtime} · ${who.calibration}`)}\n`)
 
-/** Extract over one line, minted as its own document. Returns exactly what the tally consumes. */
-const read = async (line: string): Promise<{ result: ExtractResult; links: readonly Link[]; dropped: number; sentences: readonly Sentence[] }> => {
-  const doc = asDoc(line)
-  const cut = cutSentences(doc)
-  if (cut.length === 0) {
-    return { result: { kind: 'unavailable', reason: 'nothing to read' }, links: [], dropped: 0, sentences: [] }
-  }
-  const answered = await Promise.all(cut.map(s => model.ask(SYSTEM, s.anchor.quote, LINK_SCHEMA)))
-  if (answered.every(a => a === null)) {
-    return { result: { kind: 'unavailable', reason: 'no answer from the model' }, links: [], dropped: 0, sentences: [] }
-  }
-  const links: Link[] = []
-  let dropped = 0
-  for (const [i, sentence] of cut.entries()) {
-    const raw = answered[i]
-    const outcome = raw === null ? { links: [], dropped: 0 } : validate(sentence, raw)
-    links.push(...outcome.links)
-    dropped += outcome.dropped
-  }
-  return { result: { kind: 'extraction', extraction: { doc, links, sentences: cut } }, links, dropped, sentences: cut }
-}
-
-const graph: Link[] = []
-const spokenSentences: Sentence[] = []
-const history: Turn[] = []
-const ledger: { readonly turn: number; readonly item: Introduced }[] = []
-const spoken = asDoc(text)
-const yourSentences = cutSentences(spoken)
+const session = new Session(model, 'how something works')
+const sentences = cutSentences(asDoc(text))
 const started = Date.now()
 
-for (const [i, sentence] of yourSentences.entries()) {
-  const you = sentence.anchor.quote
-  const mine = await read(you)
-  graph.push(...mine.links)
+for (const sentence of sentences) {
+  const report = await session.take(sentence.anchor.quote)
 
-  // Links and sentences from the same documents. `read` mints each line as its own `Doc`, so the
-  // sentences must come from there too — taking them from a whole-explanation `asDoc` is what made
-  // a link from sentence 2 resolve against sentence 1 rather than failing, which is worse than a
-  // null. Found by review, 2026-08-12.
-  spokenSentences.push(...mine.sentences)
-  const shapes = cohere(graph, spokenSentences)
-  const said = await speak(history, you, shapes, model)
+  console.log(`  ${dim('you')}    ${report.you}`)
+  console.log(`  ${dim('child')}  ${cyan(report.child === '' ? '(silent)' : report.child)}`)
 
-  const transcript = yourSentences
-    .slice(0, i + 1)
-    .map(s => s.anchor.quote)
-    .join(' ')
-
-  const introduced =
-    said.kind === 'said' ? tallyIntroduced(said.line, (await read(said.line)).result, graph, transcript) : []
-
-  const built = turn(you, said, introduced)
-  history.push(built)
-  for (const item of introduced) ledger.push({ turn: i + 1, item })
-
-  console.log(`  ${dim('you')}    ${you}`)
-  console.log(`  ${dim('child')}  ${cyan(built.child === '' ? '(silent)' : built.child)}`)
-
+  const debts = report.introduced.filter(i => i.kind === 'link').length
   const note = [
-    `${mine.links.length} link${mine.links.length === 1 ? '' : 's'}`,
-    `${shapes.length} shape${shapes.length === 1 ? '' : 's'}`,
-    mine.dropped > 0 ? `${mine.dropped} dropped` : null,
-    introduced.length > 0 ? amber(`${introduced.length} introduced`) : null,
+    `${report.links} link${report.links === 1 ? '' : 's'}`,
+    `${report.shapes.length} shape${report.shapes.length === 1 ? '' : 's'}`,
+    report.dropped > 0 ? `${report.dropped} dropped` : null,
+    debts > 0 ? amber(`${debts} asserted`) : null,
+    `${report.seconds.toFixed(1)}s`,
   ]
     .filter(Boolean)
     .join('  ·  ')
@@ -113,25 +67,51 @@ for (const [i, sentence] of yourSentences.entries()) {
 }
 
 const took = ((Date.now() - started) / 1000).toFixed(1)
-console.log(dim(`${yourSentences.length} sentences · ${graph.length} links · ${took}s`))
+console.log(dim(`${sentences.length} sentences · ${session.graphSize} links · ${took}s`))
 
+/**
+ * Debts and notes are printed apart, because they are not the same kind of thing and printing them
+ * together is what made this look like nonsense.
+ *
+ * A **debt** is a causal claim the child asserted that you never said. Supply can settle it and the
+ * review owes a closure on it. A **note** is a content word the child used that you did not: a
+ * cheaper second check that catches a concept arriving without a link Extract could read. Nothing
+ * settles a note and nothing ever will, so it is not owed and must not be listed as though it were.
+ */
 console.log(`\n${dim('── the ledger ' + '─'.repeat(46))}\n`)
-if (ledger.length === 0) {
-  console.log(`  ${dim('the child introduced nothing. everything it said, you said first.')}`)
+
+const debts = session.ledger.filter(r => r.item.kind === 'link')
+const notes = session.ledger.filter(r => r.item.kind === 'word')
+const unread = session.ledger.filter(r => r.item.kind === 'unread')
+
+if (debts.length === 0) {
+  console.log(`  ${dim('the child asserted nothing you had not said. no debts.')}`)
 }
-for (const { turn: n, item } of ledger) {
-  if (item.kind === 'link') {
-    console.log(`  ${amber('debt')}  turn ${n}  ${item.cause} ${dim(`—${item.relation}→`)} ${item.effect}`)
-  }
-  if (item.kind === 'word') {
-    console.log(`  ${dim('note')}  turn ${n}  "${item.word}"${item.within === undefined ? '' : dim(` (inside "${item.within}")`)}`)
-  }
-  if (item.kind === 'unread') {
-    console.log(`  ${amber('unread')} turn ${n}  ${item.reason}`)
-  }
+for (const { turn: n, item } of debts) {
+  if (item.kind !== 'link') continue
+  console.log(`  ${amber('debt')}  turn ${n}  ${item.cause} ${dim(`—${item.relation}→`)} ${item.effect}`)
 }
 
-const debts = ledger.filter(r => r.item.kind === 'link').length
+// Deduplicated. The tally reads one line at a time against your transcript, and your transcript
+// never gains the child's words, so a word it likes recurs every turn it uses it. Fifteen rows of
+// "lost" is the tally working correctly and the printer working badly.
+const seen = new Set<string>()
+const distinct: string[] = []
+for (const { item } of notes) {
+  if (item.kind !== 'word' || seen.has(item.word)) continue
+  seen.add(item.word)
+  distinct.push(item.word)
+}
+if (distinct.length > 0) {
+  console.log(`\n  ${dim(`words it used that you did not (${distinct.length}, nothing is owed on these):`)}`)
+  console.log(`  ${dim(distinct.join(', '))}`)
+}
+
+for (const { turn: n, item } of unread) {
+  if (item.kind !== 'unread') continue
+  console.log(`  ${amber('unread')} turn ${n}  ${item.reason}`)
+}
+
 console.log(
-  `\n${dim(`${debts} debt${debts === 1 ? '' : 's'} open. nothing closes them — that is the review phase, and it does not exist yet.`)}\n`,
+  `\n${dim(`${debts.length} debt${debts.length === 1 ? '' : 's'} open. \`npm run app\` runs the review that closes them.`)}\n`,
 )

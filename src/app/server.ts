@@ -21,7 +21,7 @@ import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ollama } from '../feynman/model.js'
-import { Session, type TurnReport } from './session.js'
+import { Session, type TurnReport } from '../feynman/session.js'
 import { SAMPLES } from './samples.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
