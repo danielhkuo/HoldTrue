@@ -21,7 +21,7 @@ app loses them when the process stops.
 
 This list is the design. Steps 1, 3 and 4 run today. Steps 2, 5, 6, 7 and 8 do not.
 
-1. You pick a topic from the curated list, or you type your own causal mechanism.
+1. You pick a topic from the curated list. A box for your own topic is a design, not code.
 2. You set the omniscient toggle. The app names the destination. The app takes your consent.
 3. You explain the mechanism from memory. The app shows you no source text.
 4. The child says one short line back. It asks about one step in what you just said. It can press
@@ -111,17 +111,20 @@ Rozenblit & Keil 2002. The figure for procedures is negative. An explanation of 
 confidence a little. A procedure session therefore produces the opposite of the intended effect.
 Check returns the true mechanism as a set of links. A fact has no links. A procedure has an order
 rather than a cause. The end phase then has nothing to compare. **The owner did not build the topic
-gate.** The owner curates the topic list. The pick screen carries a warning above the free-text box.
-Nothing checks what you type there.
+gate.** The owner curates the topic list. The page also has a button named "Something else". That button
+starts a session with the fixed title "Explaining". You cannot type a topic today. A topic box is a
+design, not code.
 
 ## The features
 
 The product must produce these.
 
-1. The child makes you keep producing an explanation.
-2. The child asks a question that needs a cause in the answer, not a definition.
-3. The child tells you where it lost you.
-4. The end phase closes every gap the child opened.
+1. The child makes you keep producing an explanation. See case M1.
+2. The child asks a question that needs a cause in the answer. See case E7a.
+3. The child tells you where it lost you. See case E6a.
+4. The end phase closes every gap the child opened. See case M4.
+
+[`cases.md`](cases.md) holds the register. Read a case there before you change one here.
 
 A later build adds the quiet turn. The child then goes quiet when it has no question. The owner did
 not build the quiet turn. The design ends the session with a button. No code implements the button.

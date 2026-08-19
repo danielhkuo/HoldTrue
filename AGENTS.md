@@ -51,7 +51,7 @@ is not a fact. Rule 27 keeps it out of the product.
     distinction. The child may name the step it did not reach, because that is a location. The child
     must not repeat the chain it did reach, because that hands the user their own explanation back.
     This rule rests on unfiled evidence: the Frazier, Gelman & Wellman 2009 row and the Kurkul &
-    Corriveau 2018 row. Both rows carry the CANDIDATE mark. Case E6 reports that the shipped child declares confusion for
+    Corriveau 2018 row. Both rows carry the CANDIDATE mark. Case E6b reports that the shipped child declares confusion for
     a good explanation and a bad one alike.
 
 ### The end phase
@@ -81,7 +81,8 @@ is not a fact. Rule 27 keeps it out of the product.
 18. The product must not treat hesitation or a filled pause as a signal. The research refutes this.
 19. The product must not run on a topic that is not a causal mechanism. Facts, vocabulary and
     procedures are out of scope. The app does not have a topic gate. The owner curates the topic
-    list. The free text box carries a warning that nothing checks.
+    list. The page also has a button named "Something else". That button starts a session with the
+    fixed title "Explaining". The user cannot type a topic today.
 20. The app must label the findings of a session with the omniscient toggle ON as verified. The app
     must also disclose that such a session sends text to a remote service. `docs/architecture.md`
     owns the toggle.

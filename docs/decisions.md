@@ -147,13 +147,14 @@ exists. The end phase cannot wait for a signal that nobody designed.
 
 ## 11. The owner does not build the topic gate
 
-**Decided.** The owner curates the topic list. The free-text box carries a warning. No part of the app
-checks the text the user types.
+**Decided.** The owner curates the topic list. No part of the app checks a topic. A box for a
+user's own topic is a design. The code has a button that starts a session with a fixed title.
 
 **Why.** The eligibility rule is real. `docs/product.md` holds its figures. A check needs a
 classifier that nobody designed. A warning is honest. A silent pass is not.
 
-**The rejected alternative.** The owner rejects removing the free-text box, which serves the user.
+**The rejected alternative.** The owner rejects a session with no topic of the user's own. Such a
+session serves fewer people.
 
 ## 12. One session in memory
 
@@ -221,9 +222,9 @@ The owner must answer each of these before release. Do not invent an answer.
    - How long does a provider keep your text?
    - May a provider train on your text?
    - How does a user delete the text?
-2. **The end signal design.** Decision 10 ships a button. The owner must decide whether a quiet child
+2. **The end signal design.** Decision 10 specifies a button. No code implements it. The owner must decide whether a quiet child
    ever ends a session, and what rule makes the child quiet.
-3. **The topic gate.** Decision 11 ships a warning. The owner must decide whether the app checks the
-   free-text box, and what a failed check does to the session.
+3. **The topic gate.** Decision 11 accepts no gate. The owner must decide whether the app checks a
+   topic that the user types, and what a failed check does to the session.
 4. **Is the end phase worth running with the toggle off?** A small startup model runs Check. This
    model may not hold ground truth about the mechanism. An unverified finding may be worse than no finding.

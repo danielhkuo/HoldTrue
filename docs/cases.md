@@ -54,7 +54,7 @@ Every case below serves one of these four, or it breaks one of them.
 | # | The behaviour | Verdict | Owner |
 |---|---|---|---|
 | **E1** | The model repairs your incomplete explanation with its own knowledge, and the gap stays hidden. | Guard | Both |
-| **E2a** | The child finds an error that is common in its training data. | Feature | Reviewer |
+| **E2a** | The child finds an error that is common in its training data. | Feature, not built | Reviewer |
 | **E2b** | The child asks about an invented part, and this accepts that the part exists. | Guard | Both |
 | **E3** | The child asks a question, and no part of the product answers it. | Guard | Reviewer |
 | **E4** | A better prompt makes the child ask harder questions, and nothing can answer them. | Guard | Reviewer |
@@ -112,9 +112,12 @@ do at that moment.
 
 ## The count
 
-- Six features that the product produces today.
-- Four features that the product does not produce yet.
+- Five features that the product produces today.
+- Five features that the product does not produce yet.
 - Twenty-six guards.
+
+Every feature that the product does not produce yet needs the end phase, except E13b. E13b needs a
+change to the child.
 
 Ten of the twenty-six guards have the owner Reviewer or the owner Both. Those ten moved from the
 child to the end phase. None of the ten has a builder today.

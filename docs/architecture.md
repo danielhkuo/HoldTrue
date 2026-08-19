@@ -13,8 +13,12 @@ or plain code. The document says which one.
     the user says a line
          v
     [ CHILD    model ]  one short line back, one model call per turn
-         v              the user presses the End button
-    TRANSCRIPT          every turn marked "user" or "child"
+         v
+  ................  nothing below this line exists in src/  ................
+         v
+    the user presses the End button    -- a design, not code
+         v
+    TRANSCRIPT          every turn marked "user" or "child"  -- a design, not code
          v
   END PHASE  --  a design, not code
     [ 1 CHECK  model ]  mechanism, claims, intrusions
