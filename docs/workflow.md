@@ -212,7 +212,9 @@ example or dismiss it.
 
 The agents write implementations, never assertions, so the restriction holds by construction rather
 than by instruction. It is mutation testing run before the code exists, and it exists because
-Anchor was committed green with 30 tests and a real defect in it that only mutation found — days
+Anchor was committed green with 23 tests and a real defect in it that only mutation found
+(**corrected 2026-08-12: this said 30, which is today's count after four later commits; 23 is what
+the implementation landed with, and `specs/child-speech.md` had it right**) — days
 later, after a review round had already passed over it.
 
 Four different attacks rather than four copies of one, for the reason in the fan-out settings: four

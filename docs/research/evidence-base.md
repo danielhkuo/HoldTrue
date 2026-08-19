@@ -25,6 +25,22 @@
 | "Hesitation and disfluency are surface markers of shaky understanding" | **Refuted for this use case, 2026-08-01.** Asserted in an earlier design review, no source. Holds narrowly for *answering factual questions*: Smith & Clark 1993, feeling-of-knowing drops track longer latency and more filled pauses; Litman et al. 2012 (ITSPOKE, 7,216 tutoring turns), pre-turn pause the strongest cue, averaging 3.077 s longer before uncertain turns; prosody-only detection only 63% precision against a 40% baseline. Fails for *explanation*: Schachter et al. 1991 (45 lecturers, own specialties, certainty at ceiling), filled pauses 1.39/min natural sciences, 3.84 social sciences, 4.85 humanities, F(2,42)=6.46, p<.01, differences vanishing when the same lecturers discussed a shared topic. Disfluency in exposition tracks the expressive option space, not certainty. No study tests whether disfluency localized to a causal link predicts that link being wrong. |
 | "Understanding is connections, not facts" | **False dichotomy.** Expertise research runs the other way: experts hold vastly more, better-organized items. Replacement in Part 3. |
 
+### Not in this table: three engineering figures withdrawn 2026-08-07
+
+Three uncited numbers about *causal and open information extraction* — the 97%/5% within- versus
+across-sentence figure, "~0.535 F1 for the best frontier model measured", and "95% precision at 9%
+recall" — were traced on 2026-08-07 and found misread, misattributed and untraceable respectively.
+They are **not** rows above, and that is deliberate. This file gates claims about how people learn;
+those are engineering measurements, which [`philosophy.md`](../philosophy.md) puts in a separate
+category. Mixing them here would blunt the one thing this file does well, which is having a sharp
+scope.
+
+They live, with their sources, their genres, their metrics and their sample sizes, in
+[`extraction-benchmarks.md`](extraction-benchmarks.md). That file also records the finding that
+matters most for the build order: **no published figure covers spoken, from-memory explanation by a
+learner**, so the within-sentence rate has to be measured rather than looked up. Nothing in it is a
+claim about learning, and nothing in it may be used as one.
+
 ---
 
 ## Part 2. The foundation. Strong, primary-verified, load-bearing.
@@ -381,6 +397,11 @@ significant differences … between groups at delayed test."*
 **Widely-cited numbers that do not exist.** Cepeda 2006 reports no overall *d* for spacing,
 only accuracy (massed 36.7% vs spaced 47.3%). The circulating "d = 0.4 from Cepeda 2006" is
 not in that paper.
+
+The same failure has now happened once on the engineering side: "one study reached 95% precision at
+9% recall" was searched several ways on 2026-08-07 and no such study was located. It is recorded as
+unsupported in [`extraction-benchmarks.md`](extraction-benchmarks.md), not here, because it is not a
+claim about learning.
 
 **Most of this tests surface, near-transfer outcomes within a day.**
 

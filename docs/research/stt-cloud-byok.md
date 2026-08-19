@@ -20,7 +20,7 @@ to find a served path or break the no-bundled-inference decision. A BYOK cloud A
 nothing — it is the second half of the rule as written.
 
 It does collide with something else, and that collision is a decision, not a fact:
-[`philosophy.md`](philosophy.md) opens with *"Nothing leaves the device unless you turn
+[`philosophy.md`](../philosophy.md) opens with *"Nothing leaves the device unless you turn
 something on."* Sending explanation audio to a vendor is precisely the class of thing
 [`decisions.md`](../decisions.md) already puts behind an explicit switch for cloud embedding
 and web retrieval. **A cloud STT default would contradict that; a cloud STT option behind the

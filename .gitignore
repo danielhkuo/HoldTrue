@@ -44,6 +44,12 @@ DerivedData/
 .codebase-memory/
 .gstack/
 
+# Third-party transcripts, kept locally as test material only. This repo is public,
+# and a full transcript of somebody else's talk is their copyright, not ours. Short
+# excerpts used as segmentation fixtures are committed; the whole file is not.
+re.txt
+transcripts-local/
+
 # Secrets — never commit. Templates live in .env.example (committed).
 .env
 .env.keys

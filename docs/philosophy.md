@@ -5,10 +5,12 @@
 > [`research/evidence-base.md`](research/evidence-base.md) and nothing here may contradict
 > it. Where a feature doc conflicts with this one, this one wins.
 
-HoldTrue is a study application that runs on your machine, against your own material, with
-a local model or your own API key. Nothing leaves the device unless you turn something on.
+HoldTrue is a study application that runs on your machine, with a local model or your own
+API key. Nothing leaves the device unless you turn something on.
 
-There are two laws. Both are short, because they have to be applied to every feature.
+There are two laws. Each is stated in a sentence, because it has to be applied to every
+feature. Law 2 was repealed and replaced on 2026-08-07, and it carries the record of what
+it used to say, since that is the only way to see what the replacement costs.
 
 ---
 
@@ -35,35 +37,173 @@ Three consequences bind every feature:
   underneath it" is forbidden. "You said pressure drives flow but not how the gradient is
   generated. That step is X" is the form. Within the feedback literature, person-directed
   feedback is the direction measured as making performance *worse*.
-- **No grade sits beside a diagnosis.** Grades and comments together produce no gain where
-  comments alone produce large ones. Separately, the EU AI Act's high-risk annex covers
-  systems intended to evaluate learning outcomes, so not producing a grade is what keeps the
-  practice positioning available.
+- ~~**No grade sits beside a diagnosis.**~~ **AMENDED 2026-08-10**, and this is the only
+  consequence of Law 1 that has ever been weakened, so the old text stays visible and the
+  reason it fell is recorded rather than summarised. It read: *grades and comments together
+  produce no gain where comments alone produce large ones. Separately, the EU AI Act's
+  high-risk annex covers systems intended to evaluate learning outcomes, so not producing a
+  grade is what keeps the practice positioning available.*
 
-## Law 2. Nothing is asserted on the machine's authority
+  **What replaces it.** A score may sit beside a diagnosis when the score has ground truth the
+  diagnosis does not. Today exactly one does: the **catch rate** on planted errors, where the
+  system knows what it planted and therefore knows whether you caught it. Every other number in
+  this product remains forbidden beside a finding — no rating of an explanation, no progress
+  ring, no clarity count. Those never had ground truth and still do not.
 
-**Every sentence traces to the user, to a quoted passage in their material, or to plain
-code.** "The model generated it" is not a provenance.
+  **What it costs, stated plainly because the evidence gate has no other slot for this.** This
+  is a decision taken *against* the evidence base rather than around it.
+  [`research/evidence-base.md`](research/evidence-base.md) carries Shute 2008 summarising
+  Wiliam 2007: students given only grades showed no learning gains, students given only
+  comments showed large gains, and students given **both showed no gains** — under the line *a
+  band beside a diagnosis destroys it*. Nothing here refutes that finding. The owner weighed it
+  and ruled anyway, twice, with the objection in front of him. The EU AI Act leg is untouched
+  and now bites harder, since a catch rate is closer to evaluating a learning outcome than
+  anything this product previously produced. Reasoning and rejected alternatives are in
+  [`decisions.md`](decisions.md).
 
-**During elicitation, knowledge may only silence.** While the user is answering, what the
-model knows about the world may make it hold back, soften, or decline to judge. Knowledge
-may never make it speak. There is no path from belief to utterance.
+Law 1 survives the repeal below entire, and it binds harder for it. It never depended on
+where the answer came from — the evidence is about feedback *containing* the correct
+answer, not about who wrote that answer. What changed is that the repair used to be a
+passage the user could go and read for themselves, and now it is the model's own sentence.
+Law 1 is the only rule left that requires the sentence to be there at all. A feature that
+surfaces a gap and stops is a worse failure today than it was yesterday, not a lesser one.
 
-**At repair, it must speak, and only as a conduit.** It states the missing thing from a
-named, attributable source, and it does not paraphrase that source into its own words. The
-user sees who said it.
+### Where Law 1 rests, 2026-08-19
 
-Consequences:
+**The law is unchanged. What holds it up is not.** The 2026-08-19 pivot took the deterministic
+pipeline off the live path — the decision, its evidence and its re-admission rule are in
+[`decisions.md`](decisions.md) under *The child is the product, and determinism returns as prompt
+material*, and it says of itself that this is what it costs. Nothing here repeals anything, and
+the obligation is the same obligation: anything that asks supplies the answer.
 
-- **`confidence` is brake pressure, not belief.** It means *how strong is my reason to stay
-  quiet*. A value that can only reduce output during elicitation cannot produce a confident
-  wrong correction. No code path may branch *toward* speech on a knowledge value during
-  elicitation. This is mechanically checkable and must be a test.
-- **The model classifies; it never authors.** Text reaching the user is an index into owned
-  content, or it is quarantined.
-- **A persona may ask. It may never assert.** Questions are not assertions, so a character
-  can elicit. The repair arrives in a different, attributed register, and it has to, because
-  a naive listener cannot supply a correct answer and Law 1 requires one.
+**What carried the law until now was Feynman's review phase.** The child asked in the live phase,
+and the review phase supplied the answer — a mechanism that ran, in code, whether or not the child
+was well behaved. The review phase produces no findings now. So the whole weight of Law 1 sits on
+the child's own prompt: the answer arrives only if the prompt keeps the child from asking what it
+cannot close.
+
+**That is weaker, and this file will not describe it as anything else.** The difference is not the
+strength of the prompt — a good prompt may well close more than a thin review phase did. The
+difference is what kind of thing is holding the law up. A phase in code can be tested, and a prompt
+is a disposition: it varies per turn, per model and per sampling seed, and its failures look like
+ordinary conversation rather than like an error. The repo has been here before and says so in the
+same words: *it cannot say that* became *it cannot say that without being written down*, and today
+even the writing-down is dormant. There is no red test for a question left open.
+
+**What it does not excuse.** A question the prompt makes irresistible and nothing can close is
+still forbidden — that is the rule, not the mechanism, and the mechanism failing does not lower
+the bar. It raises what the prompt owes. Two things follow and neither is designed here. The child
+may not assert a guess while the ledger that would disclose and close it is dormant, which
+`decisions.md` already rules. And **when a deterministic signal returns, whether it restores a
+closure Law 1 lost is the first question to ask of it**, ahead of whether it improves the child's
+line.
+
+## Law 2. Nothing is asserted anonymously
+
+### The law this replaces
+
+~~**Nothing is asserted on the machine's authority.** Every sentence traces to the user, to
+a quoted passage in their material, or to plain code. Knowledge may only silence during
+elicitation; at repair the model speaks only as a conduit from a named source; it
+classifies but never authors; a persona may ask, it may never assert.~~ **REPEALED
+2026-08-07.**
+
+This is kept rather than deleted because a future reader has to be able to see what was
+given up. What the old law bought was that hallucination was *structurally* impossible. If
+every sentence reaching a user is the user's own words, a verbatim quote, or a codebase
+string, then a confident falsehood has no route to the screen at all — span anchoring
+turned it into a validation failure, which is a class of bug you can write a failing test
+for. That is a strong property and nothing here gets it back.
+
+Why it went: generating the finding out of the user's own notes produced a worse finding
+than a capable model answering from what it already knows, so the constraint was buying
+provenance at the price of the thing the product exists to do. The owner's ruling is that
+the finding now comes from model knowledge, and that choosing a model equal to that is the
+user's responsibility: *"it's the user's failure to not use an appropriate model."* The old
+reasoning was never refuted. The cost is accepted, not argued away. The opening sentence of
+this file lost *against your own material* on the same ruling.
+
+### The law now
+
+**The model may assert on its own authority, so that authority has to be visible.** "The
+model generated it" is now a provenance — it is the only one on the default path — which is
+exactly why it must be stated rather than assumed. Which model produced a finding, and what
+that model was calibrated against, are properties the user is entitled to see.
+
+**Capability is the guard, and the user owns the choice.** There is no layer underneath the
+model that will catch a wrong finding, because that layer was the old Law 2. A model too
+weak for the work produces a wrong finding and ships it in the same voice as a right one.
+This is an open-source tool running on the user's hardware with the user's model, so the
+choice is theirs to make and theirs to get wrong. That position is only honest if the app
+makes the choice legible, which is what the rest of this law is for.
+
+**We calibrate against the weakest configuration we support, and we say what it is.**
+Local-first is untouched, so the floor is the best model a real machine can hold while
+running everything else: on 36 GB of unified memory, sharing with a `whisper-server`
+sidecar and Electron, that is roughly a 27–32B-class model at 4-bit, around 20 GB resident.
+Read that as arithmetic on a memory budget and nothing more. It is not a benchmark, no
+model name is blessed by it, and no figure in this paragraph has been measured. A stronger
+model should clear a weaker model's bar on **recall** — it will find what the smaller one
+found. Do not extend that to **precision**. Larger models are often more fluent and more
+confidently wrong, and precision is the axis Law 1 charges for. A cloud key is therefore
+not a free pass, and "we calibrated the local floor" is not a claim about a frontier
+model's false positives.
+
+**Running below the floor is a supported-configuration question, not a silent quality
+drop.** If the user points the app at something smaller than we calibrated against, the app
+says so and treats the configuration as unsupported. It does not quietly produce weaker
+findings in the same confident register. A degradation the user cannot see is one they
+cannot correct for.
+
+**What we gave up, said plainly.** The old law made a false statement impossible. This one
+makes it unlikely. That is a real reduction in what we can promise and calibration does not
+convert it back: a probabilistic guarantee has no bright line, no validation failure, and
+no test that goes red the moment it breaks. This file will not describe it as anything
+stronger than it is. A law that pretends to give back what it cannot is worse than one that
+admits the trade.
+
+Rejected: **keeping notes-only** — that is what was repealed, and the reason is above.
+**Requiring a frontier cloud model** — it would break local-first, which survives
+explicitly. **Retrieval to a trusted source as the default** — it stays available as an
+optional hook for a user who already has that setup; by default the source is model
+knowledge only. **A second model checking the first** — already rejected for the eval, and
+nothing here revisits it; if it returns it returns as a decision with a reason, in
+[`decisions.md`](decisions.md).
+
+### What this law leaves open
+
+Named here so they are not mistaken for settled.
+
+**Invariant 3 has no successor.** *No code path branches toward speech on a domain-knowledge
+value during elicitation* was mechanically checkable and carried a required test. Under this
+law, knowledge is precisely what makes the model speak, so the check as written is gone and
+nothing has replaced it. The repo is one check lighter than it was and will not feel the
+loss until something wrong ships. What the new mechanical check is has not been decided.
+**Re-checked 2026-08-19: the hole is the same hole and it is now the whole live path.** A
+model speaking from its own knowledge is not one branch among several any more; it is every
+turn of the session. Nothing mechanical governs when it may speak.
+
+**`confidence` as brake pressure is unargued, not wrong.** Invariant 4 — *how strong is my
+reason to stay quiet* — was a consequence of "knowledge may only silence." That premise is
+gone. The practice may well still be right, since a value that can only suppress cannot
+manufacture a confident wrong correction, but it is now a preference rather than a
+derivation. It is marked for review: neither kept silently nor deleted.
+
+**"Calibrated against" has no procedure yet.** This law requires the app to state what the
+model was calibrated against, and the ground truth the old eval used was spans into the
+user's own text, which went out with Law 2. Nothing in this section should be read as
+claiming that calibration currently exists. **Further from a procedure since 2026-08-19,
+not closer.** The one measurement in the repo that still had ground truth was Extract's
+eval, and Extract is dormant, so the only calibration instrument anyone had now scores a
+piece that does not run. What the user reads is a model's line with no instrument behind
+it at all. That is a statement of position, not a plan; see
+[`decisions.md`](decisions.md).
+
+**Law 2 itself is untouched by the 2026-08-19 pivot, and reaches further.** Every sentence a
+user reads is now model-authored on a path with nothing else on it, so *which model, and what
+it was calibrated against* is the whole of what a user can inspect. The pivot removes no
+mechanism this law depends on, because this law never had one — it asks the app to disclose,
+and disclosure costs a line of interface.
 
 ---
 
@@ -78,6 +218,10 @@ appears. Refuted material stays visible in that file rather than being quietly r
 Engineering measurements are a separate category and are not gated here. Benchmark figures
 for model accuracy, latency or power live with the decision they justify, in
 [`decisions.md`](decisions.md) or the relevant feature doc, and carry their source there.
+That category carries more weight than it used to. With capability as the guard under Law
+2, a figure about what a model can do is holding up an argument that a quoted span used to
+hold up on its own. The gate does not move to cover it, but an uncited accuracy number is
+now load-bearing and worthless at the same time.
 
 ## What we refuse to build
 
@@ -107,8 +251,26 @@ against each other, they tie. We do not claim that people mistake part-names for
 understanding. That was tested and came out null. We do not claim that speaking reveals
 more than writing. There is no support for it. We do not claim that asking beats telling.
 The direct experiment is an underpowered null, so the honest statement is that nobody has
-shown it. We do not claim that our diagnosis is a measurement. It is not, which is why
-there is no score.
+shown it. We do not claim that our diagnosis is a measurement. It is not, ~~which is why
+there is no score~~ — **that last clause struck 2026-08-12.** Invariant 7 was amended on 2026-08-10 and one score
+now appears beside a finding: the catch rate on planted errors, which has the ground truth the
+diagnosis lacks. The amendment note below amends the paragraph after this one and left this clause
+standing, which is how a repealed claim goes on reading as live.
+
+That last one matters more since Law 2 was repealed, not less. When a finding pointed at a
+passage in the user's own material, the user could go and check it. Now the finding is the
+model's opinion about their understanding, produced by a model whose precision on this task
+nobody has measured.
+
+**Until 2026-08-10 this paragraph ended *"the absence of a score is the only thing keeping
+that opinion from reading as a verdict"*, and that sentence is no longer true.** A score now
+appears beside the finding, under the amendment above. The distinction the amendment rests on
+is that the catch rate scores **detection of a planted error**, which has ground truth, and
+not **understanding**, which does not. That distinction is real and it is load-bearing, and
+nobody should assume a user will parse it. A number on a study screen reads as a grade. The
+old sentence named the thing standing between an unmeasured opinion and a verdict; the
+amendment removed it, and what stands there now is a distinction the reader has to make
+unaided.
 
 One claim we hold firmly despite thin support: **closing a surfaced gap**. The supporting
 studies converge, but several are individually weak. We hold it because the error cost is

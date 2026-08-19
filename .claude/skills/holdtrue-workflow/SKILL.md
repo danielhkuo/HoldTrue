@@ -21,13 +21,18 @@ Four reads, in order. No questions until they are done — the answers are in fi
    was still open. So take the first entry not marked done **that this skill can act on**, and
    name any earlier open entry as a caveat rather than skipping it silently.
 
+   **Then check the entry is still on the default path.** The model-knowledge pivot of 2026-08-07
+   moved several pieces off it; `docs/decisions.md` marks which, and `docs/philosophy.md` says
+   why. A piece with no subject on the default path is not the next piece, however high it sits.
+   Say so and take the next one rather than building it because the list has not been renumbered.
+
 2. **Classify that entry.** It is one of four things, and they go different ways:
 
    | Kind | Example | Where it goes |
    |---|---|---|
    | A measurement | *the falsification week* | Not this skill. Say so, name where the protocol lives, stop |
    | A deterministic piece | *Anchor* | The piece loop |
-   | A model-dependent piece | *the extraction harness* | The piece loop, with the eval branch at step 5 |
+   | A model-dependent piece | *the extraction harness* | The piece loop. [The eval branch](#the-model-dependent-piece) covers the model call; the ordinary steps still cover the deterministic code around it |
    | A bundle naming a feature | *Feynman. Cohere, Compare…* | Open `docs/features/<name>.md`, take the first piece in its order that is unbuilt |
 
    A feature named in the build order with no `docs/features/<name>.md` goes to feature entry.
@@ -37,11 +42,18 @@ Four reads, in order. No questions until they are done — the answers are in fi
    does the test file exist, is there a red commit in the log, does the implementation exist.
    Correct the line rather than believing it.
 
-4. **The map.** `gh issue list --label wayfinder:map`, then its open children. Cross-check
-   against the spec's section 5, which may already have ruled some of them non-blocking.
+4. **The map.** `gh issue list --label wayfinder:map`, then its open children — **bodies and
+   comments both**. Wayfinder records a resolution as a comment, so a body alone is the question
+   without the answer. Cross-check against the spec's section 5, which may already have ruled
+   some of them non-blocking.
 
-Then say where you are and what is next, and stop if the answer is that nothing can start. Run
-against this repo on 2026-08-06 the four reads produce:
+Then say where you are and what is next, and stop if the answer is that nothing can start.
+
+The worked example below is what the four reads produced **on 2026-08-06**, and it is kept for its
+shape rather than its content. Its content was overtaken a day later: the pivot took source
+material off the default path, so #22 — where the source's causal link comes from — is superseded
+there rather than blocking, and the same goes for #20. Read the paragraph as a demonstration of
+how to answer, never as the current state of the repo. Run the four reads yourself.
 
 > The falsification week is still open and is not this skill's work — its protocol is in
 > `docs/features/feynman.md`. The first buildable entry is the extraction harness, which is
@@ -126,8 +138,21 @@ branch has sprawled.
 
 ### 2. Harvest the map — before research, not after
 
-This is the step that stops the same question being answered twice. Query the feature's map and
-sort every child:
+This is the step that stops the same question being answered twice.
+
+**Read every ticket's comments, not only its body.** Wayfinder posts a resolution as a comment
+and step 11 below writes back the same way, so the body is the question and the comments are
+where the thinking is. Found by running this skill on 2026-08-06: #22 and #25 each carried a
+substantive comment the body did not, and #22's had already argued one of its three candidate
+shapes out on the extraction arithmetic. A harvest that reads bodies only re-opens decisions that
+are already half made, which is precisely the duplication this step exists to prevent.
+
+An open ticket carrying a resolution comment is a **third state** — not decided, not untouched.
+Say what the comment already settled and what it left open, and scope any further work to the
+remainder. (Both tickets in that example were themselves overtaken by the 2026-08-07 pivot. What
+survives is the lesson about comments, not the tickets.)
+
+Query the feature's map and sort every child:
 
 - **Closed, and it bears on this piece.** Decided. Cite the ticket in the spec. Do not
   re-litigate it and do not re-research it.
@@ -136,6 +161,11 @@ sort every child:
 - **Open, and it blocks this piece.** The piece waits. Name the ticket and stop.
 - **Open, and it does not block.** Say why in one sentence. That sentence goes into spec section 5
   as a closed ruling.
+- **Superseded from outside the map.** A decision taken elsewhere can remove a ticket's subject
+  without anyone closing it — the 2026-08-07 pivot did that to at least #20 and #22. This is not
+  the same as decided. Name the decision that superseded it, say which path the ticket still
+  applies to, which is usually the optional RAG hook, and leave its reasoning alone. Do not
+  re-argue a question that no longer has a subject, and do not delete the argument either.
 
 Anchor shipped with [#21](https://github.com/danielhkuo/HoldTrue/issues/21) and
 [#25](https://github.com/danielhkuo/HoldTrue/issues/25) open, both ruled non-blocking with the
@@ -174,7 +204,13 @@ quiet local fix leaves the map wrong for whoever builds the next piece.
 1. One paragraph on what it does.
 2. The public API as TypeScript signatures. No implementation.
 3. What it must not do.
-4. Which `AGENTS.md` invariants apply, quoted by number.
+4. Which `AGENTS.md` invariants apply, **by number and quoted in full — the number alone is not
+   enough.** `AGENTS.md` guarantees the numbers are permanent addresses and does not renumber, so a
+   number will not redirect you. What it will not tell you is whether the rule is still in force:
+   the 2026-08-07 pivot repealed two entries outright, narrowed one, and put another under review,
+   all of them keeping their numbers. A spec that says only *invariant 1* reads as a live citation
+   and is a dead one. Quoting the sentence puts that in front of the next reader at the point of
+   use, and it is the check that catches a repeal you did not know about.
 5. Rulings and open questions.
 6. Hard cases the property test generator must produce.
 7. What is not closed.
@@ -210,7 +246,8 @@ every property test green and the mutation score at 100%.
 **Banned assertions**, per `AGENTS.md`: snapshot-only, `toBeDefined()` alone, mock-only tests that
 never touch real logic, bare boolean assertions.
 
-*A model-dependent piece takes [the eval branch](#the-model-dependent-piece) instead.*
+*On a model-dependent piece, [the eval branch](#the-model-dependent-piece) replaces this step for the
+model call only. The deterministic code around the call still gets an oracle, written here.*
 
 ### 6. Red-team the oracle — before implementation, not after
 
@@ -307,20 +344,60 @@ specs.
 
 ## The model-dependent piece
 
-At most one per feature. It replaces steps 5, 6 and 9 — there is no oracle to attack, so the red
-team does not apply.
+At most one per feature, and **model-dependent does not mean all model**. The eval branch replaces
+steps 5, 6 and 9 **for the model call itself, and for nothing else**: there is no oracle over what a
+model returns, so the red team has nothing to attack there and mutation has no code to mutate.
 
-Four layers, per `AGENTS.md`: schema validation hard-fails; invariants hard-fail as properties;
-quality is aggregate precision, recall and F1 against gold labels, never per-case pass or fail;
-regression is measured **paired** against the previous prompt on the same fixed set.
+**Everything around the call is ordinary deterministic code, and the ordinary steps still apply to
+it.** Assembling a model's output into the shape the piece returns, dropping entries that fail a
+stated condition, copying identifiers through by identity, mapping a failed or absent model onto a
+defined result — none of that is a model, all of it is testable without one, and `AGENTS.md` scopes
+mutation to precisely this, the deterministic core. `docs/specs/supply.md` is the worked case: read
+its public API and see how little of a model piece is the model.
 
-100 to 150 labelled items. The human labels 30 completely cold, no agent and no suggestions on
-screen, as a control. The rest are agent-proposed and human-corrected. Then **run the assisted
-process over the original 30 and compare** — if it agrees, the rest of the set is trustworthy; if
-not, label by hand. Skipping that check is how you get an evaluation set that agrees with the model
-rather than with reality.
+So split the piece at the model call. Take the eval branch for the call, and run steps 5, 6 and 9
+unchanged over the remainder — write the oracle for the deterministic half, red-team it, and run
+`npm run mutate` before the piece is called done. A builder who skips all three because the piece is
+labelled model-dependent has thrown away the two instruments that found the real defect in Anchor,
+on the half of the piece they still work on.
 
-No LLM judge: set comparison against gold. Never compare a fresh number against a remembered one.
+**The harness itself is specified in `AGENTS.md` under Testing** — its four layers, the size of the
+labelled set, and the ban on an LLM judge. Read it there. It is deliberately not copied here; a
+copy drifts, and this file has one source per fact. What this skill adds is the two things
+`AGENTS.md` does not say.
+
+**The cold control.** The human labels 30 items completely cold, no agent and no suggestions on
+screen. The rest are agent-proposed and human-corrected. Then **run the assisted process over the
+original 30 and compare** — if it agrees, the rest of the set is trustworthy; if not, label by
+hand. Skipping that check is how you get an evaluation set that agrees with the model rather than
+with reality. Never compare a fresh number against a remembered one.
+
+**Ruled 2026-08-07: not every piece has a gold standard, and the missing one was ruled on rather
+than left open.** The harness assumes gold labels exist. For Extract they do, and the
+pivot did not touch them — its labels are spans into the user's *own explanation*, so the
+falsification week's explanations are still the first items of its set. For the judgement downstream
+of extraction — *did this finding name a real gap in this person's understanding* — they do not, and
+the owner ruled that its eval is skipped, recording the skip as a decision rather than leaving it an
+absence. That ruling, what it costs, what it does not touch, and the falsification-scale
+alternative that was offered and declined are in `docs/decisions.md` under *The source of the
+finding*. Read the row; do not re-derive it here and do not re-open it inside a piece loop.
+
+**So a piece needing that judgement scored is not blocked. It ships unmeasured, by decision**, and
+the piece loop runs to the end. What it owes in exchange is honesty in the spec: say plainly what
+nothing measures, cite the ruling rather than presenting the hole as an oversight, and record any
+cheap partial instrument that does exist rather than writing measurement off wholesale.
+
+**Tell that apart from blocked, because the failure in each direction is expensive.** *Unmeasured by
+decision* means someone weighed the measurement and declined to build it — there is a row, it carries
+a date, and you proceed and write down what you cannot know. *Blocked on a decision* means a question
+whose answer would change a signature has no answer yet — there is no row, and you stop, per the gate
+at step 4. Building something that should have waited and halting on something already settled are
+both costly, and the only way to know which you are in is to go and look for the ruling. Absence of a
+row is not a ruling.
+
+Neither state licenses inventing a gold standard inside a piece loop, and neither licenses letting a
+model grade itself in place of one. The skip raises the pressure to do the second; it does not
+loosen `AGENTS.md`'s ban on it.
 
 ---
 
@@ -353,11 +430,21 @@ Four workflows died before these settled:
   that no agent can reach one.
 - **Red-first**, except for tests derived from a mutation survivor — those are green by
   construction, since killing a mutant means passing on the original.
-- **One source per fact.** A fact in two files will drift. It has already cost a wrong build order
-  and a wrong performance number. The build order lives in `docs/decisions.md`, the decomposition in
-  `docs/features/<name>.md`, the piece contract in `docs/specs/<piece>.md`, and design decisions on
-  the map. Nothing is copied between them; they cite each other.
+- **One source per fact.** A fact in two files will drift. It has already cost a wrong build order,
+  a wrong performance number, and a benchmark figure that sat in four files with a source under
+  none of them. The build order lives in `docs/decisions.md`, the decomposition in
+  `docs/features/<name>.md`, the piece contract in `docs/specs/<piece>.md`, engineering figures in
+  `docs/research/extraction-benchmarks.md`, and design decisions on the map. Nothing is copied
+  between them; they cite each other.
+- **Where a finding may come from is `docs/philosophy.md`'s to state, and it changed on
+  2026-08-07.** Read it there rather than inferring it from a doc, a spec or a ticket written
+  before that date. Several of them still argue from the repealed premise, and they are being
+  corrected rather than deleted, so an uncorrected one is a live hazard.
 - **One map per feature**, and this skill cannot invoke wayfinder — it prepares the invocation and
   hands it over.
-- **A claim about how people learn** must already be in `docs/research/evidence-base.md`.
+- **A claim about how people learn** must already be in `docs/research/evidence-base.md`. The
+  evidence gate is unchanged by the 2026-08-07 pivot — checked, not assumed — and it is still
+  scoped to claims about learning. An engineering number is not gated there and is not exempt
+  either: it carries its source, genre, metric and sample size, and if more than one file needs it,
+  it lives in `docs/research/extraction-benchmarks.md` and the files cite it.
 - **Never edit a test to make it pass.**
