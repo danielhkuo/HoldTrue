@@ -1,65 +1,46 @@
-# Docs
+# The documentation map
 
-**What runs today, 2026-08-19.** The child, and one model call per turn. You explain something out
-loud, the child answers and asks where your chain breaks, and that is the session. The child and its
-prompt are the product.
+This document lists every document and gives the precedence order. It restates nothing else.
 
-**What is dormant.** Extract, validate, Cohere, the tally, Supply and Contradict — the deterministic
-pipeline. Off the live path, not deleted. So there are **no findings at all** right now, and the
-review phase of the session produces nothing. Each piece returns one at a time, and only when
-someone shows it improves what the child says. **Why, what it costs, and the rule for letting a
-piece back: [`decisions.md`](decisions.md), the row *The child is the product, and determinism
-returns as prompt material*.** Read that row before anything else here; several documents were
-written while the pipeline was live and carry marks pointing back to it.
+HoldTrue is a study application. [`product.md`](product.md) says what it is. Only the live phase
+exists. The end phase is a design. [`architecture.md`](architecture.md) describes both.
 
-**Which document wins.** [`philosophy.md`](philosophy.md) beats a feature doc, which is the only
-precedence it claims for itself. [`../AGENTS.md`](../AGENTS.md) holds the numbered invariants and is
-not in the list below because it is not under `docs/` — read it first anyway; a violation of an
-invariant is wrong even where a doc here says otherwise. [`decisions.md`](decisions.md) owns the
-build order, and no other file may restate it.
+## The documents
 
-- [philosophy.md](philosophy.md): **the core law.** Two laws — *we close what we open*, and *nothing
-  is asserted anonymously* — plus the evidence gate and what we refuse to build. Wins any conflict.
-  Law 2 is new as of 2026-08-07 and replaced the notes-only rule, so do not assume it from the
-  number. Law 1 is unchanged, but **where it rests moved on 2026-08-19**: the review phase used to
-  close what the child opened, and now the child's prompt does. That section says plainly why that
-  is weaker.
-- [features/feynman.md](features/feynman.md): the first shipping feature — its law, its session, its
-  eligibility boundary. The session is written as it is (steps 1 to 3) with the review phase kept
-  visible as the destination (steps 4 to 8).
-- [decisions.md](decisions.md): stack, macOS lifecycle, roadmap constraints, build order, and every
-  ruling with its reason and its rejected alternatives. Superseded rows stay visible.
-- [workflow.md](workflow.md): why the build procedure is shaped the way it is. The procedure itself
-  is [`/holdtrue-workflow`](../.claude/skills/holdtrue-workflow/SKILL.md), the only numbered document.
-- [specs/](specs/): one per piece — its contract, its rulings, and what it hands on. Five exist, at
-  every stage from built-and-closed to unbuilt draft; each carries its own status and its own open
-  rulings, and this map does not copy them. All but the child's cover dormant pieces.
-  [specs/child-speech.md](specs/child-speech.md) is the one covering what runs.
-  [specs/supply.md](specs/supply.md) — **read its banner first**; it was written against a repo that
-  no longer exists.
-- [transcripts/](transcripts/): 18 generated conversations of an adult explaining a mechanism to a
-  child, written blind to this design. Design material and test fixtures, **not** a measurement.
-- [research/evidence-base.md](research/evidence-base.md): every empirical claim about **how people
-  learn**, its source, and the strength that source licenses. A claim about learning that is not in
-  here does not appear in the product or in a design doc.
-- [research/extraction-benchmarks.md](research/extraction-benchmarks.md): the **engineering**
-  figures — causal extraction, open IE, ASR — each with its genre, metric and sample size. Ungated,
-  but every number carries its source.
-- [research/stt-parakeet.md](research/stt-parakeet.md),
-  [research/stt-cloud-byok.md](research/stt-cloud-byok.md),
-  [research/stt-local-candidates.md](research/stt-local-candidates.md),
-  [research/stt-signals.md](research/stt-signals.md): the speech-to-text candidates and what the
-  chosen engine can tell us about its own errors, from
-  [issue 23](https://github.com/danielhkuo/HoldTrue/issues/23), which resolved to whisper.cpp behind
-  a sidecar. Model size is still open.
-- [../measurements/within-sentence/README.md](../measurements/within-sentence/README.md): the
-  falsification week's protocol and its kill numbers — never run, and the one measurement nobody
-  else can do. It scores a dormant piece; `AGENTS.md` still calls it the operative document for it.
-- [research/prior-art/](research/prior-art/): per-paper analyses from the retired product.
-  **Superseded** and partly refuted.
+| Document | What it holds |
+|---|---|
+| [`../AGENTS.md`](../AGENTS.md) | The numbered rules, the evidence rule, the testing position and the writing standard. |
+| [`product.md`](product.md) | What the product is, the two laws, the four mechanisms, the eligibility rule, the retired promise and the enforcement table. |
+| [`cases.md`](cases.md) | The case register. Every behaviour the product must produce, and every behaviour it must stop. One line for each. |
+| [`architecture.md`](architecture.md) | The two phases, the four end-phase parts, the model layer and the omniscient toggle. |
+| [`decisions.md`](decisions.md) | Every reason, every rejected alternative, the build order and the open decisions. |
+| [`research/`](research/) | Three kinds of evidence. See below. |
+| [`transcripts/`](transcripts/) | 18 generated conversations. See below. |
 
-## The split
+[`decisions.md`](decisions.md) also records the documents the owner deleted on 2026-08-19. Older
+files still link to the deleted paths. Those links are dead.
 
-`philosophy.md` holds what generalizes, a feature doc holds what doesn't. The seam is
-empirical: *close what you open* landed in two independent literatures, so it is core, while
-*the gap is a missing connection* is false of flashcards, so it stays with Feynman.
+## The research folder
+
+The folder holds three kinds of file. Each kind has its own rule.
+
+- Learning evidence: [`evidence-base.md`](research/evidence-base.md). `AGENTS.md` gates this file.
+- Engineering figures: [`extraction-benchmarks.md`](research/extraction-benchmarks.md) and the four
+  speech-to-text files `stt-*.md`. Each figure carries its source where you use it.
+- Ungated material: [`feynman-edge-cases.md`](research/feynman-edge-cases.md) and
+  [`prior-art/`](research/prior-art/). A claim in these two files must not enter the product or a
+  document until the owner files it in `evidence-base.md`. `feynman-edge-cases.md` also holds the measured
+  data about real children.
+
+## The transcripts folder
+
+Model agents wrote the 18 transcripts on 2026-08-10. They are not a record of what a real child
+says. They are not a measurement.
+
+## Which document has priority in a conflict
+
+1. `AGENTS.md` has priority over every other document.
+2. `product.md` has priority over `architecture.md`.
+3. `decisions.md` owns the build order. Another file must not copy the build order.
+
+Correct the document with the lower priority. Do not write new text to avoid a conflict.

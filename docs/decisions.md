@@ -1,1078 +1,229 @@
 # Decisions
 
-Technical decisions and their reasons. Philosophy: [`philosophy.md`](philosophy.md),
-[`features/`](features/). Evidence: [`research/evidence-base.md`](research/evidence-base.md).
-
-**HoldTrue** is the platform. **Feynman** is the first feature.
-
-**Row status, added 2026-08-19.** Most rows below carry one of three marks at the head of their
-first cell, because the pivot recorded in [the child is the
-product](#the-child-is-the-product-and-determinism-returns-as-prompt-material) took most of this
-file's subject matter off the live path without refuting any of it.
-
-- **[LIVE]** — the row governs something that runs on the default path today.
-- **[DORMANT]** — the row's subject came off the live path on 2026-08-19. The reasoning is
-  untouched and nothing in it is refuted. **A row whose subject is dormant is not a row that was
-  wrong**, and it returns in force with its subject, under the re-admission rule in that section.
-- **[SPENT]** — a number that scored a dormant pipeline. Kept rather than deleted, because it was
-  fixed before any data and has to return unchanged if its subject returns.
-
-Older marks — SUPERSEDED, REVERSED, REPEALED, STRUCK, DROPPED, DELETED — are rulings *against* the
-row, and a status mark is not one of those. Where both appear, the ruling came first and the status
-describes what became of the subject afterwards.
-
-**"The pivot", unqualified and in anything dated before 2026-08-19, means the 2026-08-07 pivot on
-the source of the finding.** The 2026-08-19 change is always named. Two pivots in twelve days is a
-reading hazard and this line is the whole of the fix.
-
-## The source of the finding
-
-Decided 2026-08-07. This repeals the largest constraint in the repo, so it sits above everything
-below it and several rows further down are marked against it. The law it repeals is Law 2 in
-[`philosophy.md`](philosophy.md), and whatever rule replaces Law 2 is written there rather than
-here — this section records that the decision was taken, what it costs, and what was turned down
-along the way.
-
-| Decision | Why | Rejected |
-|---|---|---|
-| **[LIVE]** And it is now the only source — with the pipeline dormant, nothing else on the live path produces a sentence at all. **Model knowledge is the default source of the finding** | The owner's call, and his reason is that confining the finding to the user's own notes was seriously constraining: a gap the notes never mention could not be found at all, which is most of what a person actually has wrong. HoldTrue is an open-source tool, so which model runs is the user's choice and, in his words, *"it's the user's failure to not use an appropriate model."* That is a coherent position for a tool nobody is selling, and it moves the guard against a confident falsehood from the architecture to model capability plus the person who picked the model. It obliges the app to be honest about which model it is running and what that model was calibrated against. **What this does not touch.** Law 1 entire — anything that asks supplies the answer, and it binds harder now, not less. Local-first: nothing leaves the device unless you turn something on. The evidence gate, still scoped to claims about learning. Invariants 5, 6 and 7. Invariant 2 survives with a narrower scope rather than being deleted: wherever something is quoted, it is still validated as a literal substring, there is simply far less quoting. | **A cloud or bring-your-own-key frontier model as the floor.** Declined because local-first survives the pivot on its own reasoning — it was never part of what Law 2 was doing, so repealing Law 2 gives no reason to spend it. **Notes-only retained**, which is the status quo being repealed rather than refuted, so its cost is stated and not argued away: what the project gives up is a *structural* guarantee. If every sentence is the user's own words, a verbatim quote from their material, or a string in the codebase, then a confident falsehood has no route to the screen, and hallucination stops being a judgement call and becomes a validation failure that span anchoring catches mechanically. Nothing enforces that now. The replacement is a bet on the model, and the bet is the user's to lose. |
-| **[LIVE]** It is now the model that speaks as the child, so the precision worry in this cell lands on the child's line rather than on a finding. **The local floor is the best model the machine can run** | The calibration target is a development machine that is an M5 Max with 36 GB, so the floor is roughly a **27–32B-class model at 4-bit, about 20 GB resident**, sharing those 36 GB with a `whisper-server` sidecar and Electron. The class and the memory budget are the decision. No model is named here and no accuracy figure is quoted, because nothing has been run at that size for this task. The owner's reasoning for calibrating at the floor is that a cloud model will be stronger and so will pass any eval this setup passes. **Recorded with its correction, because the reasoning holds on one axis and not the other.** It holds for **recall** — a stronger model finds at least what a weaker one finds. It does not automatically hold for **precision**, because larger models are frequently more fluent and more confidently wrong, and precision is the axis Law 1 charges for: a wrong repair does not cost a round trip, it teaches a falsehood. Calibrating against the weakest supported configuration is sound. Treating a stronger model as a free pass on the same eval is not. | **Naming a specific model, or writing down a benchmarked figure.** Neither exists yet, and three fabricated figures were traced and corrected in this repo on 2026-08-07 already. **Calibrating against the strongest configuration** and letting the weak end fail quietly, which inverts the direction the error is asymmetric in. **Making cloud the floor**, which is the same rejection as the row above. |
-| **[LIVE as a rule, DORMANT as a path]** The rule that RAG is never the default still holds and binds harder than ever; the optional path it scopes is on the dormant shelf in the build order, with Index, Retrieve and Compare. **RAG is an optional hook, never the default path** | In the owner's words: *"Its hypothetical. Like if someone has that kind of setup, i want them to be able to hook it up. But by default its model knowledge only."* So the default path has no corpus, no retrieval step and no source document, and the finding comes from the model. The retrieval design already decided in this file is not deleted — it is scoped to the optional path, where a quote can still be validated against a real source and invariant 2 still means something. | **Requiring RAG on the default path.** It puts a setup step in front of the first run and makes the headline feature depend on a corpus most people will not have, which is a milder version of the constraint just repealed. **Dropping the RAG path entirely.** It throws away reasoning that is still correct wherever retrieval runs — see the two rows below marked *scoped to the RAG path* — and forecloses the one configuration in which a citation can be mechanically checked. |
-| **[DORMANT]** It rules on the eval for a finding, and as of 2026-08-19 there are no findings at all: Supply and Contradict are off the live path. The skip is not lifted and not spent — it returns with them, unchanged. **The eval for the model-knowledge finding is skipped, and the skip is recorded as a decision rather than left as an absence** — decided 2026-08-07 | The owner's call, and his reasoning in his words: building one is what *"full benchmark suites are for"*, he does not want to spend that effort, and *"its not like we can do anything if the current models are insufficient."* **The cost, recorded beside it and not argued away.** The piece that carries the entire authority of the feature will ship with no way to tell whether it works, and there is no number to point at when a finding feels wrong. The **new** Law 2 in [`philosophy.md`](philosophy.md) — *"Nothing is asserted anonymously"*, the replacement written on 2026-08-07, and not the repealed law that every other row in this file means when it says Law 2 — obliges the app to state what the model was calibrated against. For this piece the honest answer is *nothing*. It stays nothing for as long as this row stands, which is not the same as forever: the alternative in the third column of this row is declined and not refuted, and anyone who takes it up turns *nothing* into a number. So `philosophy.md`'s open item on calibration having no procedure is closed for the default-path finding by this row rather than answered by it. **What the skip does not touch.** **Overtaken on 2026-08-16: the week was dropped entire**, by the owner, and the entry recording that drop and what it cost is kept in the build order below. Read the rest of this paragraph as what was true when the row was written, and as the reason the drop cost what it did. The falsification week survives whole, but not for one shared reason, and this row's first draft got that wrong. Two of the three — the within-sentence rate and the false-question rate — score the user's own explanation against hand marks on that same explanation, so neither ever depended on the notes. The third, vault eligibility, is a census of notes with no explanation and no hand marks anywhere in it, and it is **done**, run on 2026-08-06 over one vault and reported in [#26](https://github.com/danielhkuo/HoldTrue/issues/26), rather than scheduled. It survives the pivot because it was already finished, not because of anything about hand marks. Extract's own eval survives unchanged: spans into the explanation text, schema validation, the properties, the paired protocol over a fixed set. What is skipped is the measurement of the *finding*, which is the one that never had a gold standard short of a subject expert per case. **One narrower thing stays measurable, and it is not what this row skips.** Whether a finding names a link the user *did* state — the piece mistaking an extraction miss for a gap — asks nothing about anybody's understanding, so it needs no subject expert: the week's hand marks already record which links were stated. That check belongs to [`specs/supply.md`](specs/supply.md) and is recorded there, not here. What has no cheap instrument, and what this row therefore gives up, is precision on the gaps that are genuinely gaps. | **A falsification-scale version, offered and declined: the owner marking real-gap / not-a-gap on findings drawn from his own explanations**, on the ground that he is the subject expert on his own understanding — which is precisely the expert-per-case the full protocol could not afford, available for the length of the falsification week rather than a benchmark suite. Record it as the thing a future reader will most want to know was weighed rather than overlooked. It is **declined, not refuted**: nobody showed it would not work. **What picking it up later actually requires**, because the obvious reading of that phrase is wrong and would waste the week. It is not available to anyone willing to spend seven days. The entire warrant is that the marker is the subject expert on **his own** understanding, so the person doing the marking has to be the person who gave the explanations, marking findings drawn from those same explanations. Hand it to a second reader and it measures whether a finding looks plausible to a stranger, which is a different quantity and one nobody has asked for. That is what makes it cheap for the owner and unavailable to anybody else — it is not work sitting on a shelf for the next contributor, it is work only one person can do, and it stays available for as long as he is willing to write out explanations and mark them. **And what it would have produced**, which is the one place the cost of this skip is genuinely softened by knowing what was on the table: a **precision** figure — of the findings shown, what fraction named a real gap — on **spoken, from-memory explanation by a learner**, which is the one genre this product actually has and the genre no published benchmark covers at all. Precision is also the axis this piece is expected to fail on and the axis the local floor gives no free pass on, per the row two above. The sample would be small and partial: one labeller, his own material, the findings drawn from the week's fifteen to twenty explanations. Too thin to calibrate against and not offered as calibration — and still the only measured statement anybody would have been in a position to make about the piece. **Leaving the eval as an absence**, which is what a row exists to prevent — a hole in the docs reads as an oversight, and this one is a choice. **An LLM judge**, not reopened and given no fresh consideration here; `AGENTS.md` bans it, and the only thing that changed is that the pressure to reach for it went up. |
-
-## Stack
-
-| Decision | Why | Rejected |
-|---|---|---|
-| **[LIVE]** **Electron** | Only candidate with first-party documented sidecars, SQLite extensions, three-platform E2E. `node:sqlite` has `loadExtension()`, FTS5 built in. | **React Native**: no Linux path, no `child_process` (Hermes), no in-support Windows/macOS version pair. **Electrobun**: no sidecar docs, Linux testing upstream-blocked, bus factor 1. **Tauri**: SQL plugin can't load extensions (open 2yr), no macOS find-in-page, two macOS 26 crashes. **Flutter**: fallback if Electron becomes untenable. |
-| **[LIVE]** The one model call a turn makes goes through it. **Ollama, or bring your own API key** | No bundled inference: no signing, no notarization entitlements, no giant installer. Ollama 0.32.4 *is* `llama-server`; bundling llama.cpp buys nothing. | **MLX**, deferred: Apple-only, permanent second code path, Ollama already uses Metal. |
-| **[DORMANT]** It priced extraction, and Extract is off the live path. ~~**Qwen3.5 4B or larger for extraction**~~ **SUPERSEDED 2026-08-07** | Superseded by the local floor in [the source of the finding](#the-source-of-the-finding). The floor is now a 27–32B-class model at 4-bit, not 4B, because the model is the guard rather than a component behind one. The old stated reason — *"causal extraction collapses below 3B, and 3B to 4B is untested"* — was uncited when it was written and is still uncited, so it is not evidence at the new floor either and should not be carried up. Two things in this row survive untouched and still govern: the licence test, Apache-2.0 at all sizes, and the delivery rule, that the app never downloads, stores or bundles a model — Ollama owns that, read `/api/tags` and offer `/api/pull`. | Gemma 4: non-OSI license on weights. Still rejected, and still on licence grounds, which the pivot does not reach. |
-| **[DORMANT]** Nothing embeds anything while Index is on the shelf. **An embedding model served by Ollama** | Embedding a library means sending the whole library, so the cloud path belongs behind the same explicit switch as web retrieval. | Cloud embedding on the default path. |
-| **[DORMANT]** A turn touches no database: there is no index, no store and no query on the live path. **SQLite via `node:sqlite`** | Vectors as blobs, FTS5 keyword half, a worker-sharded flat scan. Hybrid keyword+dense, since study material is full of formulas and proper nouns embeddings fumble. Measured timings live in the [`AGENTS.md`](../AGENTS.md) stack table; the "2.3 ms" once stated here was unsourced and wrong by ~20×. | Any vector database. Not warranted at this scale. |
-| **[DORMANT]** No documents are read on the default path. **PDFium** | The character index *is* the citation offset, exactly what span anchoring needs. | PyMuPDF (AGPL). Not a conflict now that we are AGPL too, but PDFium fits better technically and doesn't entangle forks. |
-| **[DORMANT]** Web retrieval was already off by default and now has nothing to serve. **Tavily, off by default** | 1,000 requests/month free, no card, terms permit app integration. | Google CSE (closed to new customers), Brave (free tier killed Feb 2026). |
-| **[DORMANT]** Rejected already, and the job it was hired for belongs to the dormant RAG path. ~~**LettuceDetect v2**~~ **REJECTED 2026-08-06** | Two independent reasons, either sufficient. No runtime: Ollama does not serve a 307M encoder, and ONNX Runtime contradicts no-bundled-inference. And redundant: it was hired to check a *generated* statement against its cited span, but invariant 1 forbids generated text reaching the user, and `src/index/anchor.ts` already rejects any quote that is not an exact slice. **Amended 2026-08-07:** the second reason fell with invariant 1, since generated text is now the default output. The rejection stands on the first reason alone, which the pivot does not reach. Note also that the *job* this tool was hired for — checking a generated statement against the passage it cites — is exactly what the optional RAG path would want, so it may be worth a fresh row one day. It would need a runtime answer, and it does not have one. | Kept as an open question for three days with nothing depending on it. |
-| **[n/a — deleted, not dormant]** ~~**Astryx**~~ **DELETED 2026-08-06** | Never recorded a reason, never recorded a rejected alternative, and never appeared in `package.json` or the lockfile. A row with no reason is not a decision. Re-add it with one if it is wanted. | n/a |
-| **[LIVE]** **AGPL-3.0** | Not recorded. | PolyForm Noncommercial: not OSI, ambiguous for a study tool. |
-
-## The child is the product, and determinism returns as prompt material
-
-Decided 2026-08-19. This supersedes the shape of the live phase and spends several numbers below.
-It is a strategy change, not a repudiation: nothing deterministic is deleted, and every piece named
-here is expected back.
-
-**The decision.** The child and its prompt are the product. A turn is one model call. The
-deterministic pipeline — Extract, validate, Cohere, the tally, Supply, Contradict — comes off the
-live path and returns one signal at a time, each admitted only if it measurably improves the
-child's line.
-
-**Why, and it is measured rather than felt.** Every probe run between 2026-08-16 and 2026-08-19
-pointed the same way.
-
-- **The child is the only component that consistently works.** On a real session it asked four
-  questions and every one was a genuine probe, including one that landed precisely on the speaker's
-  misconception.
-- **What we feed it is inert.** Five shape conditions against the same sentence produced five
-  near-identical questions, and `dangling` and `rootless` produced the *same line* despite their
-  context text saying opposite things. Removing the shapes entirely changed nothing except that the
-  child began repeating itself — so they were supplying novelty, not direction.
-- **The graph has no edges.** Cohere's whole matching layer joins zero seams on real extractions;
-  raw string equality gives the identical node count. A real four-turn session produced five links
-  in five disconnected pieces.
-- **The findings built on it were thin and unstable.** The best run produced one correct
-  contradiction, and a replication of the same input returned `unsettled` instead. A product whose
-  headline capability is a coin flip is not a product.
-- **The prompt is the lever that has twice been shown to work.** Rewriting two of the child's five
-  worked examples took dictionary questions from five-in-sixteen to zero-in-eleven. Nothing in the
-  deterministic layer has ever produced a change that large.
-
-**What this costs, stated rather than argued away.** There are no findings at all until determinism
-returns. Law 1 — anything that asks supplies the answer — now rests on the child's own prompt
-instead of on a review phase, which is weaker and is honestly weaker. The disclose-and-close
-condition on a plant has no mechanism while the tally is off the path, so **the guess must stay off
-until it does**. And the review's one real capability, catching a stated misconception, is gone
-until Contradict is re-admitted.
-
-**What it spends.** The four false-question kill numbers and the 75% within-sentence line score a
-pipeline that no longer runs on the default path. They are **spent, not deleted** — they measure a
-thing that is dormant, and if it returns they return with it, unchanged and still fixed before any
-data.
-
-**Two holes in this row, found by an audit of it on 2026-08-19 and answered here rather than left.**
-
-**First: does this row's own evidence break the rig guard?** *Two models may talk* rules that no
-figure from the rig or a planted-gap run enters a tracked file until
-`measurements/within-sentence/explanations/` holds fifteen real ones, and dropping the falsification
-week made that permanent. This row then argues a strategy change from measured figures. The defence,
-made here because nobody had made it: **that guard bans a RATE standing in for a measurement the week
-would have produced** — the false-question rate, the within-sentence share, anything about how often
-the product is right. Every figure in this row is an engineering count of *the child's own output*
-or of *whether a deterministic layer joins anything*, which is a different quantity and one the week
-was never going to supply. Two of them come from a real explanation the owner spoke rather than from
-generated prose. That is the argument; if it does not hold, this row is arguing from evidence it is
-not allowed to cite, and the pivot needs re-grounding rather than re-wording.
-
-**Second: the re-admission rule as written cannot re-admit the tally, and that is a defect.** The
-rule admits a signal that changes what the child *says*. `tallyIntroduced` changes nothing the child
-says — it records what the child said after the fact. So on a literal reading it can never clear the
-bar, which would park the guess behind it permanently and leave Law 1 with no mechanism forever.
-**The rule is therefore two rules**, and the second was implied rather than stated: a signal that
-feeds the prompt returns when it improves the child's line; a signal that *records or checks* what
-was said returns when it makes a finding the owner would act on. The tally and Supply are the second
-kind. Cohere's shapes are the first.
-
-**The re-admission rule, which is the whole point of the pivot.** A deterministic signal comes back
-only when someone shows it changes what the child says, for the better, across more than one pass.
-That is a bar nothing in the pipeline has ever had to clear, and applying it retroactively is what
-the evidence above amounts to.
-
-| Rejected | Why |
-|---|---|
-| **Keeping the finding pipeline while also improving the child** | Doing both is what produced a week of changes nobody could attribute. Ruling 16 in `specs/child-speech.md` named this confound on 2026-08-12: *"a prompt change that improves the tally looks exactly like a persona that got bolder."* |
-| **Deleting the deterministic modules** | They are coming back, they carry the only tests in the repo, and the record of what failed is worth more than the lines cost. Dormant, not gone. |
-| **Rebuilding the child prompt from scratch** | The current one is the product of two measured corrections. Starting over discards both. |
-
-## Feynman design
-
-Decided 2026-08-03. Feature doc: [`features/feynman.md`](features/feynman.md).
-
-| Decision | Why | Rejected |
-|---|---|---|
-| **[LIVE]**, and load-bearing in a way it was not before: the pivot makes the fiction the product, so this row now carries the interface rather than decorating it. The question it raises — whether a first release could ship against typed text — is named further down this section and stays open. **AND THE RUNNING CODE VIOLATES THIS ROW, recorded 2026-08-19:** the rewrite types, because no speech sidecar exists. That is availability rather than disagreement and the row is not repealed — but a decided row reading LIVE beside code that breaks it is how a decision quietly becomes a preference, so it is written here rather than only in a source comment. `src/page.html` funnels every route into a turn through one `send()`, so swapping typing for speech is a change in one place. **Voice in, not typing** | You do not type at a child sitting in front of you. The role-play is the product, and typing breaks it. That is the whole reason and it is enough. | Typing. Note this is **not** a claim that speech reveals more than writing — that is refuted in the evidence base (D'Mello et al. 2011, no learning difference) and may not appear in this product. The reason is fiction, not diagnosis. |
-| **[DORMANT]** Reversed already, and the deterministic child that both halves of this row argue about is off the live path entirely. Nothing here is refuted a second time. ~~**The child speaks only from your own words**~~ **REVERSED 2026-08-12** | Reversed by the row below, and the reasoning was never refuted — it was outbid. Two designs were built and run against the same explanation on 2026-08-12. The deterministic child produced a non-sequitur every fifth turn and cannot ask a question that points forward; the model-spoken child was better on every turn, and on turn 2 it named *fills up* and *empties*, which the speaker never said. That is the trade in one line: it reads well **because** it holds knowledge this row banned, and that same knowledge can ratify a belief you never held. What survives is the wish for a mechanically checkable rule — the check moves from before the child speaks to after it, and becomes a ledger rather than a guarantee. **The evidence is thin and is recorded as thin:** the non-sequitur comparison has no written protocol and no artifact in the repo. Original reasoning: The pivot repealed *a persona may ask, it may never assert* along with Law 2 and left the child's naivety undefined. This defines it: the child heard you and heard nothing else. Every sentence it says is built from Extract's link set by two deterministic pieces, so it calls no model and can be wrong only where you were. That also gives the repo back a mechanically checkable rule — *no child utterance names a concept absent from the transcript* — which is the shape of check invariant 3 took with it. Consequence: the child cannot deliver the review-phase finding, so step 7 keeps its register switch and now rests on Law 1 alone. | **Model knowledge in the child's voice**, which is more lifelike and puts a confident falsehood in the mouth of the one character the product is built around. Its cost is real and is not argued away: the best question in 18 generated transcripts — *then why does Grandma in Australia have Christmas on the beach?* — runs entirely on world knowledge and this child can never ask it. A child that knows only your words will also ratify your errors and never take it back. |
-| **[SPLIT 2026-08-19 — *the child speaks* is LIVE, *the arithmetic* is DORMANT]** The model still says one line as the child, and that call is now the whole turn. Two halves came off: the shapes Cohere found, handed to it as context — measured inert, five shape conditions producing five near-identical questions and two opposite contexts producing the same line — and the second Extract pass that wrote down what the child introduced. So the guarantee this row bought, *it cannot say that without being written down*, **has no mechanism today**. That is the largest single cost of the pivot and it is recorded, not argued away. **The child speaks, and the arithmetic keeps the books** — decided 2026-08-12 | A model is handed the conversation so far plus the shapes Cohere found, as context and not as an instruction, and says one line as the child. A second pass runs Extract over that line and writes down every link it holds that your graph does not. The guarantee changes from *it cannot say that* to **it cannot say that without being written down**, which is weaker, honestly weaker, and is the guarantee Law 1 actually asks for — invariant 5 never demanded silence, it demanded that what gets opened gets closed. The part worth noticing is what it does to Supply: instead of finding gaps in an understanding with no ground truth, Supply is handed a list of specific propositions the child introduced and checks each one. Contract and rulings in [`specs/child-speech.md`](specs/child-speech.md). | **The deterministic child**, struck above, which cannot ask forward and reads like a form. **A vocabulary-level audit** — cheaper, no model call, and blind to a reversed chain or a negation built from your own words. Ruling 8 in the spec records that the two checks catch different failures rather than the same one at two depths, and it was ruled the same day: both run. |
-| **[DORMANT, and explicitly parked]** The pivot rules that the guess stays off until the tally is back on the live path, because the disclose-and-close condition in this cell has no mechanism without it. The condition is not relaxed and the evidence under it is untouched — the condition is **unmet**, which is a different thing and the reason the guess is off rather than shipped. **The child may assert a guess, and every guess is written to a plant ledger** — decided 2026-08-10 | Being wrong is what forces the teacher to correct, and the evidence supports it: [`research/evidence-base.md`](research/evidence-base.md) carries Van Loon et al. 2015 via Metcalfe — hypercorrection occurs on refutation texts and not on texts that merely present correct information. The guess is deterministic, connecting two of your own unlinked concepts, so it needs no world knowledge. **The condition that rides with it:** the same file carries Butler & Roediger 2008, where selecting lures leads students to acquire false knowledge, so every plant must be disclosed and closed before the session ends. That makes the guess unshippable in a live-only release. | **Mirror only**, which is safer and gives up the correction dynamic. **Closing a plant once and retiring it** — refuted by the evolution transcript, where the adult corrected the error and the child reproduced it later. **Count corrected 2026-08-12:** this row said *six turns later*. Counted against [`transcripts/round-2.md`](transcripts/round-2.md), the adult corrects at the giraffe passage, and the child reproduces the teleology — *"Like fish decided to grow legs to walk on land?"* — **ten child turns later**, not six. The refutation is stronger than the row claimed, not weaker. |
-| **[DORMANT]** It scores a plant against a finding, and today there are neither. The exception it carved into invariant 7 stays carved and stays scoped to a score with ground truth; nothing currently qualifies. **The catch score appears beside the finding** — decided 2026-08-10 | The owner's call, taken with the objection in front of him twice. What it buys is a number with real ground truth, which is the one thing the repo otherwise lacks: the system knows what it planted, so whether you caught it is checkable in a way no finding is. **The cost, recorded because the evidence gate has no other slot for it.** This is a decision taken *against* the evidence base rather than around it. [`research/evidence-base.md`](research/evidence-base.md) carries Shute 2008 summarising Wiliam 2007: grades alone produced no learning gains, comments alone produced large gains, and **grades with comments produced no gains** — with the line *a band beside a diagnosis destroys it*. It also amends [`philosophy.md`](philosophy.md)'s third consequence of Law 1, not only invariant 7, so it reaches every feature and not just this one. **Written into `philosophy.md` on 2026-08-10**, with the old text struck and kept visible, and into `AGENTS.md`'s invariant 7. The exception is scoped to a score carrying ground truth the diagnosis lacks, which today admits the catch rate and nothing else. | **A separate surface, never beside a finding**, which keeps the number and stays outside what Wiliam measured. **Engineering measurement only**, which repeals nothing. Both were offered and declined. |
-| **[LIVE subject]** Reversed already, but transcript correction is still a live question — speech goes in and a transcript comes out on the one path that runs. *No upfront transcript correction*, in the session-shape table below, is the row in force. ~~**The user corrects the transcript, and the child does the asking**~~ **REVERSED 2026-08-05** | Original reasoning: at 15–25% WER an uncorrected transcript means the user reads words they did not say and is told they are theirs, and Law 2's floor is *"a user reads their own words."* Reversed because it is friction in the one place the session should feel like talking. The reasoning was never refuted — the cost is accepted, not argued away. See the session-shape section below. | Still rejected: a second model reading audio for hesitation — refuted, see the feature doc. |
-| **[DORMANT]** Repealed already, and both alternatives it leaves open are questions about a child that now runs on model knowledge alone and on nothing else. ~~**The child knows your source and nothing else**~~ **REPEALED 2026-08-07** | Repealed by [the source of the finding](#the-source-of-the-finding). The row rested on two things that the default path removes. It assumed a document — there is none — and it assumed that anything the child says is a quote, which is what made its confusion "quotable" in the first place. The invariant it was steering around, invariant 3's ban on world-knowledge speech, is itself repealed. What the child knows now, and whether it plays a naive character at all, belongs to [`features/feynman.md`](features/feynman.md) and is deliberately not answered here. | Both alternatives this row once rejected — a genuinely naive persona, and a persona drawing on world knowledge — are now open rather than rejected, and neither has been chosen. The reasoning that killed genuine naivety is the one part of this row that still stands on its own: the model is not naive, and pretending it is does not make it so. |
-| **[STRUCK already, and its replacement went DORMANT on 2026-08-19]** Read this first, because it changes what the strike means. The row was struck on the strength of a named replacement — *every assertion is written down and something closes it* — whose mechanism was the plant ledger and `tallyIntroduced`. Both are off the live path. **So today nothing writes the child's assertions down and nothing closes them.** Law 1 and invariant 5 are unrepealed and unmet; the pivot section says so in its own words and this cell is the second place it is written down. The engineering asymmetry at the foot of this cell is untouched and is now the only thing holding the default. ~~**The child asks, never tells**~~ **STRUCK 2026-08-16** | **Struck, not restated, and the owner took the harder of the two options this row itself offered.** What is struck is the row's status as a bar. Both things that held it up are gone: the constitutional half was Law 2's consequence *a persona may ask, it may never assert*, repealed 2026-08-07, and the engineering half never forbade anything — it says why asking is the better default, which is guidance and not a rule. Restating it as guidance was offered on 2026-08-16 and declined, on the ground that a row restated after being relaxed twice ratifies the accumulation it was written to prevent, and that a rule nobody can violate is a rule in name only. **What governs the child now, and this is the whole of the replacement: every assertion is written down and something closes it.** The plant ledger under *The child may assert a guess* and `tallyIntroduced` under *The child speaks, and the arithmetic keeps the books* are the mechanism; Law 1 and invariant 5 are the obligation, and neither was ever repealed. The guarantee is weaker and is honestly weaker — *it cannot say that* became *it cannot say that without being written down*. **What is lost, recorded rather than argued away.** Nothing now requires a proposal to widen the child's licence to be argued as a constitutional change. The relaxations of 2026-08-10 and 2026-08-12 happened by accumulation, which is exactly what this row existed to catch, and striking it removes the catcher rather than repairing it. That objection was in front of the owner when he ruled. **The original reasoning follows, and the engineering asymmetry in it survives the strike as the reason the child still asks by default.** Causal link extraction is wrong often enough that being wrong is the normal case rather than the edge case. Corrected 2026-08-07: the "~0.5 F1" this row used to cite came from an Open IE benchmark on written text, not from causal extraction at all. The nearest real figures are worse, so the argument survives with more room than it had — supervised systems on EventStoryLine (news, document-level causal pairs) reach 0.52–0.66 F1 within a sentence and 0.33–0.48 across one, and zero-shot GPT-4 manages 11.5 F1 within a sentence on Causal-TimeBank. Nothing is published for spoken learner explanation, so read all of those as a ceiling. A wrong question costs one round trip; a wrong claim tells someone they failed to say what they said. This is an **engineering** rationale — the pedagogical one (*"a leading question beats a stated correction"*) is refuted and unavailable. **Reviewed 2026-08-07 under the pivot: it survives, on half the support it used to have.** Two things held it up, and one of them is gone. The constitutional half was Law 2's consequence *a persona may ask, it may never assert*, which is repealed and now contributes nothing. The engineering half stands, and it stands better at the new floor than one might expect, because the nearest published figure for a large model is the zero-shot GPT-4 line already in this cell — 11.5 F1 within a sentence on Causal-TimeBank — so making the model bigger is not visibly a fix for causal extraction, and the asymmetry the row turns on does not move: a wrong question costs one round trip, a wrong claim tells someone they failed to say what they said. What is no longer true is the calibration. This row was priced against a 4B extractor, nothing has been run at 27–32B, and so its assumed error rate is now an assumption rather than an extrapolation from adjacent work. Since the law that forbade the child asserting is gone, **this row is the only thing left stopping it**; a proposal to relax it is a constitutional change, not a tuning decision. **And it was relaxed twice without anybody touching this row — noted 2026-08-12, by an audit that read the file cold.** The guess row above permitted an assertion on 2026-08-10, and *The child speaks, and the arithmetic keeps the books* handed the child's whole line to a model on 2026-08-12. So the constitutional change this row demanded be treated as one happened by accumulation instead, which is the exact failure the sentence was written to prevent. **What survives, and it is not nothing:** the engineering asymmetry is untouched — a wrong question still costs one round trip and a wrong claim still tells someone they failed to say what they said — and it is why the child asks rather than tells even now that it may do either. What is gone is the row's status as a bar. Somebody should either strike it or restate it as guidance; this note is not that ruling. **Ruled 2026-08-16: struck, and the ruling is at the head of this cell.** | Stating the gap directly — **no longer rejected here, and rejected by nothing else.** It is permitted, and what it owes is a ledger row and a closure. **Restating this row as guidance**, offered 2026-08-16 and declined for the reason at the head of the cell. |
-| **[DORMANT]** Neither check runs. The structural one is Cohere's, and the truth one was always the check against the source. **Two checks, in order: structure then truth** | Internal consistency needs no world knowledge, so its trigger is a property of the user's own words — which is what makes a live interrupt legal under invariant 3. It also needs no retrieval, so it is far cheaper than the source check. | One combined check. Folding coherence into Compare. |
-| **[DORMANT in fact, not by ruling]** The pivot's list of what comes off the live path does not name Clarity. It was never built and nothing calls it, so it is on the shelf either way; whether that is a decision is under **Open**, recorded there rather than assumed here. **Clarity is a separate instrument** | Expression and understanding are orthogonal — the feature doc already says holding the mechanism and failing to say it is not a failure of understanding. Separation is also what makes a clarity number legal: invariant 7 bans a grade *beside a diagnosis*, and this one is not beside anything. Being isolated, a wrong count cannot corrupt a finding. | A combined score. Clarity feeding the understanding path. **A clarity eval** — "was this clear" has no ground truth, one labeller, and a model listener is not naive enough to serve as an oracle. `AGENTS.md` already forbids an LLM judge. |
-| **[DORMANT in fact, not by ruling]** Same as the row above, and the same open item. **Clarity reports counts, never verdicts** | "Your sentences averaged 34 words" is a fact. "Your explanation was hard to follow" is an inference needing evidence nobody has. An instrument makes no claim, so it needs no eval. | Any holistic judgement of an explanation's quality. |
-| **[DORMANT]** Scoped to the RAG path on 2026-08-07 and on the dormant shelf since. **The corpus is a folder, and a pasted document is a folder of one** — [#20](https://github.com/danielhkuo/HoldTrue/issues/20), decided 2026-08-06, **scoped to the optional RAG path 2026-08-07** | **Scoped, not struck.** The default path has no corpus, so Retrieve has no subject and nothing in this row governs it. Every word of the reasoning below stays valid wherever retrieval does run, which is why it is marked rather than deleted: do not re-derive it, and do not build it before someone decides the RAG path is being built. The original reasoning follows. Picking scopes the *topic*; retrieval searches the folder. That resolves the apparent contradiction between the session's step 1 and Retrieve's row without changing either. Storing a pasted article as a single-note corpus makes scope a **parameter**, not an architecture, so the v1 default stays a cheap product choice. It also keeps the retrieval abstain testable against a real multi-document corpus, which the feature doc calls *"the only thing standing between a growing corpus and a verbatim quote from the wrong note."* | **Single-document v1 with a folder mode later.** It buys a shippable Feynman before Index and sidesteps #25 — but it validates the abstain against the one input where it is not needed, and every threshold tuned there fails to transfer. **Whole-library with no paste path.** Costs the zero-setup first run for an adoption filter that #26's census measured at 13–16% and found non-binding. |
-| **[DORMANT]** Same shelf as the row above, and doubly so now: Extract itself is off the live path, not only its source side. **The source's causal link comes from Extract, run at session time over retrieved passages** — [#22](https://github.com/danielhkuo/HoldTrue/issues/22), decided 2026-08-06, **scoped to the optional RAG path 2026-08-07** | **Scoped, not struck.** There is no source side on the default path, so there are no retrieved passages, Extract runs over the user's explanation alone, and Compare has no second link set to diff against. What that does to the decomposition is named under **Open** and is not answered here. The reasoning below is untouched by the pivot and remains the answer wherever retrieval runs — in particular the arithmetic that kills an index-time link store, which does not depend on where the finding comes from. The original reasoning follows. One model step on two kinds of input, so Compare becomes set arithmetic over two **link sets** and keeps its property test. Invariant 9 is untouched: it forbids diffing two extractions of the user's *own words*, and the source is not the user's words. | **An index-time link store.** Its distinctive capability is composing A→X in one note with X→B in another, and that dies on its own arithmetic. The arithmetic was re-checked on 2026-08-07 against corrected figures and the kill holds at every one of them, because composition multiplies whatever the single-hop rate is. The most generous published number anywhere near this task is **0.535** — IMoJIE's optimal F1 on the CaRB Open IE benchmark, arXiv:2005.08178, a 2020 BERT-based seq2seq system on written benchmark sentences, and not the "best frontier model" it was once quoted as — which composes to **~0.29** over two hops. Small models sit lower, in the high-20s to mid-30s on CaRB and ReOIE (LLaMA-2-13B 36.2 and 25.7, GPT-3.5 zero-shot 39.1 and 25.9), composing to **0.07–0.13**. The "~0.30 at 8B" originally cited here has no source for 8B specifically and is only directionally plausible; it is not needed, since the conclusion does not turn on which figure in that band is right. Strip composition and it is a cache that a content-hash `doc_id` invalidates wholesale on any edit, against a vault of constantly changing files. **Co-occurrence as a link proxy.** Cheapest and fully deterministic, but it is systematically worst on the 69% of notes that are declarative stubs and definition sheets — a glossary co-locates every term by construction — and a false hit fires a probe with no answer behind it, which is a Law 1 failure. |
-| **[LIVE]**, and promoted: after 2026-08-19 the child and its prompt are the whole of what runs, so this row describes the product rather than justifying a budget line. It does not become a licence — the correction in its third column, that **Law 1 binds regardless of where the answer comes from**, is exactly the obligation the pivot leaves unmet. **The roleplay is the product** — decided 2026-08-07 | The owner's call, and the same form of argument the voice row above already accepted: you do not type at a child sitting in front of you, that was the whole reason, and it was enough. It is a **fiction** argument, not a pedagogical one, so it does not pass through the evidence gate, which governs claims about how people learn. What it justifies is spending design effort on the child being a convincing child, and treating a change that makes the fiction thinner as a real cost rather than a free simplification. | **Defending it pedagogically**, which is available to nobody. The evidence base holds no row saying a conversational partner teaches better, and two pointing the other way: Roscoe & Chi's **87% knowledge-telling episodes for audience-directed explanation against 60%** for self-explanation to text, and Alter, Oppenheimer & Zemla 2010, where opening with *"walk me through it step by step"* shrinks our own diagnostic yield. **Reading it as a licence over the constitution.** It suspends neither Law 1 nor invariant 5: those carry their own evidence and bound what the child may ask however central the roleplay becomes. **Corrected 2026-08-07, later the same day.** As written, this row read Law 1 and invariant 5 through the notes-only premise, so "supplies the answer" meant the answer came out of the user's own material. That premise is repealed by [the source of the finding](#the-source-of-the-finding). What survives, and is the whole of what survives, is that **Law 1 binds regardless of where the answer comes from**: whatever the child opens, something has to close, and the fact that the answer is now the model's rather than a quotation from a document neither weakens the obligation nor changes who owes it. If anything it tightens, because the answer is no longer checkable against a source. |
-| **[DORMANT]** Cohere is off the live path, so nothing reads the table in either direction. **The connective table is a mute, never a joiner** — decided 2026-08-07 | A closed-class list of sentence-initial causal connectives earns a place only by *suppressing* output. If sentence N opens with one and Extract returned no cause for N, Cohere must not flag N's subject as an unlinked concept. That produces nothing, asserts nothing and needs no span, which is exactly what invariant 3 permits — knowledge may suppress output, never produce it — and exactly what invariant 4 means by `confidence`, a reason to stay quiet. | **The same table used as a joiner**, reading the connective and attaching the previous sentence as the cause. It recovers only ~10–17% of the links per-sentence extraction loses — the council's 2026-08-07 estimate, not a measurement, and the falsification week's connective column measures it directly for the cost of one extra column. Worse, **it fails silently**: the previous-sentence span it attaches is a genuine substring of the transcript, so a wrong-but-literal link passes invariant 2 and reaches the user looking validated. A mute that misfires costs a question nobody asks; a joiner that misfires puts a false link on screen with a quote under it. |
-| **[DORMANT]** It constrains Extract's emission and Extract is off the live path, so the invariant is in force over a piece that is not running. That is not a repeal and it is not a warrant either — see **Open**, where the route this row named for warranting it no longer exists. **Invariant 8 keeps its constraint and loses its warrant** — decided 2026-08-07 | *"Extraction is per-sentence, never one-shot over a whole explanation"* entered in `5477081`, the initial commit, as a bare line with no argument. The 97/5 figure arrived four days later in `c3822d4` — the commit whose stated purpose was giving every fact a source. Constraint first, justification after, and the justification does not survive tracing; see the paragraphs below this table. **Unwarranted is not wrong.** The invariant stays in force, because nothing has been shown against it and the schema, the anchors and Compare's set arithmetic all rest on per-sentence emission — but it is now held on no published evidence, and it may not be defended by citing 97/5 again. The measurement in [`measurements/within-sentence/`](../measurements/within-sentence/) is what settles it. | **Silent repeal** and **silent retention**, both. Dropping the invariant because its stated reason failed would treat unwarranted as refuted, which it is not; keeping it while leaving the dead figure in place is worse still, since the next reader inherits the number as settled fact. **The soliloquy** — extract over the whole uninterrupted stretch of speech between two child interventions — is not adopted as drawn. It is **circular in the live phase**: a soliloquy is defined by the interventions, and the live phase's job is deciding when to intervene, so it would segment on the thing it is computing. Its boundaries would also derive from interaction history rather than content, contradicting the content-addressed rule in the anchor format. |
-
-**Citations in this table that the 2026-08-07 pivot invalidated.** Recorded here rather than row
-by row, because in each case a live decision is resting on a dead reference and the decision itself
-is untouched. *Two checks, in order: structure then truth* justified the live interrupt by saying
-its trigger is a property of the user's own words, *which is what makes it legal under invariant 3*.
-Invariant 3 is repealed, so that legality clause is void, while the ordering argument — a structural
-check needs no world knowledge and no retrieval, so it is far cheaper than the other one — is
-unaffected. The second check, *truth*, meant the check against the source, and there is no source on
-the default path; what it becomes is open. *The connective table is a mute, never a joiner* cited
-invariant 3 and invariant 4 for its entire constitutional half, and both of those are now gone or
-under review. It rests on its engineering half, which was always the stronger one: a joiner fails
-*silently*, because the previous-sentence span it attaches is a genuine substring of the transcript,
-so a wrong link passes invariant 2 and reaches the user looking validated. That argument never
-depended on Law 2 and outlives it. **None of these rows is reopened by this note.** They are flagged
-so that the next reader who follows a citation to a repealed rule does not conclude the decision
-fell with it.
-
-**Do not carry the composition figures into an argument about Extract's source side.** They
-measure *graph extraction from prose* — read arbitrary text, produce a graph — the right shape
-for killing composition and the wrong one for relation classification with the argument pair
-already supplied. The squaring in that row inherits the same limit: it assumes the two hops fail
-independently, and it prices a written Open IE benchmark rather than causal links in study notes.
-It stands because composition cannot beat its own single-hop rate however that rate is measured,
-not because 0.29 is a number anyone should go on to quote.
-
-**The general rule, and the worked example this file supplied itself.** A number measured on one
-task may not be carried into an argument about a different one. The paragraph above used to cite
-*"the feature doc's own within-sentence figure is ~97% F1, against roughly 5% across a sentence
-boundary"* as its authority, which commits precisely the error the sentence before it forbids.
-Traced 2026-08-07: that pair is Table 7 of PubMedCausal (Kunle-John et al., arXiv:2605.28363),
-intra-sentential 0.9743 against inter-sentential 0.0500, DeepSeek-R1-32B few-shot. It is measured
-on **PubMed abstracts**, by **relaxed cosine matching at a 0.75 threshold** rather than exact
-extraction, over **202 inter-sentential instances — 3.1% of a corpus that is 96.9%
-intra-sentential by construction**, the corpus having been keyword-filtered for "causality". The
-5% is the residue that filter missed: the hardest slice, not a representative sample. Carried
-into an argument about a learner explaining from memory out loud, it is the same category error
-as pricing relation classification with CaRB, and a wider one — the intra-sentential share of
-causal links is itself genre-dependent, 96.9% in that biomedical corpus against about 32% in news
-(EventStoryLine: 1,751 intra-sentence causal pairs against 3,727 inter, the verified pair owned by
-[`research/extraction-benchmarks.md`](research/extraction-benchmarks.md), which also records the
-second-hand counts that circulate for the same corpus and why they change nothing). A threefold
-swing between two *written* genres, before speech is considered at all.
-
-**No published figure covers spoken, from-memory explanation by a learner.** Say that plainly
-rather than substituting the nearest adjacent number. What the field does report, for anyone
-tempted: supervised systems on EventStoryLine run 0.52–0.66 F1 within a sentence against
-0.33–0.48 across one, a ratio of roughly 1.3–1.6× rather than 19×, and the dominant axis is not
-intra-versus-inter at all but **explicit-versus-implicit** — PubMedCausal's own table shows 0.8803
-explicit against 0.3920 implicit on the same sentences, a 49-point gap. **How many causal
-relations carry an explicit connective at all is itself unsettled** — a "28–34% of edited prose"
-figure circulated during the 2026-08-07 council and could not be verified, and PubMedCausal's own
-corpus measures 63.1%, roughly double it. Do not cite either; see
-[`research/extraction-benchmarks.md`](research/extraction-benchmarks.md). What does still bear on Extract's
-source side is repo-internal and untouched by any of this: #26's census of one vault found 13–16%
-of notes are causal mechanisms, and nearly all of those already carry a quotable causal sentence.
-That is a measurement of this project's actual input rather than a transplanted benchmark, and
-its generalisability to other people's notes is open.
-
-**The open option for invariant 8: widen what the model reads, keep what it emits.** Three of the
-five voices in the 2026-08-07 council converged on this independently, from different assigned
-dispositions — hand the model a window of surrounding sentences as context while it still emits
-one link set per sentence, so the schema, the anchors and Compare's set arithmetic are all
-unchanged and everything downstream of invariant 8 survives untouched. It is **an option, not a
-decision.** The one thing the whole council agreed on is that this gets settled by running the
-measurement rather than by argument, and the measurement has not run. It is recorded so nobody
-re-derives it from scratch, and so nobody builds it before there is data.
-
-**[SPENT 2026-08-19.]** The 75% line below scores a measurement of a piece that is now dormant, on
-a collection that was cancelled three days before the pivot. It is kept exactly as written and is
-not to be re-derived: it was fixed before any data, which is the only thing that gives it authority,
-and it returns unchanged if Extract and the collection ever do. That measurement's kill number was a
-related casualty, **and it moved on 2026-08-16 — from 60% to
-75%.** The line in [`measurements/within-sentence/`](../measurements/within-sentence/) was written
-down before any data, which is procedurally right, but it was written when 97/5 looked like a
-general property of the task rather than a property of PubMed abstracts. It was corrected before
-collection started, which is a different act from adjusting a threshold after seeing a result. That
-file owns the ruling, the reasoning and the two options it turned down; it is frozen from the first
-explanation on.
-
-**The pivot is recorded, not designed around.** This pass wrote the decision down and stopped
-there. Where it opens a question — most visibly whether a first release could ship against typed
-text, since voice's remaining justification is the fiction the pivot just made central — the
-question is named in [`features/feynman.md`](features/feynman.md) and left open. Nothing in the
-design has been re-cut to suit the roleplay, and nothing should be until someone decides to.
-
-**Models on the live path: one, the child. Corrected 2026-08-19.** A turn is one model call. The
-count below is kept whole, because the history of getting this number wrong is the point of the
-paragraph and because it is what the count returns to as pieces are re-admitted — but every sentence
-after this one describes a dormant pipeline. **Models on the finding path: Extract, Supply,
-Contradict, and the child.** Cohere, Compare and
-Clarity are deterministic and carry property tests. It briefly reached four on 2026-08-05 when a
-point-coverage readout was added; that was reverted the same day and took Points and Cover with
-it. **Corrected 2026-08-12, and it was wrong twice.** It said two while Supply, named further down
-this file, was already a third. And the live phase no longer calls one: it calls three per turn —
-Extract over your sentence, the child's line, then Extract again over that line for the audit. What
-is still deterministic is everything between them, which is Cohere's set arithmetic and the audit's
-comparison.
-
-## Feynman session shape
-
-Decided 2026-08-05. The session splits into a **live phase** while you are talking and a
-**review phase** once you have stopped. This supersedes parts of the section above.
-
-**[DORMANT 2026-08-19 — the whole split.]** There is one phase. The review phase existed to produce
-findings, and there are no findings while Supply and Contradict are off the live path. Every row in
-this table is marked individually below; the split itself returns when the second phase has something
-to do.
-
-| Decision | Why | Rejected |
-|---|---|---|
-| **[DORMANT]** There is one phase, per the note above this table. The cost-and-latency half of the argument is the half that will still be standing when the second phase has work again. **Two phases: live, then review** | The structural check needs only the user's own words, so it is cheap and can interrupt. Everything needing the notes — retrieval, contradiction, omission, coverage — moves to a pass that runs after the user stops talking, where being slow costs nothing. This also resolves most of the latency worry: the expensive work no longer happens while someone waits. | One continuous loop with retrieval interleaved. |
-| **[DORMANT]** Superseded already, and the structural check it turns on is Cohere's, which is on the shelf. ~~**The child checks structure only**~~ **SUPERSEDED 2026-08-12** | Superseded by *The child speaks, and the arithmetic keeps the books* above. The structural check survives whole — Cohere still finds where your chain does not close, and its shapes are what the child is handed. What fails is the second sentence of the original reasoning. Original: *It looks at whether your own chain closes: you named a thing and never said what it does. No notes, no world knowledge, nothing to be wrong about beyond the shape of what you said. Keeps the live phase fast and keeps invariant 3 trivially satisfied.* The child now holds world knowledge and has plenty to be wrong about; invariant 3 is repealed and satisfies nothing. **The rejected alternative stays rejected.** The child still does not fact-check you live: the audit reads the child, never your words. | The child fact-checking live. Still rejected, and by a narrower argument than the row once had — not that the child knows nothing, but that what it knows is pointed at its own line. |
-| **[DORMANT]** No review phase runs, so the permission grants nothing. Its line — agentic about what to look for, never about what to say — was already left standing on nothing after authorship stopped being quoted; see the note under this table. **The review phase may be agentic** | Multi-step retrieval — search, read, search again — is strictly better than one shot, and after the user stops talking there is no latency budget to protect. The line is **agentic about what to look for, never about what to say**: authorship stays quoted. | Agentic authorship. An agentic live phase. |
-| **[DORMANT]** Superseded already, and the RAG path it still governs is on the shelf. Its *newly unanswered* question — what happens when the model and a supplied source disagree — is unanswered still and now needs a source path before it can even be asked. ~~**The notes are assumed correct**~~ **SUPERSEDED 2026-08-07** | Superseded by [the source of the finding](#the-source-of-the-finding), and it is the sharpest reversal in this file: the alternative this row rejected, *fact-checking against model knowledge*, is now the default path. The original reasoning was that the app never checks a claim against the world, only against the user's own material, so if the notes are wrong the user is taught something wrong and that cost is accepted. On the default path there are no notes to be wrong, so the accepted cost does not disappear, it changes shape — what can now be wrong is the model, and the pivot assigns that to the user's choice of model rather than to the design. The row still governs the optional RAG path unchanged. **Newly unanswered:** what the app does when the model and a supplied source disagree. This row used to answer that by construction, the source always won, and nothing answers it now. | *Fact-checking against model knowledge* is no longer rejected; it is the default, which is what supersedes the row. *Flagging suspect notes* stays rejected and unexamined — nothing in the pivot bears on it, and it still belongs to the future notes-improvement tool that was always the intended answer. |
-| **[DORMANT]** Contradict and Supply are both off the live path, so neither finding exists to be distinguished. The distinction returns with them and the pivot names catching a stated misconception as the one real capability that is gone until it does. **Contradiction is a distinct finding from omission** | *Your notes say otherwise* and *your notes connect something you skipped* are different failures. Omission means the explanation was incomplete; contradiction means something is wrong in your head and you would keep believing it. Contradiction is checked first, because being told about a skipped step is strange if the surrounding explanation is mistaken. | Treating both as one comparison. |
-| **[LIVE]** Speech still goes in and a transcript still comes out; this is the row in force on transcript correction. **No upfront transcript correction** | Friction, in the one place the session should feel like talking. **Accepted cost:** thinking-aloud speech transcribes at 15–25% error, so the app will sometimes quote back words the user did not say — the failure this design is least able to absorb. Reverses the 2026-08-03 decision above, which reasoned from Law 2's floor rather than from how it would feel to use. | A full correction pass. **Unresolved:** whether a quote is editable inline at the moment it is shown, which would put the fix only where it bites. |
-| **[DORMANT]** Reverted already, and coverage was a review-phase readout in any case. ~~**Coverage is reported, and a model decides it**~~ **REVERTED same day** | Amended invariant 7 to permit traceable point-coverage, on the reasoning that findings alone cannot answer *do I need to study this again* — an explanation can contradict nothing, omit nothing detectable, and still miss the mechanism. **Reverted after a four-way design panel:** all four advocates independently declined to use the permission, including the one whose sole assignment was answering that exact question. Nobody wanted what it bought. The question remains real and unanswered. | A holistic rating, still rejected on its own merits: a single global score is unstable run to run and cannot show its own reasoning. |
-
-**Citations in this table that the 2026-08-07 pivot invalidated.** Same treatment as the design
-table above: the references died, the decisions did not, and nothing here is reopened by saying so.
-*Two phases: live, then review* splits the work by what needs the notes, and on the default path
-nothing needs the notes, so the split now has to stand on cost and latency alone — which was always
-the larger part of its argument. *The child checks structure only* claimed that the live phase
-*keeps invariant 3 trivially satisfied*; invariant 3 is repealed, so that clause is void, and what
-constrains the live phase instead is named under **Open**. *The review phase may be agentic* drew
-its line at **agentic about what to look for, never about what to say**, on the ground that
-*authorship stays quoted*. Authorship does not stay quoted any more, so the line as drawn has
-nothing holding it up. It is left standing rather than repealed, because the distinction underneath
-it — searching freely is not the same permission as asserting freely — may well survive on some
-other reasoning, and nobody has looked. *Contradiction is a distinct finding from omission* is
-worded throughout as *your notes say otherwise*; the distinction it draws, between believing
-something wrong and skipping a step, does not depend on where the other side of the comparison comes
-from, so the row survives with stale wording.
-
-**Why the revert, in full.** The panel ran four designs against four priorities — user
-experience, correctness, ambition, shippability — and each was attacked by a skeptic. The
-coverage permission was granted the same morning and was live in the docs the panel read. The
-correctness design narrowed it to bare counts; the UX design replaced it with two lists; the
-ambitious design added a *new* forbidden-table row banning progress rings over covered points;
-the shippable design cut the whole review phase. Four independent routes around a permission
-that had just been created for them.
-
-**What this does not settle.** *Do I need to study this again* is still a real question with no
-answer in the design. The panel's position is that the answer, if one exists, is the
-contradiction check rather than a coverage inventory — a contradiction is diagnostic by
-construction, where coverage of well-documented points is not.
-
-**Not settled by any of this.** Coverage tells you what your notes cover. Something you have
-wrong that your notes never mention will not surface, so an empty result means *nothing
-contradicted your notes*, not *you understand this*. How that is worded is unresolved, and
-getting it wrong rebuilds the overconfidence the feature exists to correct.
-
-## Workflow
-
-Operational rules: [`../AGENTS.md`](../AGENTS.md). Reasoning here.
-
-**[LIVE]**, with one exception: the eval set in the fan-out list below — 100–150 labelled
-explanations — labels Extract's input, and Extract is dormant. The exception is the item, not the
-rule that fan-out is for design and review.
-
-**Tests are the specification, written by hand.** TDFlow (Jan 2026): **94.3% on SWE-Bench
-Verified with human-written tests versus 69.8% writing their own**, a 24-point gap; the
-bottleneck is now writing valid tests, not resolving issues. In 86,156 test-file patches
-across 33,596 agent PRs, **80.2% had weak or no oracle signal**: agents write tests
-confirming what the code already does.
-
-The human owns the *oracle*, not the enumeration: scaffolding, fixtures and mechanical table
-expansion delegate, deciding what correct means does not. Red-first runs and mutation testing
-backstop, so agent-written tests need not all be read.
-
-**Coverage is rejected as a target.** Inozemtseva & Holmes (ICSE 2014): controlling for suite
-size collapses its correlation with fault detection, in one project from 0.85 to essentially
-zero. Coverage measures execution, never assertion. Mutation testing is the better instrument
-but no score target either: Google, across 30,000 developers, found 85% of mutants judged
-unproductive and adequacy "neither practical nor desirable."
-
-**Language-agnostic test *frameworks* are ceremony.** Pact needs two independently deployable
-teams; Gherkin's value is a non-engineer audience. Neither exists here. Language-agnostic
-*fixtures* (golden JSON, thin runner, public APIs) deliver the benefit at zero cost.
-
-**Agent fan-out is for design and review, not construction.** Panels fit arguments, where
-independent judgement is the product; for code, ground truth is "do the tests pass," cheaper
-and more reliable to run than to convene critics over. Parallel builders also need
-independent, well-specified units, which a greenfield repo lacks.
-
-Fan out on four: **the eval set** (100–150 labelled explanations, fully parallel and
-independently verifiable), **design decisions**, **daily code review** across dimensions,
-findings adversarially verified before being believed, and one deliberate exception, **one**
-contest of independent implementations for the extraction pipeline. Construction fan-out is
-justified only there: the eval harness supplies the cheap objective judge the rule assumes
-missing, so implementations are scored, not argued.
-
-**Visual loop.** Electron speaks CDP natively: `--remote-debugging-port=9333` plus
-`agent-browser` closes the build-launch-look cycle. Renderer only, and a screenshot is a weak
-oracle: an ergonomic, never a gate.
-
-## macOS
-
-**[LIVE]**, except the indexing bullet — `utilityProcess.fork()` has nothing to fork for while
-Index is on the dormant shelf. Everything else here is platform behaviour that a one-model-call turn
-still meets: App Nap, sleep, Ollama's lifecycle, the tray, notifications, file watching and focus.
-
-Battery was investigated; the framework is not the variable. An idle webview draws ~25 mW
-against a ~3–5 W machine floor, and the only controlled Safari-vs-Chrome test favoured
-Chromium by ~9%, inside its own noise. What matters is where the work runs.
-
-- **Indexing in `utilityProcess.fork()`:** real Node, no Blink page scheduler.
-  `QOS_CLASS_UTILITY` inside the child; never `QOS_CLASS_BACKGROUND`, which pins to E-cores.
-- **App Nap hits menu-bar apps.** No Electron binding: needs a native addon wrapping
-  `beginActivityWithOptions`. Take it **per batch**, hold a strong token reference, release
-  in `finally`. Never set `NSAppSleepDisabled`.
-- **Don't block sleep.** Warning before sleep is near-zero: checkpoint continuously and
-  resume. `powerMonitor` gives AC/battery, thermal state, CPU speed-limit; Low Power Mode and
-  battery percentage need the same addon.
-- **Don't manage Ollama's lifecycle.** A second `ollama serve` fails on the held port. Idle
-  cost is tiny: zero with no model loaded, about half an idle text editor with one, where the
-  true cost is 4 GB resident. `{"keep_alive": 0}` at session end reclaims it.
-- **Tray.** Icon filename must end in `Template` for dark mode. Hold a module-scope reference
-  or GC removes it. `setActivationPolicy('accessory')` with `LSUIElement: 1`.
-- **Scheduled reminders when quit are impossible**: a LaunchAgent cannot post notifications,
-  Apple requires a user context. Stay resident as an accessory menu-bar process via
-  `SMAppService`. **Signing is mandatory**: Electron 42 made unsigned apps fail notifications
-  outright.
-- **File watching:** `@parcel/watcher`. Its `writeSnapshot()` / `getEventsSince()` pair
-  reconciles changes made while closed, no full walk. Debounce 300–500 ms per path (atomic
-  saves arrive as delete-then-add, not change); content-hash before re-embedding; subtree
-  rescan on the dropped-events flag.
-- **Focus enforcement:** Screen Time / FamilyControls is iOS and Catalyst only, not macOS.
-  Realistic scope: `NSApplicationPresentationOptions` with `disableProcessSwitching` (kills
-  ⌘-Tab, no entitlement, needs a native addon since Electron's `setKiosk` doesn't set it).
-  System-wide blocking needs a NetworkExtension filter plus an admin helper, a project in
-  itself.
-
-## Roadmap constraints
-
-Planned: study calendar, topic parser, document explorer with Obsidian, Pomodoro, focus
-enforcement, pinned browser view. Three things must be right **now**; everything else reads
-from them.
-
-**[DORMANT 2026-08-19 — all three numbered items.]** They are index constraints and Index is on the
-dormant shelf. They are kept marked rather than cut because each is a thing that must be right
-*before* the piece is built, so they cost nothing to hold and would be expensive to rediscover. The
-paragraphs after them — scheduling, and Obsidian needing no plugin to read — are unaffected.
-
-1. **Content-addressed, stable IDs in the index.** Re-parsing a document must not reshuffle
-   topic identity, or the calendar silently breaks months later.
-2. **One anchor format everywhere**, `{doc_id, unit_id, char_start, char_end, quote}`, quote
-   verified as a literal substring. Feynman cites with it; the topic parser and retrieval
-   practice read the same chunks.
-3. **Incremental re-indexing.** An Obsidian vault is thousands of constantly changing files;
-   a full re-index per save is unusable.
-
-Schedule retrieval practice and Feynman sessions **independently**: spacing is well evidenced
-for retrieval, but no evidence that repeating an explain-back loop on the same topic helps,
-and one finding suggests the effect is not topic-specific.
-
-Obsidian needs no plugin to *read*: a vault is a folder of markdown. A plugin is for writing
-back only, and belongs in its own repo.
-
-### `doc_id` is the content hash
-
-Decided 2026-08-05, while building Anchor. **[DORMANT 2026-08-19.]** Anchor is off the live path,
-so nothing mints or resolves an anchor during a turn. The collision below was found by a test and
-the reasoning is untouched; both return with Anchor.
-
-`doc_id` is a hash of the document's text, so it identifies **a version of a document**, not a
-file on disk. A file that changes gets a new `doc_id`, and every anchor made from the old one
-stops resolving — because the existing `doc_id` comparison rejects it, before any text is
-compared.
-
-**Why, concretely.** Anchor originally verified a reference by asking *"is the stored text still
-at the stored position?"* That is a question about one spot in a file, and it cannot distinguish
-*nothing moved* from *something else identical slid into that slot*. This is not hypothetical: it
-was found by a test. An edit inserting exactly 19 characters ahead of an anchor at offset 19
-slid a **different** occurrence of `water` into precisely the bookmarked position. The stored
-text matched, resolution succeeded, and it returned the wrong occurrence with no error. Repeated
-words make it likelier, and study notes repeat their key terms constantly.
-
-Hashing asks a question with a real answer instead — *is this the same document I made the
-reference from?* — and the collision becomes unreachable, because a changed file never gets as
-far as comparing text at a position.
-
-**It costs nothing in Anchor.** No new field, no change to the five-field format, no new code in
-`resolveAnchor`. Identity does the work.
-
-**It fails in the safe direction.** A typo fixed elsewhere in the file invalidates anchors that
-were still fine. Since anchors are session-scoped and a session is minutes long, discarding a
-good reference costs nothing, where keeping a subtly wrong one puts a false quote on screen.
-
-| Rejected | Why |
-|---|---|
-| Comparing stored text at stored offsets alone | The collision above. Silent, and likelier the more a term repeats. |
-| Storing surrounding context to disambiguate | Widens the anchor format past five fields, and the context can itself change. Already rejected once for Anchor. |
-| Re-resolving by searching for the quote | Returns a confident wrong occurrence rather than nothing — the failure the whole product is built to avoid. |
-
-**Consequence to handle in Index, not here.** `doc_id` now answers *which version*, so something
-else must answer *which file* — the calendar and topic parser have to follow a document across
-edits. That is a separate stable identifier, and it belongs to Index. Two documents with
-byte-identical content will also share a `doc_id`; harmless for Anchor, since the text is the
-same either way, but Index must not assume `doc_id` is unique per path.
-
-### The `Doc` is the turn — decided 2026-08-12
-
-**[DORMANT 2026-08-19.]** The append bug below is real and the fix is right, but a turn no longer
-runs Extract, `validate` or the tally, so nothing on the live path builds a `Doc` at all. Everything
-in this section returns with them — including the four costs the thirteen-agent sweep found, **none
-of which has been paid or fixed**, and the misheard-turn hole, which is the deepest of them.
-
-**What was broken.** `asDoc` hashed the whole transcript with a constant `unit_id: 'transcript'`, so
-any append re-hashed the document and every anchor minted before it failed `resolveAnchor`'s first
-gate. That is not a repeat problem, it is an append problem: it fires on every turn. `npm run demo`
-works only because it reads a finished file.
-
-**The decision.** Each turn the user speaks is its own `Doc`, immutable once said. A repeat is
-another turn, and the earlier one is marked superseded rather than deleted.
-
-**Why this shape and not a stable session id.** An immutable turn is exactly the thing a content
-hash identifies well, so the hash stops needing to change and `anchor.md` ruling C gets *more* true
-rather than being repealed. The alternative — keep the session `Doc` and make `doc_id` stable — also
-works for pure appends, since appending moves no earlier offset. It was rejected because it repeals
-ruling C on the only piece mutation-tested at 100%, and because it holds only
-while the transcript is append-only forever: rewrite one superseded span and every later offset
-moves at once.
-
-**`unit_id` is `${session}:${ordinal}`.** Minted, not derived. The session part is random at session
-start; the ordinal is stored with the turn and **never recomputed from a filtered list**. Rejected:
-deriving the id from the turn's text and its predecessors, which is reproducible and needs no
-storage — it loses on its seed, because a constant seed makes two sessions that open with the same
-sentences produce identical `unit_id` *and* identical `doc_id`, which is the silent cross-session
-wrong resolve the scheme existed to stop. A random seed is a mint, so the derived design becomes the
-minted one carrying an ordered transcript.
-
-**Superseded means marked, and every consumer names its own view.** The tally and Cohere read
-unsuperseded turns only; `speak` and the review phase see both hearings. Rejected: superseded means
-invisible everywhere, which is one correct default instead of a rule each consumer must remember —
-and that objection is real, recorded here rather than argued away.
-
-**What it costs, found by a thirteen-agent sweep and listed because none of it is obvious.**
-
-- **A superseded turn keeps resolving.** Its `Doc` is immutable, so every link minted on it resolves
-  perfectly. Nothing in `src/` filters by supersession, so the graph holds a claim you retracted,
-  the child's re-introduction of it goes unrecorded, and Cohere and the child quote the withdrawn
-  words back verbatim and correctly. **Silent, and the Law 1 direction.**
-- **The child's line goes through `asDoc` too.** With a turn-ordinal `unit_id`, your *"okay"* and
-  the child's *"okay"* in the same round hash identically and carry identical units, so an anchor
-  minted on the child's line resolves against your turn. **Nobody has decided whether the child's
-  line is a `Doc` in the same namespace**, and until somebody does this recreates ruling C's hole one
-  level up.
-- **The misheard turn is never superseded, by construction.** `child-speech.md` ruling 18 says the
-  gate catches unintelligible turns and cannot catch misheard ones, so every supersede filter runs
-  straight past *flopper*. Immutable-once-said also removes in-place repair, so the only route back
-  is a repeat you must first notice. **This is the deepest cost of the decision and it was not
-  visible before the sweep.**
-- **Cross-turn state has no supersede story.** The only state crossing turns keys off concepts, so a
-  question retired by a withdrawn turn stays retired, and a `gotIt` can fire saying you answered
-  something you unsaid. The current holder is retired by `child-speech.md` ruling 11, but its
-  successor inherits the problem.
-- **There is nowhere to put the mark.** `Turn` holds text by value with no id and no anchor, and
-  `src/` performs no writes of any kind. Supersession has no home until something persists.
-- **`asDoc(text)` gains the id**, and `extract` threads it. `src/index/anchor.ts` changes nowhere,
-  which is the point. Note that `demo.ts` never calls `extract` — it calls `asDoc`, `cutSentences`
-  and `validate` itself, so threading the id through `extract` alone leaves the only runnable entry
-  point unconverted.
-
-**Two defects this surfaced, both recorded rather than fixed here.** `validate.ts`'s synthetic `Doc`
-pads with spaces, so a turn beginning with a tab or newline produces padding of the right length and
-the wrong bytes and the `Doc` still lies about its own hash; the real healing condition is one
-sentence, leading whitespace all spaces, no trailing whitespace. And `extract` returns
-`unavailable: 'nothing to read'` for an empty turn, which the tally logs as `unread` — a note saying
-the model could not read the turn when the model was never asked.
-
-**`anchor.md` ruling A has one stale clause.** It says the `unit_id` decision *"lands in Index, which
-mints them."* Index is off the default path and the mint site is `extract.ts`, so minting moves to
-Extract or Transcribe. The ruling stands; the sentence does not.
-
-**Issue [#21](https://github.com/danielhkuo/HoldTrue/issues/21) is halved, not closed.** This answers
-what a unit is for extraction. The retrieval half is untouched, because retrieval has no subject on
-the default path.
-
-### Two models may talk; nothing they produce is a measurement — decided 2026-08-12
-
-**[LIVE 2026-08-19, and promoted.]** With the pipeline dormant, the rig is the only instrument the
-child's prompt has, and the prompt is the product. Two things move. The planted-gap column scores
-Extract and Cohere, so it is **dormant** with them. And the structural guard at the foot of this
-section is now the hardest constraint in the file — the pivot section argues from counts taken this
-way, which is checked against the guard under **Open** rather than waved through here.
-
-**The proposal.** Run a model as the explainer against `speak` as the child, so a full session can be
-simulated without the owner writing an explanation by hand. Every test until now cost him one, which
-is a large part of why build-order entry 0 has never started.
-
-**Legal, and the ban is narrower than it looks.** `AGENTS.md`'s *no LLM judge* appears three times
-and all three are in a **scoring** context — *"No LLM judge: set comparison against gold."* It
-forbids a model grading output. It says nothing about a model producing input, and nothing rules on
-a synthetic corpus at all.
-
-**So it ships as a rig, not an instrument.** `npm run rig`. It emits engineering counts and nothing
-else: crashes, links per sentence, shapes by kind, ledger rows, repetition, silence, latency. **No
-rate, no precision figure, no score.**
-
-**[SPENT 2026-08-19, for a second and independent reason]** — the four numbers score Cohere's
-false-question rate, and Cohere is dormant. The paragraph below still governs every word: guessed
-blind, still written down, and still not to be spent on generated prose if Cohere comes back.
-
-**The four kill numbers must never be run on it, and the reason is not squeamishness.** They were
-guessed blind and are **spent the first time they are used**. A model writing clean prose engineers
-out the condition that produces a false question — it has no misconceptions, no disfluency, no
-self-repair and no rambling — so the rate would fall for a reason that says nothing about Cohere, and
-the numbers would be gone.
-
-**Planting the gap is the one thing that yields ground truth**, and it is scoped to one column.
-Author a full causal chain, delete exactly one link, run the loop, and check whether the deleted step
-was flagged. That is not a judgement about anybody's understanding; it is *did it find the thing we
-removed*, which is checkable by machine. It is scored as **recall on the excised link, pass or fail
-per case**, and reported as an Extract-and-Cohere diagnostic. It is **not** the false-question rate
-and it is not the catch rate invariant 7 admits — nobody has ruled whether a deletion from generated
-prose is a "planted error" in that sentence's sense, and this row does not widen it.
-
-**The guard is structural, because the prose version has already failed.**
-[`transcripts/README.md`](transcripts/README.md) says its generated conversations are *"not a
-measurement"* — and this file then argued a constitutional reversal from *"the best question in 18
-generated transcripts"*, and corrected the plant ruling by counting turns in `round-2.md`. The
-disclaimer did not hold. So: **no figure from the rig or from a planted-gap run enters a tracked file
-until `measurements/within-sentence/explanations/` holds fifteen real ones**, and rig fixtures never
-enter Extract's eval set or that directory.
-
-**Undecided, and named rather than assumed.** Whether generated explanations may serve as the fixed
-set for Extract's paired regression — nobody has ruled who writes that set. Whether the
-disclose-and-close condition on a plant reaches plants the harness makes. And there is **no row in
-[`research/evidence-base.md`](research/evidence-base.md)** saying a two-model roleplay reproduces the
-Feynman condition; the nearest row, Roscoe & Chi's 87% knowledge-telling for audience-directed
-explanation, points the other way. The rig is a debugging tool and is defended as one.
-
-### The child's prompt is examples, and temperature stays 0 — decided 2026-08-12
-
-**[LIVE 2026-08-19, and it is now the product.]** This is the section the pivot promotes above
-everything else in this file. The prompt is the lever twice shown to work, and the rewrite of two
-worked examples that took dictionary questions from five-in-sixteen to zero-in-eleven is the second
-of the two. The remedy named here and not built — a rotating bank of a dozen examples dealt by turn
-index — is entry 0 of the build order below, because at temperature 0 the child's own previous line
-is the strongest exemplar in the prompt, which makes the session degrade by construction. That is now
-a defect in the product itself rather than in a component.
-
-**Two rows, because a council found the second was never written down at all.** A grep for
-*temperature* across `docs/` returned no ruling: it existed only as a comment in `model.ts`, which
-also stated a reopening condition no reader would ever find. That is now here.
-
-**The prompt is five worked examples, not a description of a voice.** The first version described the
-child in rules and quoted the openers it wanted — *wait*, *ohhh*, *how come*, *whoa*. A six-turn rig
-run returned six lines opening *ohhh*, every one a confirmation the adult could answer with *yeah
-exactly*, so the child never made anybody explain more.
-
-**The obvious fix was tested and failed, which is why this row exists.** Deleting the quoted openers
-took *ohhh* to zero and the collapse moved: *So* then opened four of six and the lines stayed
-confirmations. Feeding the child its own recent openers back as a fact did nothing. Forbidding
-*ohhh* moved the token to *whoa*. **Naming the openers was not the cause.** *Sound like a child* is —
-it hands the model a label and lets it fill the label from its own prior, and a prior cannot be
-deleted, only outweighed by a sample. Rejected: rules with a computed forbidden list, which is
-cheaper and which an ablation showed re-collapses.
-
-**The examples come from [`transcripts/`](transcripts/), where the distribution was already on
-disk.** 275 real child lines: *oh\** opens 8% of them and the deployed child ran at 100%. They sit on
-foreign topics so a copied surface is visibly off-topic, and they disagree structurally so there is
-no shared frame to induct.
-
-**What examples did not fix.** They buy the move, not the variation. At temperature 0 the strongest
-exemplar in the prompt is the child's own previous lines, and those compound. A rotating bank of a
-dozen dealt by turn index is the named remedy and is not built.
-
-**Temperature stays 0 on every call, the child included** — but **not for the reason first given.** A
-comment claimed a probe showed byte-identical output three times of three. Re-probed across sessions
-it did not hold: turns 1-4 matched and turns 5-6 did not, and a three-sample repeat gave two
-identical lines and one different. **This runner is not byte-deterministic at 0**, so determinism is
-not what 0 is buying. It stays because nothing has shown a per-call temperature buys fluency the
-prompt cannot, and the prompt just bought a great deal. Note also that the model ships its own
-defaults — temperature 1, `top_k` 64, `top_p` 0.95 — and the request overrides only temperature.
-
-**One model, not two.** Rejected: a small fast model for the child and the large one for Extract.
-`phi4-mini` on the shipped prompt returned *"Whee! Brake works slow bike down. Hot too. Cool?
-Okay."* — four sentences, the one-line rule broken, and no child in it; on the few-shot prompt it
-answered in 50-word paragraphs. **Examples do not buy a smaller model.** The 30-to-50-second turn
-stays, and it is a real cost against a live phase this repo calls cheap. **Re-priced 2026-08-19:**
-a turn is one model call rather than three, so 30 to 50 seconds is no longer one third of the wait —
-it is the whole of it, and it is now the entire latency budget of the product.
-
-**A correction to the row above.** *The local floor is the best model the machine can run* estimates
-about 20 GB resident for a 27-32B class model. Measured on this machine, `muse-glimmer:30b-mlx` is
-**about 27 GB** resident. The class is unchanged; the memory figure was optimistic.
-
-## Build order
-
-**This is the single source.** Corrected 2026-08-06: it previously put the index before the
-extraction harness, which contradicted the piece-level order in
-[`features/feynman.md`](features/feynman.md) on exactly the point that matters.
-
-**Re-cut 2026-08-19, and the old list was wrong end to end.** The pivot recorded in [the child is
-the product](#the-child-is-the-product-and-determinism-returns-as-prompt-material) took Extract,
-`validate`, Cohere, the tally, Supply and Contradict off the live path, and entry 0 had already been
-dropped on 2026-08-16. What was left was an order in which every entry but one built a piece nothing
-calls, and an order that builds dormant work in a fixed sequence is worse than no order, because it
-reads as a commitment. **The list under *The order in force* below replaces it.** The superseded
-list and the 2026-08-07 proposal are kept underneath it, struck and readable rather than deleted:
-this file's convention is that an absence reads as an oversight, and a build order that quietly
-changes shape is how three copies of it drifted the first time.
-
-**The note that stood at the head of this section for twelve days is now answered.** It read
-*unsettled since 2026-08-07, with a re-cut proposed below and not yet ruled on*, and its substance
-was that the 2026-08-07 pivot had taken the premise out from under step 0 and step 2 and moved the
-model floor step 2 rested on. That is all still true and it is no longer the live problem. The
-2026-08-07 proposal was never ruled on and is **moot rather than rejected**: its entries 2 through 7
-order work that is now dormant. It stays readable for its dependency reasoning, which is correct and
-will be wanted again at re-admission.
-
-### The order in force — decided 2026-08-19
-
-The shape in one sentence: **the child's prompt first**, because it is the product and the only
-lever twice shown to work; then the loop that puts a person in front of it; then determinism comes
-back one signal at a time through the bar in the pivot section. Same convention as the old list —
-one line of dependency reasoning per entry, and a piece cites this list and no other copy of it.
-
-0. **The child's prompt.** It is the product, and nothing gates it: the prompt is a string in the
-   repo and the runner already exists. The named remedy that is not built is the **rotating bank of
-   a dozen worked examples dealt by turn index**, from [*The child's prompt is
-   examples*](#the-childs-prompt-is-examples-and-temperature-stays-0--decided-2026-08-12) — at
-   temperature 0 the strongest exemplar in the prompt is the child's own previous line, so a session
-   degrades by construction, and under the pivot that is a defect in the product rather than in a
-   component. This entry is first because the two largest measured improvements this project has
-   ever made were both made here.
-1. **A way to read a prompt change across more than one pass.** The re-admission rule requires
-   showing an effect *across more than one pass*, and the prompt work wants the same instrument for
-   its own sake; today both are judged by eye. What exists is the
-   [rig](#two-models-may-talk-nothing-they-produce-is-a-measurement), which emits engineering counts
-   and no rate. What does not exist and will not is the falsification week's hand marks, dropped
-   2026-08-16 — the entry recording that drop is kept below and is the reason this entry cannot be
-   satisfied by reviving anything. This entry is **deciding what counts as better and over how many
-   passes**. It is not a benchmark suite and it does not reopen the eval skip [at the top of this
-   file](#the-source-of-the-finding), which rules on measuring a *finding*, and there are no
-   findings.
-2. **The turn, end to end: speech in, one model call, one line back.** Transcribe, then `speak`,
-   then Session and Interface. `speak` is still not started. This is the first entry that yields
-   something a person can use, and under the pivot it is reachable **without a single deterministic
-   piece**, which was not true of any ordering this file has held before. The open question *when
-   the child interrupts* is a property of this entry rather than of a component, which is what moves
-   it up the list.
-3. **Re-admission, one signal at a time — each becomes its own entry when it is taken up, and not
-   before.** Nothing has a position here until somebody has shown it clears the bar, because handing
-   a dormant piece a number in a list is exactly the commitment the pivot withdrew. Two things are
-   known about the queue and both are recorded rather than ruled: the **tally** is what the guess is
-   parked behind, and it is already built at 41 tests and 96.67% mutation, so it is the cheapest
-   thing to test the rule against — but it changes nothing the child *says*, so whether the rule as
-   worded can ever admit it is an open question under **Open** and not a scheduling detail.
-4. **The dormant shelf.** Not work to be done; a list of what is held and what each piece waits on,
-   so that nothing here reads as abandoned and nobody rebuilds it from scratch.
-   - **Anchor** — built, 30 tests, mutation 100%. Nothing on the live path mints or resolves an
-     anchor: there is no document, and the child's line is not quoted. Invariant 2 still bites
-     wherever anything is quoted, which is nowhere today.
-   - **Extract and `validate`** — built and running; `extract` knowingly violates its own ruling 3.
-     A turn no longer runs either of them, over your sentence or over the child's line.
-   - **Cohere** — a skeleton with no spec and no tests, and the measured finding against it is in
-     the pivot section: its matching layer joins zero seams on real extractions, and raw string
-     equality gives the identical node count.
-   - **The tally (`tallyIntroduced`)** — built. The guess and the disclose-and-close condition both
-     wait on it; entry 3 is where it can come back.
-   - **Supply and Contradict** — specced, ten open rulings in [`specs/supply.md`](specs/supply.md),
-     never started. Nothing should be ruled on those ten while the pieces are dormant: ruling them
-     now spends the one person who can rule on a signature nothing calls. **This answers the
-     2026-08-12 note that Supply had no entry in the order** — it has one, and it is this shelf.
-   - **Index, Retrieve and Compare** — scoped to the optional RAG path on 2026-08-07 and gated on a
-     decision nobody has taken. Unchanged by the pivot except that the queue in front of them is now
-     empty for a second, independent reason.
-
-**What this order does not do.** It does not schedule the return of anything, and it does not
-promise the pieces on the shelf come back in the order they are listed there. The re-admission rule
-is a bar, not a queue, and writing a queue here would recreate the commitment the pivot spent.
-
-### ~~The order in force until 2026-08-19~~ — SUPERSEDED 2026-08-19
-
-Kept whole and not summarised. Entry 0's record of what dropping the falsification week cost is the
-most valuable thing in this section, and entries 2 through 4 are correct dependency reasoning about
-pieces that have since gone dormant. Where it says *in force*, read *was in force*.
-
-0. ~~**The falsification week.**~~ **DROPPED 2026-08-16, by the owner.** Not deferred, not
-   blocked — dropped, and recorded here because a measurement that quietly stops being mentioned
-   reads as an oversight and this one is a choice. What the project gives up, stated plainly and
-   not argued away:
-
-   - **The only measurement that could end the project.** The within-sentence rate was the one
-     number that could have said *stop*. Nothing replaces it, so no measurement can now retire
-     this design.
-   - **Invariant 8 is unwarranted permanently.** Its stated warrant, the 97/5 pair, was traced to
-     PubMed abstracts and falsified on 2026-08-07. The measurement in
-     [`measurements/within-sentence/`](../measurements/within-sentence/) was what would have
-     replaced it. The invariant stays in force on nothing, and the open question *what warrants
-     invariant 8* below can no longer be closed.
-   - **The 75% kill number, ruled earlier the same day, is moot.** It was frozen against a
-     collection that will not happen. Left recorded rather than deleted, because the reasoning
-     about which direction the error runs is still the right reasoning if anybody restarts this.
-   - **Cohere's four kill numbers can never fire.** Ruling 9 in [`specs/cohere.md`](specs/cohere.md)
-     scored the false-question rate against hand marks. There are no hand marks. Cohere ships
-     unmeasured, and its spec's claim that the rate "can retire this piece" is now false.
-   - **Extract's prompt work loses its gold set, and that is the sharpest cost.** Three prompt
-     variants were compared on 2026-08-12 and the comparison was worthless because each agent
-     built its own test set. The week was the fix. Without it every future prompt change is judged
-     by eye on generated prose — which is exactly the condition
-     [*Two models may talk*](#two-models-may-talk-nothing-they-produce-is-a-measurement) says
-     produces no measurement.
-   - **The structural guard loses its release condition.** That row says no figure from the rig
-     enters a tracked file "until `measurements/within-sentence/explanations/` holds fifteen real
-     ones." That directory will now never fill, so the guard is permanent rather than temporary.
-     Read it that way: **no rig figure ever enters a tracked file.**
-
-   **What this does not touch.** Vault eligibility was finished on 2026-08-06 and is banked in
-   [#26](https://github.com/danielhkuo/HoldTrue/issues/26). Extract's eval set is a separate effort
-   and is not cancelled by this row, only deprived of its first fifteen to twenty items.
-
-   The original entry read: Three measurements, about a day each: the within-sentence
-   rate, the false-question rate, and vault eligibility. Kill numbers written down *before* any of
-   them run. **Two corrections, 2026-08-12.** It is not codeless —
-   `measurements/within-sentence/rate.mjs` exists. And it now clears two blockers rather than one: it
-   is still the only *measurement* that can end the project — entry 2 carries a kill switch of a
-   different kind, since a local floor that cannot extract makes the feature cloud-only or nothing —
-   **and** it is the gold set the Extract
-   prompt work needs, since three prompt variants were compared that day and the comparison was
-   worthless because each agent had built its own test set. Details in [`features/feynman.md`](features/feynman.md).
-1. **Anchor.** Everything produces or consumes anchors. *Done.*
-2. **Extraction harness plus ~100 labelled explanations.** No benchmark exists for the task
-   (pulling named concepts and asserted causal links out of a learner's short explanation),
-   and the model-size recommendation is extrapolated from adjacent work. The 4B figure this step
-   used to name was superseded on 2026-08-07 by the local floor recorded at the top of this file,
-   so read it as the floor of the day rather than a measured threshold. If the local floor can't
-   do it, the headline feature is cloud-only or doesn't exist: find out before there is a UI
-   on top. Also the test suite for the hardest component.
-   **This does not need the index.** Its gold labels are spans into the *explanation text*, and
-   Anchor already resolves spans into arbitrary text, so it can be hand-labelled against pasted
-   explanations. Believing otherwise is what put it behind the index in the first place.
-3. **Index, then Retrieve with the abstain in front of it.**
-4. **Feynman.** Cohere, then **Speak** and **Tally**, then Compare, Contradict, then Session and
-   Interface. **Renamed and re-cut 2026-08-12**: they were Notice and Voice, and both were
-   deterministic. Speak calls a model, so it is this feature's one model-dependent piece and takes
-   the eval branch. Tally is set arithmetic over what Extract made of the child's line, so it needs
-   no model of its own and is testable against a hand-written result, the same way Anchor was.
-   **`tallyIntroduced` is built** — 41 tests, mutation 96.67% — and **`speak` is not started.**
-   Specced together in [`specs/child-speech.md`](specs/child-speech.md), whose section 7 lists what
-   the built half hands on. The name was `Audit` for part of the day; it misled its own owner into
-   reading it as a fact-checker, and ruling 13 records the rename.
-5. Everything else. **Supply is not in this list and should be**, noted 2026-08-12:
-   [`specs/supply.md`](specs/supply.md) says so itself, `#4` of the proposed re-cut gives it a
-   position that binds nothing, and this file names it one of four models on the finding path. A
-   piece with a spec, ten open rulings and no entry is invisible to anyone reading the order.
-
-### ~~Proposed re-cut — PROPOSED 2026-08-07, NOT DECIDED~~ — SUPERSEDED 2026-08-19, NEVER RULED ON
-
-**Moot rather than rejected.** It re-cut a pipeline that has since gone dormant, so its entries 2
-through 7 order work nobody is doing. Nothing in it was refuted, and its dependency reasoning — in
-particular why Cohere sits between a runnable Extract and the false-question rate — is the reasoning
-re-admission will want back. Read it as a record, not as a proposal awaiting a ruling.
-
-Drafted against the 2026-08-07 pivot and the eval skip, in the same shape as the list above: one line of
-dependency reasoning per entry. Nothing here is in force. It is written to be accepted or edited in
-one pass, which is why the disagreements it could not settle are listed underneath it rather than
-resolved quietly inside it.
-
-0. **The falsification week, two measurements at the front rather than three.** The within-sentence
-   rate needs a pen and no code so nothing gates it, and after the eval skip it is the only
-   measurement left that can end the project; vault eligibility is banked in
-   [#26](https://github.com/danielhkuo/HoldTrue/issues/26); the false-question rate leaves this
-   entry for 3, because it runs Extract and then Cohere's set arithmetic and neither exists yet.
-   Kill numbers still written down *before* any of them run.
-1. **Anchor.** *Done.* Nothing waits on it any more, since the default path reads no documents, but
-   Extract's spans into the user's own transcript still resolve through it, so it stays here rather
-   than moving into the retrieval phase at the bottom.
-2. **Extract — proposed here as two entries rather than one, 2a and 2b.** Every default-path piece
-   below consumes its link set and it consumes nothing but the user's own words, so it is both the
-   first thing buildable and the last thing that could be deferred. The split runs between the half
-   that other entries consume and the half that only Extract's own eval consumes:
-   - **2a. Extract, runnable.** The prompt, the schema, per-sentence emission under invariant 8,
-     spans resolving through Anchor — enough to run over a written-out explanation and emit a link
-     set something downstream can do arithmetic over. Nothing in 2a needs a label.
-   - **2b. The harness and the ~100 labelled explanations.** Extract's own eval: gold spans, schema
-     validation, the properties, the paired protocol over a fixed set. The ~100 stays ~100 and
-     narrows to explanation-side extraction only, since the source-passage half of Extract's input
-     goes with entry 7, and the week's fifteen to twenty hand-marked explanations are its first
-     labelled items rather than a separate effort.
-
-   **Why the split is proposed, and it is only proposed.** Entry 3's false-question rate carries a
-   kill number, and as the entry stands unsplit that measurement sits behind the labelling. It does
-   not need the labelling: its gold labels are the hand marks on the week's fifteen to twenty
-   explanations, not the ~100. Checked against [`features/feynman.md`](features/feynman.md), which
-   owns the protocol, what the rate does need is a runnable Extract **and** Cohere's set arithmetic
-   — it counts how often Cohere flags a concept the hand marks show *was* linked, so Cohere is a
-   third precondition rather than a detail. The shorter version of this argument that has been put,
-   that the rate belongs between a runnable Extract and its eval set, is wrong on exactly that
-   point: Cohere sits in between, and the rate cannot run before it. The split survives the
-   correction, because Cohere needs only 2a — so entry 3 follows 2a, and 2b runs alongside it or
-   after it. Leaving it unsplit is what puts a kill number behind a month of labelling, which is
-   the failure the build-order note in [`AGENTS.md`](../AGENTS.md) records this repo paying for
-   once, when a third copy of the order deferred the project's one kill switch behind a month of
-   work.
-3. **Cohere, and the false-question rate it unblocks.** Cohere needs only a runnable Extract — 2a,
-   not 2b — and is deterministic set arithmetic, so it is cheap; the false-question rate needs
-   Cohere's flags scored against the week's hand marks, and a measurement carrying a kill number
-   belongs in front of anything expensive — the same reasoning that moved Extract ahead of Index on
-   2026-08-06. Under the split above, this entry stops waiting on the labelling; without the split
-   it does not.
-
-   **Speak and Tally belong with this entry**, added 2026-08-10 as Notice and Voice, renamed and
-   re-cut 2026-08-12, specced in [`specs/child-speech.md`](specs/child-speech.md). Tally takes an
-   `ExtractResult` and a link set, both of which can be written by hand, so it is still testable
-   with no model. What changed is the runtime: the live phase now calls Extract twice per turn,
-   once over your sentence and once over the child's line, so neither piece runs before Extract
-   does. Speak takes the eval branch, being the model call.
-4. **Supply, the step that produces the finding from model knowledge.** It has a name now, and the
-   name is the spec's: [`specs/supply.md`](specs/supply.md). It consumes the link set Extract
-   produces, so it cannot precede 2a — but **Extract is not the binding constraint, and citing
-   Extract here read as though it were.** The spec carries a block of **open rulings** — ten as
-   this entry is written, and the spec owns that count rather than this list — every one of
-   which would change a signature in its section 2, and under `/holdtrue-workflow`'s gate that
-   means the oracle step cannot start until they are answered. Ruling 7 says it in as many words:
-   *"Do not build either until this is ruled."* So this entry's position is set by a ruling and not
-   by a queue, which makes it the same kind of entry as 7 rather than the same kind as 3. Where it
-   belongs *once ruled* is as early as the Extract dependency allows, since the eval skip leaves it
-   with no measurement and the owner reading its output by hand is the only signal there is that it
-   works — which is also the argument for ruling on the ten sooner rather than later, because
-   nothing else in this list is waiting on the owner in that way.
-5. **Contradict.** Its second input and the source half of its two-span output both assume a
-   document, so it cannot be built until it has the same default-path contract entry 4 is being
-   given — which puts it behind entry 4 rather than beside it, even though at runtime the
-   contradiction is checked first. **It is under the same ruling as entry 4, and this line used to
-   omit that.** [`specs/supply.md`](specs/supply.md)'s ruling 7 asks whether Supply and Contradict
-   are one piece or two, calls itself the least settled of the ten and the one that changes the
-   return type, and its *"Do not build either until this is ruled"* names **both** of them. If it
-   comes back *one piece*, this entry stops being an entry.
-6. **Session, then Interface.** Last, always: both compose the pieces above them, and neither can be
-   specified before the findings they present exist.
-7. **The optional retrieval phase, gated on a decision rather than on the entries above finishing.**
-   Index, then Retrieve with the abstain in front of it, then Compare, then Extract's source-passage
-   input — the internal ordering is untouched and the abstain is still built before the retrieval it
-   guards. What changed is that no default-path entry consumes any of it, so what it waits on is
-   somebody deciding the RAG path is being built; the #20 row above already says do not build it
-   before then.
-8. **Everything else.**
-
-**Why the retrieval path leaves the line instead of moving down it.** A later number still reads as
-a commitment with a queue in front of it, and this work has no queue — it has a precondition, and
-the precondition is a ruling. Stated rather than assumed, because it is the entry most likely to be
-wrong: with the finding's eval skipped, the RAG path is now the only configuration in which
-*anything* about a finding can be checked mechanically, since invariant 2 still bites wherever
-something is quoted. That is a real argument for wanting it sooner than "whenever someone decides,"
-and this proposal is not in a position to rule on it.
-
-**What the falsification week's contents are now.** Nothing joined the list and nothing left it on
-the merits. What changed is that the fourth measurement it might have grown — whether a
-model-knowledge finding names a real gap — is now closed by ruling rather than open by omission, so
-a reader wondering why there is no fourth measurement is looking at a decision and not an oversight.
-One item moves, and for a reason that predates the pivot entirely: the false-question rate was never
-code-free, since it runs Extract and then Cohere by its own description.
-
-**Left for the owner, and not decided here.**
-
-- **Whether the eval skip reaches Contradict's eval set.** The row above rules on the finding.
-  Contradict is a second model-knowledge piece with its own labelling effort, whose collectability
-  was already unresolved before the pivot. Extending the ruling to it would be assuming an answer;
-  it is left unassumed in both directions.
-- **Whether entry 4 or entry 5 comes first.** [`features/feynman.md`](features/feynman.md) holds an
-  unresolved counter — treat the live child as an internal instrument and ship Contradict first,
-  since a contradiction is diagnostic by construction — which if taken swaps them. This proposal
-  does not take it, on the narrow ground that entry 4's contract is being written and entry 5's is
-  not; that is a reason about readiness, not about which finding matters more.
-- **Whether the retrieval phase gets a date or stays gated on a ruling.** Entry 7 proposes the
-  ruling; the argument against is in the paragraph above it.
-- **Whether entry 2 splits into 2a and 2b.** Proposed above, with the dependency check behind it.
-  This is the one edit in the proposal that changes what gets built first rather than only what is
-  written down, and it is worth ruling on separately from the rest of the re-cut: the rest can
-  wait, and a kill number sitting behind a month of labelling is the thing that cannot.
-- ~~**The name of entry 4.**~~ **Given, 2026-08-07.** The spec named the piece **Supply** and the
-  entry now uses that name. Whether it is the right name is open too, but it is open *there* and
-  not here — it is ruling 10 in [`specs/supply.md`](specs/supply.md). If the spec renames the
-  piece, this entry follows it rather than arguing with it.
-- **One knock-on edit this pass did not make.** Moving the false-question rate out of entry 0
-  contradicts [`features/feynman.md`](features/feynman.md), which describes the week as three
-  measurements *"none needing a model or a line of code."* That file was not touched by the pass
-  that drafted this proposal; the 2026-08-08 correction pass took it up. If the re-cut is accepted
-  and that sentence is still standing there, it is the stale copy — this file is the single source
-  where the two disagree, and a silent disagreement is how the three copies drifted the first time.
-
-## Open
-
-- ~~**Which STT engine.**~~ **CLOSED 2026-08-12.** Issue 23 resolved it to whisper.cpp behind a
-  `whisper-server` sidecar; what stays open is the model size and whether a second sidecar is
-  acceptable. What that engine can and cannot say about its own errors is in
-  [`research/stt-signals.md`](research/stt-signals.md). The original entry read: Voice is decided;
-  the engine is not. Constrained by accuracy on
-  thinking-aloud speech and by the absence of published fairness data on every local option.
-  **A third constraint, added and then narrowed on 2026-08-10.** It was briefly written here as
-  *the engine must emit punctuation*, because invariant 8 makes extraction per-sentence and
-  [`specs/extract.md`](specs/extract.md) was going to cut the sentences itself. **That is no longer a
-  constraint on the engine**, because the cutting moved into Transcribe behind a per-engine adapter —
-  ruling 3 of that spec, re-ruled the same day. What replaces it is weaker and does not narrow the
-  candidate list: **whichever engine is chosen needs an adapter that can produce sentence
-  boundaries**, from punctuation where the engine is good at it and from pause timing where it is
-  not. Every candidate reports timing, so no candidate is excluded. **What is still worth recording
-  before the choice**: none of the three `research/stt-*.md` files says whether its candidates
-  punctuate, and the answer changes how much that adapter has to do.
-- **When the child interrupts. [LIVE, and now the most consequential item in this list.]** After
-  the explanation, or mid-sentence. Mid-sentence needs a streaming pipeline and is a much bigger
-  build. It rises because a turn is one model call and the interrupt is the shape of that turn:
-  there is no longer a deterministic trigger deciding the moment, so the answer is a product
-  decision rather than a consequence of what Cohere flags.
-- **What warrants invariant 8, now that its stated warrant is gone. [DORMANT, and it cannot be
-  closed by the route this bullet used to name.]** The invariant still holds; the reason for it does
-  not. **Two corrections, 2026-08-19.** This bullet said *the within-sentence measurement decides
-  it*, and that sentence was already false: the falsification week was dropped on 2026-08-16, the
-  collection will not happen, and the entry recording the drop says in as many words that this
-  question can no longer be closed. It contradicted the build order for three days and is fixed
-  here. Second, the invariant constrains Extract's emission, and Extract is off the live path, so
-  nothing is governed by it either way today. **What survives:** the invariant stays in force over a
-  dormant piece on no published evidence, and the open option — widen the model's reading window,
-  keep per-sentence emission — is still the live candidate whenever Extract returns. Reasoning under
-  the Feynman design table above.
-- **TTS. [LIVE.]** Unresearched. The child may not need a voice — and the pivot raises the stakes,
-  since the child is now the whole product and its voice is most of what a user meets.
-- Repo name and the public push. `origin` was repointed to `danielhkuo/HoldTrue`.
-
-**Opened by the 2026-08-07 pivot.** These are named and deliberately not answered. A decision taken
-this evening does not get its consequences designed the same evening, and this file's own rule is
-that a row with no reason is not a decision — so none of these gets a row until someone has a
-reason.
-
-- ~~**The eval has lost its ground truth.**~~ **RULED ON 2026-08-07**, later the same day, by the
-  skip recorded [at the top of this file](#the-source-of-the-finding). The eval for the finding is
-  not being built, and the cheaper falsification-scale version was offered and declined; both are in
-  that row with the cost. Kept visible because the diagnosis under it was right and half of it is
-  still live. What holds: the notes were the authority for the *measurement*, not only for the user,
-  and *did the model find a real gap in this person's understanding* has no gold standard short of a
-  subject expert per case. **What this bullet got wrong, and a reader should not inherit.** It swept
-  the falsification week and the 100–150 labelled items in with the rest, and neither belongs there.
-  Two of the week's three measurements score the user's own explanation against hand marks on that
-  same explanation, and the third, vault eligibility, is a census of notes that was finished on
-  2026-08-06; the 100–150 labels are spans into explanation text. Both are untouched by the pivot.
-  Read that as a correction rather than as a chorus: `AGENTS.md` and
-  [`features/feynman.md`](features/feynman.md) both carried the opposite claim — that the labelled
-  set and the paired protocol assumed a text to compare against — until the 2026-08-08 correction
-  pass went through them, and this file is among the sources they were corrected against, with
-  [`measurements/within-sentence/README.md`](../measurements/within-sentence/README.md). If either
-  still reads the old way, it is stale rather than a second opinion.
-  **What is still open** is the eval for **Contradict**, which is a separate labelling effort with
-  its own unresolved collectability and is not covered by the skip either way, and what *"calibrated
-  against"* can mean for a piece nobody is measuring.
-- **Most of the decomposition is off the default path. Widened 2026-08-19: all of it is.** Index,
-  Retrieve and Compare have no subject when there is no corpus — #20 and #22 are marked *scoped to
-  the optional RAG path* above for exactly this reason — and Extract, `validate`, Cohere, the tally,
-  Supply and Contradict joined them on the shelf at the pivot. **The part of this bullet that was
-  unanswered is now answered**: the default path decomposes into one model call, and the build order
-  above is cut to match. What replaces it is the re-admission rule, one piece at a time, so the
-  instruction *nothing should be re-cut until it is* has been discharged rather than ignored.
-- **Anchor's role has changed. [DORMANT 2026-08-19.]** Nothing on the live path mints or resolves
-  an anchor, so the status line this bullet asks for now has a plain answer: it is held, not used.
-  `src/index/anchor.ts` — 30 tests, mutation score 100% — was the
-  foundation everything else read from. **Corrected 2026-08-12: it is no longer the only piece
-  built.** `validate`, `normalise` and `tally` ship with tests; `extract` runs but knowingly violates
-  its own ruling 3; `cohere` is a skeleton with no spec and no tests. Anchor is the only one at 100%
-  mutation. It becomes optional
-  infrastructure for the RAG path and for any citation that still gets quoted. It is neither wasted
-  nor deleted, and its status line should say what it is now for.
-- **Invariant 4 needs a new rationale or a repeal. [DORMANT.]** `confidence` is Extract's field and
-  Extract is off the live path, so the review is not urgent and is not thereby closed either.
-  `confidence` as brake pressure was a
-  consequence of Law 2. It may still be good practice, but its stated reason is gone. Marked for
-  review rather than silently kept or silently dropped.
-- **What replaces invariant 3's mechanical check. Worse as of 2026-08-19.** Invariant 3 was
-  repealed as stated, and it was the rare invariant that was *mechanically checkable and required a
-  test*. Whatever takes its place should be checkable too, or the repo quietly loses a check and
-  will not notice the loss — the characteristic failure mode of repealing a constraint that a test
-  was enforcing. **The two things that were standing in for it are now dormant themselves**: the
-  plant ledger and `tallyIntroduced`. So the repo has lost the replacement as well as the original,
-  and this bullet is the record of that rather than a plan to fix it.
-- ~~**How much design budget the roleplay may claim.**~~ **ANSWERED 2026-08-19, by the pivot: all
-  of it.** The child and its prompt are the product, so effort spent on the child being a convincing
-  child is the main line rather than a claim against it. Kept visible because the question was real
-  and because the answer is a decision rather than the question evaporating. The original entry
-  read: recorded earlier on 2026-08-07 and still open,
-  now with more riding on it: the roleplay's justification is the fiction, and the fiction is what
-  the pivot just made central.
-
-**Opened by the 2026-08-19 pivot.** Same treatment as the block above: named, given the argument
-that makes them real questions, and not answered. A row with no reason is not a decision, and none
-of these has a reason yet.
-
-- **Does the re-admission rule reach a piece that records rather than speaks?** The rule is *a
-  deterministic signal comes back only when someone shows it changes what the child says, for the
-  better, across more than one pass.* The tally changes nothing the child says — it writes down what
-  the child has already said — so on the rule as worded it can never qualify, and the guess, which
-  the pivot parks behind the tally, is parked forever. Two readings are available and this file
-  picks neither: either the rule governs signals fed *into* the child, and the tally returns under
-  Law 1 on its own bar, or the rule is the only door and the guess is off permanently. The pivot
-  says the guess stays off *until the tally is back*, which assumes the first reading without
-  arguing it. The owner rules.
-- **What closes an assertion today.** *The child asks, never tells* was struck on 2026-08-16 on the
-  strength of a named replacement — every assertion is written down and something closes it — and
-  that replacement went dormant three days later. Law 1 and invariant 5 are unrepealed and unmet.
-  Naming the gap is not filling it and nothing in this file fills it.
-- **Whether Clarity is dormant by decision or only in fact.** The pivot's list of what comes off the
-  live path does not name it. Nothing calls it and it was never built, so the answer changes nothing
-  today; it is recorded so that a reader does not take its absence from that list as a ruling that
-  it stays live.
-- **Whether the pivot's own counts are inside the structural guard, and this is the sharpest
-  unresolved contradiction in the file.** [*Two models may
-  talk*](#two-models-may-talk-nothing-they-produce-is-a-measurement) rules that **no figure from the
-  rig or a planted-gap run enters a tracked file**, and the drop of the falsification week made that
-  permanent rather than temporary, since the directory that would have lifted it will never fill.
-  The pivot section then argues a strategy change from *five shape conditions*, *five links in five
-  disconnected pieces*, *one correct contradiction against a replication that returned `unsettled`*
-  and *five-in-sixteen to zero-in-eleven*. An argument for admitting them is available — they are
-  engineering counts of the child's own output, which is the category that row explicitly permits
-  the rig to emit, and not one of them is a rate or a precision figure. **That argument has not been
-  made, and this file will not make it on the owner's behalf.** Until it is, the strongest evidence
-  in the newest section of this file sits against the strictest guard in it.
-- **Whether voice survives its own justification.** *Voice in, not typing* rests on the fiction, and
-  the pivot makes the fiction the product — which argues for voice. It also makes the whole product
-  reachable without Transcribe, so a typed first release is now cheap in a way it never was. The
-  question is named in [`features/feynman.md`](features/feynman.md) and is repeated here only
-  because the pivot changed both sides of it at once.
+This file records the decisions of 2026-08-19. It owns these items:
+
+- every reason
+- every rejected alternative
+- the build order
+- the open decisions
+
+`docs/architecture.md` owns the design itself.
+
+**The previous documentation is gone.** The owner deleted it on 2026-08-19. Its rulings are not
+binding. Do not cite them. Do not recover them from git. The research in `docs/research/` and the
+transcripts in `docs/transcripts/` survive. They are evidence, not rulings.
+
+**Nothing in the end phase exists.** The live phase runs. `src/` holds these files:
+
+- `child.ts`
+- `model.ts`
+- `server.ts`
+- `topics.ts`
+- `rig.ts`
+- `page.html`
+- `child.test.ts`
+
+The app does not have these parts:
+
+- the toggle
+- the marked transcript
+- the topic gate
+- Check
+- Diff
+- Probe
+- Close
+
+Every decision below is a design. No decision below is a description of running code.
+
+## 1. Two phases
+
+**Decided.** HoldTrue runs a live phase and then an end phase.
+
+**Why.** M3 needs a listener that cannot complete your chain. M4 needs a part that knows the correct
+answer. One model cannot hold both roles in the same turn.
+
+**The rejected alternative.** The owner rejects one model that corrects you mid-session.
+
+## 2. Check decides link identity, and Diff is arithmetic
+
+This is the most important decision in this file.
+
+**Decided.** Check returns links with ids, and Check decides when two words name the same link. Diff
+is a pure function over ids and flags. Diff never compares text, and Diff is not a model.
+
+**Why.** Judging that "the gas gets squeezed" and "compression" are the same link is a model task. No
+string rule does this task. The retired `cohere.md` design had this exact defect. Its matching layer
+joined zero seams on real extractions. Raw string equality returned the identical node count.
+
+The cause was grammatical form. The extractor wrote causes as noun phrases. It wrote effects as verb
+phrases. Thus "the chain" and "pulls the chain" never joined. A closed three-link chain produced four
+false flags. Stemming does not correct this defect.
+
+This design moves identity into the model for that reason. It also leaves Diff exact, so a test can
+pin every row without a model.
+
+**The rejected alternative.** The owner rejects a second text-matching layer. Stemming, normalising
+and cosine matching all compare surface form. The measured failure was not surface form. The owner
+also rejects a model that reads the transcript and reports the gaps. That design has no oracle.
+
+## 3. Diff orders contradictions, then intrusions, then omissions
+
+**Decided.** Diff emits a contradiction first, an intrusion second and an omission last.
+
+**Why.** A false claim is the worst thing you keep after the session. An intrusion is a cause the
+child invented. You may now believe it. An omission may only mean that you compressed a step.
+
+**The rejected alternative.** The owner rejects an order by count or by confidence.
+
+## 4. Probe runs once, on the first row
+
+**Decided.** Probe takes the first row of the Diff output and asks one question. The end phase must
+not skip Probe.
+
+**Why.** Check reads your words only. It cannot separate "you did not say it" from "you do not know
+it". Your answer separates them. Decision 3 sorts by harm, so the first row is the worst row.
+
+**The rejected alternative.** The owner rejects the phrase "the largest gap", which has no definition.
+
+## 5. Close runs for every row
+
+**Decided.** For the probed row, Close uses the verdict. For every other row, Close states that you
+did not say the link.
+
+**Why.** M4 needs a correct answer for each surfaced gap. Only one row carries a probe answer. For
+every other row, the app has no evidence about your knowledge.
+
+**The rejected alternative.** The owner rejects a Close that states you do not know the link.
+
+## 6. The model layer has no default
+
+**Decided.** The user makes one choice at startup, Ollama or an API key. That one model runs the
+child. It also runs the end phase when the toggle is off.
+
+**Why.** A local model keeps your text on the device. A key sends your text to a provider. A default
+hides that consequence from the person who lives with it.
+
+**The rejected alternative.** The owner rejects a BYOK default. It decides that question for you.
+
+## 7. The omniscient toggle
+
+**Decided.** The user sets the toggle for each session.
+
+**Why.** Check needs ground truth about the mechanism. A small local model does not hold this ground
+truth. The user must know which model produced a finding. The two labels carry that fact.
+
+**The rejected alternative.** The owner rejects one silent quality level for every user.
+
+## 8. No silent fall back
+
+**Decided.** If the provided frontier model fails, the app must tell the user. The app must not use
+the startup model in silence. The app states the failure. The app labels the session unverified.
+
+**Why.** The user paid for a verified session. A silent swap returns a weaker finding under the label
+the user paid for. The labels exist to prevent this failure.
+
+**The rejected alternative.** The owner rejects an automatic retry on the startup model.
+
+## 9. An unreachable model is a stated failure
+
+**Decided.** If the end phase cannot run, the app states on the screen that no review ran and that
+the questions stay open.
+
+**Why.** The user reads a silent ending as a session that found nothing wrong. This result is the
+worst outcome the product can produce. `model.ts` returns a result rather than throwing, so the app
+can state the failure.
+
+**The rejected alternative.** The owner rejects an empty screen and a generic error banner.
+
+## 10. A button ends the session
+
+**Decided.** The user presses a button to end the session. A child that stops asking questions is a
+feature for a later build. The owner does not build this feature now.
+
+**Why.** A quiet turn needs a rule that says when the child has no question left. No such rule
+exists. The end phase cannot wait for a signal that nobody designed.
+
+**The rejected alternative.** The owner rejects an end signal that the child produces today.
+
+## 11. The owner does not build the topic gate
+
+**Decided.** The owner curates the topic list. The free-text box carries a warning. No part of the app
+checks the text the user types.
+
+**Why.** The eligibility rule is real. `docs/product.md` holds its figures. A check needs a
+classifier that nobody designed. A warning is honest. A silent pass is not.
+
+**The rejected alternative.** The owner rejects removing the free-text box, which serves the user.
+
+## 12. One session in memory
+
+**Decided.** The server holds one session in memory. Nothing goes to disk. The findings appear once.
+The app loses them when the process stops.
+
+**Why.** The product is unproven. Storage adds a privacy surface and a migration cost before anybody
+knows whether the review is worth keeping.
+
+**The rejected alternative.** The owner rejects a database and a session file.
+
+## 13. Consent before the first send
+
+**Decided.** The app must disclose where the text goes. The app must take the user's consent before
+the first send. The retention terms, the training terms and the deletion terms stay open below.
+
+**Why.** The startup choice decides whether your words leave the device. The user cannot consent to a
+transfer nobody named.
+
+**The rejected alternative.** The owner rejects a consent notice in the documentation only.
+
+## 14. The deletion of the old documents
+
+**Decided.** The owner deleted the old documents, and this log replaces them.
+
+**Why.** The old documents held rulings that the product no longer follows. Several rulings
+contradicted the code, so a reader could not tell a current rule from an obsolete rule.
+
+**The rejected alternative.** The owner rejects an edit pass over the old files.
+
+## 15. A model may write a test assertion
+
+**Decided.** A model may write a test assertion. The owner removes the old rule that required a human
+author.
+
+**Why.** The rule cost a person for each assertion. It stopped no bad test. A testable oracle is the
+real control. Diff has an oracle. The child's line has no oracle, whoever writes the assertion.
+
+**The rejected alternative.** The owner rejects keeping the rule for a human author.
+
+## The build order
+
+This file is the only place the build order lives. The owner built nothing in this list.
+
+1. **The model layer.** The startup choice, Ollama or a key. Every part below makes a model call.
+2. **The disclosure and the consent screen.** The key path sends your text off the device. The
+   consent must appear with the path that causes the transfer.
+3. **The end signal button.** The end phase cannot start until a session can end.
+4. **The marked transcript.** Check takes a transcript with a role on every turn.
+5. **Check.** It returns the links, the ids and the flags that every part below reads.
+6. **Diff.** It needs the ids and the flags from Check, and a test can pin it without a model.
+7. **Probe.** It takes the first row from Diff, so Diff must sort first.
+8. **Close.** It uses the probe verdict for one row, so Probe must run first.
+9. **The omniscient toggle.** It swaps the model behind the end phase and adds the two labels.
+10. **The review screen.** It shows the rows, the probe, the closures and the label.
+
+The topic gate is not in this list. Decision 11 records why.
+
+## Open decisions
+
+The owner must answer each of these before release. Do not invent an answer.
+
+1. **The privacy terms.** Decision 13 requires a disclosure and a consent. It does not answer these
+   questions:
+   - How long does a provider keep your text?
+   - May a provider train on your text?
+   - How does a user delete the text?
+2. **The end signal design.** Decision 10 ships a button. The owner must decide whether a quiet child
+   ever ends a session, and what rule makes the child quiet.
+3. **The topic gate.** Decision 11 ships a warning. The owner must decide whether the app checks the
+   free-text box, and what a failed check does to the session.
+4. **Is the end phase worth running with the toggle off?** A small startup model runs Check. This
+   model may not hold ground truth about the mechanism. An unverified finding may be worse than no finding.

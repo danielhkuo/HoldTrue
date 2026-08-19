@@ -10,6 +10,11 @@
 > [`evidence-base.md`](evidence-base.md) with its source. Several rows below contradict rows that
 > are already in there.
 >
+> **Rule and ruling numbers in this file point at retired documents.** The old `AGENTS.md`,
+> `philosophy.md`, `decisions.md` and the five specs were deleted on 2026-08-19. A citation such as
+> "invariant 2" or "ruling 11" refers to those files. Git holds them. The current rules use a new
+> numbering that starts at 1, and the two numberings do not match.
+>
 > **Evidence markers.** `GATED` — already in the evidence base, quoted. `CANDIDATE` — a real
 > primary source, not yet filed. `FOLKLORE` — widely repeated, no source found. `PROBE` — run
 > against the shipped prompt on the live model, n=1 per condition, one machine. `REPO` — already
