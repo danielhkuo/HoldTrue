@@ -1,5 +1,25 @@
 # Spec: Extract
 
+> **DORMANT — 2026-08-19.** The pivot in [`../decisions.md`](../decisions.md), *The child is the
+> product, and determinism returns as prompt material*, took this piece off the live path. It is not
+> deleted and it is expected back, one signal at a time, under the re-admission rule in that row: a
+> deterministic signal returns only when it is shown to change what the child says, for the better,
+> across more than one pass. A turn is now one model call, and this is not it.
+>
+> **What a return has to answer, and it is recall rather than anchoring.** The dominant failure is
+> silence: **35.70% missing relations against 0.31% false positives**, roughly 115 missed links for
+> every spurious one. On a real four-turn session this piece returned **zero** links on two of the
+> four turns, raw payload `{"links":[]}` with `dropped: 0` on every run. Nothing failed to anchor
+> because nothing was offered, which settles that the gate was innocent. Prompt rules 6 and 7 —
+> hedges and a bare pronoun subject, and a stative verb still being a link — were added on
+> 2026-08-16 and recovered both turns, on two independent passes, gains only.
+>
+> **Three noun-phrase rewrites were tried the same day and all three were reverted.** The record of
+> why is `src/feynman/extract.ts`'s header and nothing here repeals it: the join-rate win came from
+> extracting *less*, and the variant that scored best on planted gaps returned the identical three
+> links for three different input texts one replication later. Read that header before trying a
+> fourth.
+
 > **Status: half built, corrected 2026-08-12.** `validate` and `normalise` ship with 56 tests, and
 > `extract.ts` runs — against ruling 3, which it violates knowingly and says so. What is not built is
 > the harness and the ~100 labelled explanations, which is what build-order entry 2 actually is.
@@ -15,18 +35,25 @@
 > an artifact of an engine nobody has chosen. Read ruling 3 before the API.
 >
 > Build order entry 2, and the entry that carries the project's kill switch: if a local model cannot
-> do this, the headline feature is cloud-only or it does not exist.
+> do this, the headline feature is cloud-only or it does not exist. **Stale as of 2026-08-19 and
+> kept for the reasoning:** the build order this entry sits in described the deterministic live
+> phase, and nothing is queued behind this piece while it is dormant. The kill switch still applies
+> to whatever re-admits it.
 
 ## 1. What it does
 
 Extract reads what you said, one sentence at a time, and returns the causal links you asserted —
 each with a span into your own words.
 
-It is the **first model call in the live phase**, and every finding is built on its output. Cohere
-finds where the chain does not close, and Speak is handed those shapes. **Corrected 2026-08-12, on
-all three counts.** This used to say *only*, it used to name Notice and Voice, and it used to call
-the no-second-pass rule invariant 9. The live phase now calls three models per turn: this one, the
-child's line, then this one again over that line for the audit. Invariant 9 forbids **diffing two
+It **was** the first model call in the live phase, and every finding was built on its output: Cohere
+found where the chain did not close, and Speak was handed those shapes. **Past tense as of
+2026-08-19** — see the dormancy banner. The live phase is one model call now and this is not it, so
+nothing downstream is fed by this piece today. The paragraph below is kept because it records what
+the contract was and what invariant 9 actually forbids, both of which return with the piece.
+**Corrected 2026-08-12, on all three counts.** This used to say *only*, it used to name Notice and Voice, and it used to call
+the no-second-pass rule invariant 9. The live phase called three models per turn: this one, the
+child's line, then this one again over that line for the audit. **That shape ended 2026-08-19** —
+one call, the child's, and the audit pass went with the rest of the pipeline. Invariant 9 forbids **diffing two
 extractions of the user's own words**, which is narrower than never re-reading anything. What is
 still true, and is what this piece guarantees, is that Extract runs once per sentence of your
 transcript and nothing re-extracts your words to check them.
@@ -298,9 +325,14 @@ different sets. So a non-zero `dropped` on a sentence means the system knows it 
 **there** — the only signal in this piece that points at a specific sentence rather than at the whole
 transcript.
 
-[`child-speech.md`](child-speech.md) consumes it as the `resay` move. That move is the only one in
-the design that recovers a loss instead of reporting one: saying the sentence again gives Extract a
-second attempt at it.
+**Stale, 2026-08-19, and it was already stale before the pivot.** This said
+[`child-speech.md`](child-speech.md) consumes `dropped` as the `resay` move. It does not: `resay`
+was cut and came back the same day under that spec's ruling 18 with a different trigger — a turn
+nobody could understand, decided by a gate that runs before `speak` — and the banner on section 2's
+`Sentence` type already says so. Nothing reads `dropped` today, and nothing produces it either while
+this piece is dormant. The reasoning is kept because it is why the count is per-sentence: saying the
+sentence again would give Extract a second attempt at it, and that is the one move in the design
+that recovers a loss instead of reporting one.
 
 **Rejected: one count for the whole extraction**, which is what this spec said until today and which
 carries no information a consumer can act on — you cannot ask about a sentence you cannot name.
@@ -398,9 +430,10 @@ run — degrading one generator to plain ASCII once left every property green at
 
 ## The eval
 
-Not section 6, which is the property generator's, and not written yet. Recorded here because
-`AGENTS.md` says **build Extract against the four layers as written** and a builder needs to know
-which of them survived the pivot.
+Not section 6, which is the property generator's, and not written yet. **Nobody is building this
+now** — the piece is dormant as of 2026-08-19 and no eval is queued. Kept because it is what a
+return needs: the four layers survived the 2026-08-07 pivot as written, and the recall defect in the
+dormancy banner is precisely what an eval of them would have caught.
 
 All four do. Extract's labels are spans into the text Extract reads, and that text is the user's own
 explanation — never the notes — so nothing about the pivot reaches them. The layers are schema

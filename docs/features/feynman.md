@@ -112,30 +112,69 @@ Two techniques, neither optional:
 
 ## The session
 
-Two phases. The **live phase** runs while you are talking. The **review phase** runs once you have
-stopped, and is where the child's debts are paid. Revised 2026-08-05; again on 2026-08-07 when the
-source of subject knowledge changed from the user's notes to the model; and again on 2026-08-12,
-when subject knowledge entered the live phase as well. The live phase no longer touches only your
-own words — the child speaks from the model, and what it introduces is written down for the review
-phase to close. Reasoning in [`../decisions.md`](../decisions.md).
+Two phases were designed: a **live phase** while you are talking, and a **review phase** once you
+have stopped, where the child's debts are paid.
 
-### Live
+> **What runs today, as of 2026-08-19.** Only the live phase. A turn is one model call — the child
+> reads the conversation so far and says one line. Nothing else runs on that path: the review phase
+> produces no findings, and the deterministic pieces that fed it are dormant rather than deleted.
+> The decision, the measurements behind it and the rule for re-admitting a piece are in
+> [`../decisions.md`](../decisions.md) under *The child is the product, and determinism returns as
+> prompt material*. This page records what that does to the session; the reasoning stays there and
+> is not restated here.
+
+**Steps 1 to 3 are the session as it is. Steps 4 to 8 are the destination, not the present.** They
+are kept in full because the pieces under them are expected back, one at a time, and each returns
+to the slot the step describes. Read them as the shape the session grows into, not as behaviour a
+user sees today.
+
+Revised 2026-08-05; again on 2026-08-07 when the source of subject knowledge changed from the
+user's notes to the model; again on 2026-08-12, when subject knowledge entered the live phase as
+well; and again on 2026-08-19, when everything but the child came off the live path.
+
+### Live: what runs
 
 1. **Pick something from your material that works by a mechanism.**
 2. **Say it out loud from memory, nothing visible.** The illusion collapses on producing, not
    recognizing.
-3. **The child answers what you just said, and asks where your chain breaks.** A model speaks it,
-   and it is handed the shapes Cohere found as context rather than as an instruction. **Rewritten
-   2026-08-12.** It used to read *"It knows no facts and consults nothing"*, which described a
-   deterministic child that has been retired. The check moved rather than disappeared: a second
-   pass reads the child's line and writes down every link in it your graph does not hold, and the
-   review phase owes a closure on each. See [`../specs/child-speech.md`](../specs/child-speech.md).
+3. **The child answers what you just said, and asks where your chain breaks.** One model call,
+   handed the conversation so far and nothing else. The child and its prompt are the product, and
+   the prompt is where the design effort goes. See
+   [`../specs/child-speech.md`](../specs/child-speech.md).
+
+   **Rewritten 2026-08-19, and the two earlier versions stay visible because both are recoverable
+   destinations.** Until 2026-08-19 this step also said the child *"is handed the shapes Cohere
+   found as context rather than as an instruction"*, and that a second pass reads the child's line
+   and writes down every link in it your graph does not hold, with the review phase owing a closure
+   on each. Cohere's shapes are off the path: the pivot row records what the probes found when the
+   shapes were varied and when they were removed. The audit is dormant too — nothing reads the
+   child's line, so nothing is written down and no closure is owed. **What that costs is under
+   *Where Law 1 now rests* below, and it is the largest thing this pivot spends.** Before that, on
+   2026-08-12, the step read *"It knows no facts and consults nothing"*, which described a
+   deterministic child that has been retired and is not what came off the path this time.
+
+   **The child's guess is off, and stays off.** It was always conditional on a ledger disclosing
+   and closing every plant before the session ends, and the ledger is dormant with the rest. The
+   condition and its evidence are in [`../decisions.md`](../decisions.md); it is a condition this
+   page enforces, not one it may relax.
 
 No transcript-correction step: it is friction in the one place the session should feel like
 talking. The cost is real and accepted — at 15–25% word error the child will sometimes quote
 back words you did not say.
 
-### Review
+### Review: dormant since 2026-08-19, and the destination
+
+**None of steps 4 to 8 runs.** There are no findings at all until the deterministic pieces return,
+which is stated as a cost in the pivot row rather than argued away. The steps below are unchanged
+and are kept as written: each names a slot that a returning piece fills, and step 7's open question
+about who delivers the refutation is still open and still unanswered here.
+
+**Where Law 1 now rests.** The review phase is what closed what the live phase opened — the child
+asked, and steps 4 to 8 supplied the answer. With the review producing nothing, the only thing
+standing between a question and its answer is the child's own prompt. That is weaker than a phase
+that ran, and it is weaker in a way nothing tests. Law 1 is not relaxed by any of this; where the
+weight moved, and what that costs, is recorded in [`../philosophy.md`](../philosophy.md) under
+Law 1, which wins over this page.
 
 4. **Where the subject says otherwise.** What you said, set against what the model holds to be
    the case — or against a quoted passage, if you have hooked a source up — and a question about
@@ -177,7 +216,10 @@ four; see [`../decisions.md`](../decisions.md). *Do I need to study this again* 
 unanswered, and the panel's view is that the contradiction check answers it better than an
 inventory would.
 
-**An empty result means nothing was found.** It does not mean you understand the topic, and it
+**An empty result means nothing was found.** **Dormant 2026-08-19 along with the review phase:
+today there is no result, empty or otherwise, so the paragraph describes the destination and not
+the product. It is kept because the reading it warns against gets easier, not harder, the longer a
+session ends without a finding.** It does not mean you understand the topic, and it
 means less than it used to. It used to mean *your notes contradicted nothing*, which was a small
 claim about a bounded document you could go and read for yourself. It now means the model found
 nothing, which is bounded by what the model knows and by nothing you can inspect. Something you
@@ -557,6 +599,16 @@ typed text, since voice's only remaining justification is fiction. Unresolved, a
 product, "ship against typed text" stops being a cheap simplification and starts being a proposal
 to ship without the thing being sold. That is a real cost to weigh, not a refutation of the
 counter, and nobody has weighed it yet.
+
+**Overtaken 2026-08-19, and this is the sharpest thing the pivot does to this page.** Live-only
+stopped being an option to weigh and became the state of the product: the session is the live phase
+and nothing else. The counter recorded above — *treat the live child as an internal instrument and
+ship Contradict first* — is unavailable, because Contradict is dormant and returns only on the
+re-admission rule in [`../decisions.md`](../decisions.md). So the objection is not refuted, it is
+inhabited: the whole product now rests on Law 1 being satisfied by output nothing validates, which
+is the exact sentence written above on 2026-08-07 as a reason to hesitate. Nobody has answered it.
+The pivot row states the same cost in its own words and takes the trade knowingly; this entry stays
+open rather than being closed by the fact that it happened.
 
 **Clarity** and **Transcribe** sit outside this order. Clarity needs nothing but text and can
 be built first or last. Transcribe is needed before any real session runs.

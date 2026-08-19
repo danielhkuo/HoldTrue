@@ -1,11 +1,26 @@
 # Spec: Anchor
 
+> **DORMANT, AND UNUSED RATHER THAN DEPRECATED — 2026-08-19.** The pivot in
+> [`../decisions.md`](../decisions.md), *The child is the product, and determinism returns as prompt
+> material*, took the deterministic pipeline off the live path, and **nothing on the live path mints
+> an anchor any more**. Say it plainly: this piece is not wrong, not superseded and not to be
+> deleted. It has no caller. It is expected back with whatever caller returns first, under the
+> re-admission rule in that row: a deterministic signal returns only when it is shown to change what
+> the child says, for the better, across more than one pass.
+>
+> **It is also the healthiest piece in the repo, which is why the dormancy is worth stating rather
+> than assuming.** 30 tests and mutation 100%, the only piece at that level. Nothing here has to be
+> answered on the way back — the contract, the code and the rulings are unchanged and were never
+> what the pivot measured. What has to come back is a **caller**: Extract's spans were the
+> load-bearing one and Extract is dormant, so re-admitting Extract re-admits this.
+
 > **Status: built and closed, 2026-08-06. Role narrowed 2026-08-07.** First piece of the build
 > order. `src/index/anchor.ts`, 88 lines, 30 tests, mutation 52/52 at 100%.
 >
-> The code is unchanged, still correct, and still has callers — Extract's spans point into the
-> user's own explanation and resolve through here. What it lost is the claim in section 1 that
-> everything else reads from it: the model-knowledge pivot took source material off the default
+> The code is unchanged and still correct. **It no longer has a caller on the default path**
+> (2026-08-19): Extract's spans pointed into the user's own explanation and resolved through here,
+> and Extract went dormant with the rest of the pipeline. What it lost on 2026-08-07 is the claim in
+> section 1 that everything else reads from it: the model-knowledge pivot took source material off the default
 > path, so Index and Retrieve, two of its four callers, have no subject there. Anchor is now the
 > validator for any quote that is still shown and the infrastructure the optional RAG hook needs.
 > Not deprecated, not superseded, not to be deleted. Section 1 says what it is for now.
@@ -31,16 +46,19 @@ The model-knowledge pivot repealed that rule — see [`../philosophy.md`](../phi
 replaced it — and took source material off the default path with it. Three of the four callers
 change:
 
-- **Extract still reads from it, on the default path, unchanged.** Its spans point into the
-  *user's own explanation*, which is a document like any other, and its eval rule is that every
-  span resolves. This is the load-bearing caller now.
+- **Extract read from it, on the default path, unchanged.** Its spans point into the *user's own
+  explanation*, which is a document like any other, and its eval rule is that every span resolves.
+  This was the load-bearing caller, and **since 2026-08-19 it is dormant too** — see the banner.
+  Nothing has replaced it, so the count of default-path callers is zero. The contract is unchanged
+  and waiting.
 - **Index and Retrieve have no subject on the default path.** They are the optional RAG hook's
   pieces. The reasoning in their favour is not refuted, it is unemployed by default.
 - **Any citation shown to the user still comes through here.** Fewer sentences are quotes than
   before, but a quote that is not verified is not a quote, and this is where it is verified.
 
 So Anchor is optional infrastructure rather than the foundation, and it is still the only place
-invariant 2 is enforced. The code, the API and the rulings below are all unaffected; what narrowed
+invariant 2 is enforced — a door that is shut rather than removed, since nothing currently walks
+through it. The code, the API and the rulings below are all unaffected; what narrowed
 is the number of callers, not the contract. See section 7 for the one thing this does leave open.
 
 ## 2. Public API
@@ -137,7 +155,9 @@ here — the decision lands in Index, which mints them.
 **One clause of that went stale on 2026-08-12, and the ruling did not.** *The Doc is the turn* in
 [`../decisions.md`](../decisions.md) makes `unit_id` a per-turn identifier minted in the live phase,
 and Index is off the default path since the 2026-08-07 pivot. So the minting moves to Extract or to
-Transcribe, not to Index. Everything else in this ruling holds exactly as written: `unit_id` is
+Transcribe, not to Index. **Neither owns it today (2026-08-19):** Extract is dormant, so whatever
+runs the one-call turn mints the `unit_id`. Still no change here — the ruling is that this piece
+never interprets one. Everything else in this ruling holds exactly as written: `unit_id` is
 still opaque here, still compared and never interpreted, and **no line of `anchor.ts` changes** —
 which is what made a turn-shaped `Doc` affordable at all.
 

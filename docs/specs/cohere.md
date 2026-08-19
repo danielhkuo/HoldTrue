@@ -1,5 +1,19 @@
 # Spec: Cohere
 
+> **DORMANT, AND ITS FOUR KILL NUMBERS ARE SPENT — 2026-08-19.** The pivot in
+> [`../decisions.md`](../decisions.md), *The child is the product, and determinism returns as
+> prompt material*, took this piece off the live path. It is not deleted and it is expected back,
+> one signal at a time, under the re-admission rule in that row: a deterministic signal returns only
+> when it is shown to change what the child says, for the better, across more than one pass.
+>
+> Ruling 9's four false-question numbers score flags this piece is no longer emitting. They are
+> **spent, not repealed** — guessed blind before any data, and they return unchanged with the piece.
+> What was measured before it went dormant, and what any return has to answer: the matching layer
+> joins **zero** seams on real extractions — raw string equality gives the identical node count, so
+> every rule in it is currently buying nothing — and a real four-turn session produced five links in
+> five disconnected pieces. A return has to show the matcher joining a seam that string equality
+> misses, and show that joining it changes the child's line.
+
 > **Status: specced, not built. 2026-08-12.** Sections 1 to 5 are written; section 6 is the oracle
 > and is the owner's; section 7 is written when the piece ships. `src/feynman/cohere.ts` exists as a
 > skeleton and its own header says so — it was written so the child could speak before Extract could
@@ -22,8 +36,9 @@
 Cohere reads the graph Extract pulled out of your own words and finds **where your chain does not
 close**. No model, no source, no knowledge of the world. Set arithmetic and nothing else.
 
-It never speaks. What it produces is a list of shapes handed to `speak` as context, and every one is
-a place a question could be asked — not a question, and not a finding. Something downstream decides
+It never speaks. What it produces is a list of shapes that **was** handed to `speak` as context —
+past tense since 2026-08-19, because `speak` is no longer fed by this piece; see the dormancy
+banner. Every shape is a place a question could be asked — not a question, and not a finding. Something downstream decides
 whether to ask.
 
 **The line between Cohere and Clarity, which `../features/feynman.md` draws and this spec keeps:

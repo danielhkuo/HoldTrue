@@ -68,6 +68,36 @@ passage the user could go and read for themselves, and now it is the model's own
 Law 1 is the only rule left that requires the sentence to be there at all. A feature that
 surfaces a gap and stops is a worse failure today than it was yesterday, not a lesser one.
 
+### Where Law 1 rests, 2026-08-19
+
+**The law is unchanged. What holds it up is not.** The 2026-08-19 pivot took the deterministic
+pipeline off the live path — the decision, its evidence and its re-admission rule are in
+[`decisions.md`](decisions.md) under *The child is the product, and determinism returns as prompt
+material*, and it says of itself that this is what it costs. Nothing here repeals anything, and
+the obligation is the same obligation: anything that asks supplies the answer.
+
+**What carried the law until now was Feynman's review phase.** The child asked in the live phase,
+and the review phase supplied the answer — a mechanism that ran, in code, whether or not the child
+was well behaved. The review phase produces no findings now. So the whole weight of Law 1 sits on
+the child's own prompt: the answer arrives only if the prompt keeps the child from asking what it
+cannot close.
+
+**That is weaker, and this file will not describe it as anything else.** The difference is not the
+strength of the prompt — a good prompt may well close more than a thin review phase did. The
+difference is what kind of thing is holding the law up. A phase in code can be tested, and a prompt
+is a disposition: it varies per turn, per model and per sampling seed, and its failures look like
+ordinary conversation rather than like an error. The repo has been here before and says so in the
+same words: *it cannot say that* became *it cannot say that without being written down*, and today
+even the writing-down is dormant. There is no red test for a question left open.
+
+**What it does not excuse.** A question the prompt makes irresistible and nothing can close is
+still forbidden — that is the rule, not the mechanism, and the mechanism failing does not lower
+the bar. It raises what the prompt owes. Two things follow and neither is designed here. The child
+may not assert a guess while the ledger that would disclose and close it is dormant, which
+`decisions.md` already rules. And **when a deterministic signal returns, whether it restores a
+closure Law 1 lost is the first question to ask of it**, ahead of whether it improves the child's
+line.
+
 ## Law 2. Nothing is asserted anonymously
 
 ### The law this replaces
@@ -149,6 +179,9 @@ value during elicitation* was mechanically checkable and carried a required test
 law, knowledge is precisely what makes the model speak, so the check as written is gone and
 nothing has replaced it. The repo is one check lighter than it was and will not feel the
 loss until something wrong ships. What the new mechanical check is has not been decided.
+**Re-checked 2026-08-19: the hole is the same hole and it is now the whole live path.** A
+model speaking from its own knowledge is not one branch among several any more; it is every
+turn of the session. Nothing mechanical governs when it may speak.
 
 **`confidence` as brake pressure is unargued, not wrong.** Invariant 4 — *how strong is my
 reason to stay quiet* — was a consequence of "knowledge may only silence." That premise is
@@ -159,7 +192,18 @@ derivation. It is marked for review: neither kept silently nor deleted.
 **"Calibrated against" has no procedure yet.** This law requires the app to state what the
 model was calibrated against, and the ground truth the old eval used was spans into the
 user's own text, which went out with Law 2. Nothing in this section should be read as
-claiming that calibration currently exists.
+claiming that calibration currently exists. **Further from a procedure since 2026-08-19,
+not closer.** The one measurement in the repo that still had ground truth was Extract's
+eval, and Extract is dormant, so the only calibration instrument anyone had now scores a
+piece that does not run. What the user reads is a model's line with no instrument behind
+it at all. That is a statement of position, not a plan; see
+[`decisions.md`](decisions.md).
+
+**Law 2 itself is untouched by the 2026-08-19 pivot, and reaches further.** Every sentence a
+user reads is now model-authored on a path with nothing else on it, so *which model, and what
+it was calibrated against* is the whole of what a user can inspect. The pivot removes no
+mechanism this law depends on, because this law never had one — it asks the app to disclose,
+and disclosure costs a line of interface.
 
 ---
 

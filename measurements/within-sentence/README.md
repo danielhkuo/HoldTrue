@@ -45,6 +45,11 @@ second-hand and give the same ratio as the verified 1,751 against 3,727.
 This is a fact about how you explain things, not about the model. That is why it is measured
 before anything is built on top of it, and why an agent cannot produce the data.
 
+> **SPENT 2026-08-19.** The pivot in [`../../docs/decisions.md`](../../docs/decisions.md) — *The
+> child is the product, and determinism returns as prompt material* — took per-sentence extraction
+> off the default path. This section measures a dormant pipeline. The line below is **not moved and
+> not repealed**; it was fixed before any data and it returns unchanged if the pipeline does.
+
 ## The kill number — RULED 2026-08-16: below 75%
 
 **The line is below 75%**: under that, invariant 8 needs renegotiating rather than obeying. It was

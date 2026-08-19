@@ -1,5 +1,28 @@
 # Spec: Supply
 
+> **DORMANT — 2026-08-19.** The pivot in [`../decisions.md`](../decisions.md), *The child is the
+> product, and determinism returns as prompt material*, took this piece off the live path. It is not
+> deleted and it is expected back, one signal at a time, under the re-admission rule in that row: a
+> deterministic signal returns only when it is shown to change what the child says, for the better,
+> across more than one pass.
+>
+> **This one is dormant twice over, and the second reason is the one to read.** Supply settles debts
+> the child introduced, and a debt is a row the tally mints. The tally is off the live path too, so
+> **this piece has no input at all** — not a thin input, none. Whatever re-admits Supply has to
+> re-admit the tally first, or bring its own source of debts.
+>
+> **What a return has to answer.** Zero debts fired in roughly 25 turns of real use up to
+> 2026-08-17. A piece whose trigger has never fired cannot yet show it changes what the child says,
+> which is exactly what the re-admission rule asks for. The measurement to bring back is a debt that
+> fires and a repair that lands, twice.
+>
+> **And the omission half is still owed.** Ruling 7 was declared *spent* on 2026-08-16 — see the
+> banner below — on the ground that the 2026-08-12 re-scope had deleted the gap hunter. An audit
+> has since found that the ruling **renamed past** the omission finding rather than reassigning it:
+> nothing was given the job of naming the step a user skipped. The omission half is still promised
+> in three documents and is produced by nothing. That is an open hole, not a closed ruling, and it
+> is the second thing a return has to answer.
+
 > ## RULING 7 IS SPENT, AND `src/feynman/supply.ts` IS BUILT — 2026-08-16
 >
 > **Ruling 7 said "do not build either until this is ruled." It is ruled, and the answer is that
@@ -80,6 +103,12 @@
 > nine. Nothing was decided, renamed, or closed by that pass.
 
 ## 1. What it does
+
+**Superseded twice, and kept because nothing replaced the job it describes.** This paragraph is the
+**omission** contract: it was overtaken by the 2026-08-12 re-scope, which handed this piece the
+propositions the child introduced instead, and the whole piece went dormant on 2026-08-19. Read it
+as the record of a job that is still promised and still unassigned — see the dormancy banner's last
+paragraph — not as what `src/feynman/supply.ts` does.
 
 Supply takes the topic the user chose and the causal links Extract pulled out of what they actually
 said, asks model knowledge what the mechanism requires, and returns the link the mechanism has that
@@ -227,7 +256,8 @@ review phase rather than to continue without it.
   model's rather than a quotation.
 - **No running in the live phase.** The live phase has to stay cheap enough to interrupt someone
   mid-explanation, which is the reason that survived when the provenance reason did not. Supply is
-  review-phase work.
+  review-phase work. **Trivially satisfied since 2026-08-19** — the live phase is one model call and
+  this piece is dormant — so it constrains a return rather than anything running today.
 - **No quiet substitution of a different model.** A fallback that answers with something other than
   what `identify()` reported makes the attribution a lie, which is worse than an `unavailable`.
 - **No silent degradation below the floor.** Whatever the app does about an unsupported
@@ -459,7 +489,15 @@ or below the floor — the floor is stated as a class and a memory budget that `
 arithmetic nobody has run. So `'unknown'` is the honest value today and will be until someone
 decides what measures it.
 
-### 7. Whether Supply and Contradict are one piece or two. OPEN.
+### 7. Whether Supply and Contradict are one piece or two. DECLARED SPENT 2026-08-16, AND THE OMISSION HALF SURVIVES IT.
+
+**Status, 2026-08-19.** The banner at the top of this file rules this question dissolved rather than
+resolved, on the ground that the re-scope deleted the gap hunter. That disposes of the *seam*
+question and nothing else. An audit found the ruling renamed past the omission finding: the text
+below still proposes `supply` returns omission findings only, and no piece anywhere was given that
+job when this one stopped doing it. Treat the seam as settled and the omission half as **open and
+unassigned**. Both pieces named here are dormant under the pivot, so "do not build either until
+this is ruled" is moot for now, and the sentence stands for whoever re-admits them.
 
 **Proposed:** two. `supply` returns omission findings only, and Contradict keeps its own contract.
 

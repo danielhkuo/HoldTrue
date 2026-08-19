@@ -4,6 +4,11 @@
 // Reads every explanation in ./explanations, counts the links you marked as within one
 // sentence against those you marked as split, and reports the fraction.
 //
+// SPENT 2026-08-19. The pivot in docs/decisions.md — "The child is the product" — took the
+// per-sentence extraction pipeline off the default path, so this measures something that no
+// longer runs. The number below is not repealed and not moved: it is fixed, it was fixed before
+// any data, and if the pipeline returns it returns with it unchanged. Kept for that reason.
+//
 // THE FALSIFICATION WEEK WAS DROPPED ON 2026-08-16, BY THE OWNER. This program still runs and
 // still counts correctly, but nothing is scheduled to fill `explanations/` and no decision now
 // waits on the number it prints. Read the cost sheet in docs/decisions.md, build order entry 0,

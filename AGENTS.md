@@ -14,6 +14,16 @@ notice, voice and demo; `notice`, `voice` and `words` are retired by `child-spee
 not yet deleted, and `cohere` is a skeleton with no spec and no tests. The rest is docs, a
 pre-commit hook, and three skills in `.claude/skills/`.
 
+**What runs, as of 2026-08-19: the child, and one model call per turn.** Extract, validate, Cohere,
+the tally, Supply and Contradict are **dormant** — off the live path, not deleted, and each returns
+only when someone shows it improves what the child says. The child and its prompt are the product,
+so a prompt change is product work rather than tuning. The decision, the probe results behind it and
+the re-admission rule are one row in [`docs/decisions.md`](docs/decisions.md), *The child is the
+product, and determinism returns as prompt material*; read it before touching anything under `src/feynman/`.
+Several sections below were written for the pipeline while it was live. Every one that the pivot
+reaches is marked with its date, and nothing is deleted — a rule governing a dormant piece still
+governs it the moment the piece comes back.
+
 **Read this before anything else: on 2026-08-07 the notes-only constraint was repealed.** The old
 Law 2 — *every sentence traces to the user, to a quoted passage in their material, or to plain
 code* — is gone in its entirety, and model knowledge is now the default source of a finding. A
@@ -140,7 +150,11 @@ finds the repeal where the rule used to be.
    pivot, 2026-08-07: unchanged.** Extract still reads the user's own explanation, sentence by
    sentence, and the user's explanation is the input this governs. What moved is the other side —
    the source-side extraction is off the default path — and that does not reach this rule. The
-   pending measurement is still pending; the pivot neither settles it nor excuses it.
+   pending measurement is still pending; the pivot neither settles it nor excuses it. **Governs a
+   dormant piece as of 2026-08-19.** Extract is off the live path, so nothing this invariant binds
+   is currently running. It is not repealed and not weakened — when Extract returns it returns
+   per-sentence, and it returns with this measurement still owed. Dormancy is not settlement, and a
+   piece coming back does not get to arrive with the rule quietly widened.
 9. **Never diff two extractions of the user's own words.** (Both extractions carry enough error that
    their difference is mostly extractor noise. The figures are in the feature doc; one of them was
    quoted as a frontier-model score until 2026-08-07, when it was traced to a 2020 system, so do not
@@ -162,6 +176,27 @@ just as easily as one sourced from a note, so it needs the rule as much as befor
 on the grades-versus-comments evidence and on the EU AI Act's high-risk annex, neither of which says
 anything about where a sentence originates; its 2026-08-05 amendment and same-day reversal stand as
 recorded.
+
+**Checked against the 2026-08-19 pivot: 2, 5, 6 and 7 bind the child; 8 and 9 govern dormant
+pieces.** Re-derived, not assumed, and one of them lost its mechanism rather than its force.
+
+- **5 still binds and now has nothing mechanical under it.** It is Law 1, and Law 1 was carried by
+  Feynman's review phase, which produces nothing today. What supplies the answer is the child's
+  prompt. The rule is unchanged; where it rests, and why that is weaker, is recorded in
+  [`docs/philosophy.md`](docs/philosophy.md) under Law 1. **Do not read the missing mechanism as a
+  relaxed rule.** A question the child cannot close is still a violation, and it is now a violation
+  nothing will catch for you.
+- **6 binds unchanged**, and reaches more text than before: every sentence a user reads is the
+  child's, so the grammar rule is the only thing standing between a finding-shaped remark and a
+  remark about the person.
+- **7 binds, and its exception currently admits nothing.** The one score it permits beside a
+  diagnosis is the catch rate on planted errors, and the plant ledger is dormant, so there is no
+  score to display and no diagnosis to display it beside. Do not widen the exception to fill the
+  gap.
+- **2 binds wherever anything is quoted**, which on today's path means a span of the user's own
+  transcript and nothing else. `src/index/anchor.ts` is still the enforcement point.
+- **8 and 9 are unchanged and currently idle.** Both govern Extract, which is off the live path.
+  Their reasoning is untouched by the pivot and travels back with the piece.
 
 ## Anchor format
 
@@ -286,6 +321,16 @@ offset anchoring, `resolve(anchor(text, span)) === span`, over astral-plane and 
 UTF-16 code-unit vs code-point confusion is silent and example tests never expose it. Also chunk
 partitioning, retrieval order invariance, scheduling monotonicity.
 
+> **The four paragraphs that follow describe work nobody is doing, as of 2026-08-19.** Extract is
+> dormant, so its eval harness measures a piece that does not run, and no labelled set is being
+> built. Nothing here is repealed and nothing is deleted: this is the protocol Extract owes on the
+> day it is re-admitted, and the re-admission rule in [`docs/decisions.md`](docs/decisions.md) asks
+> a different question first — whether the signal changes what the child says, for the better,
+> across more than one pass. **The child itself has no eval and is not covered by anything below.**
+> A prompt change is judged by reading transcripts, which is not a measurement, and the repo should
+> stop short of calling it one. `no LLM judge` is the rule most likely to be reached for here and
+> it has not moved.
+
 **The LLM extraction step gets an eval harness, not tests.** Four layers: schema validation
 hard-fails; invariants hard-fail as properties (every span resolves, no dangling endpoints, empty in
 → empty out); quality is aggregate precision/recall/F1 against gold labels, never per-case
@@ -325,8 +370,10 @@ instrument is precision on gaps that are genuinely real. Either way, do not reac
 gap makes tempting: **no LLM judge** is unchanged, and the fact that the pressure to break it just
 went up is the reason it is worth restating.
 
-**Calibrate against the weakest supported configuration, not the strongest.** The floor model is the
-one the harness has to pass, and the argument that a stronger model passes any eval a weaker one
+**Calibrate against the weakest supported configuration, not the strongest.** **Reaches the child
+as of 2026-08-19**, since the child is what the floor model now has to run: a prompt tuned on a
+large model and shipped to the floor is the same mistake this paragraph names, one layer up. The
+floor model is the one the harness has to pass, and the argument that a stronger model passes any eval a weaker one
 passes holds for **recall** — it does not automatically hold for **precision**, because larger models
 are often more fluent and more confidently wrong. Precision is the axis Law 1 charges for: a false
 finding opens a gap that does not exist and then closes it with something untrue. Calibrating on the

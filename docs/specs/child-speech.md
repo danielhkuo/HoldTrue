@@ -1,8 +1,28 @@
 # Spec: the child's speech
 
-> **Status: half built, 2026-08-12.** `tallyIntroduced` and `turn` ship — 41 tests, mutation 96.67%,
-> five survivors dismissed with reasons in section 6. **`speak` is not built**: no code, no prompt,
-> no eval. Every ruling in section 5 is settled. Section 7 says what the piece hands on.
+> **Status: `speak` is the product and it is the only thing on the live path. `tallyIntroduced` is
+> DORMANT — built, tested, and receiving no input since 2026-08-19.**
+>
+> [`../decisions.md`](../decisions.md)'s *The child is the product, and determinism returns as
+> prompt material*, decided 2026-08-19, made a turn **one model call**, and that call is `speak`.
+> Extract, Cohere and the tally came off the live path. Nothing is deleted and nothing in this file
+> is refuted: `session.ts`'s `take` builds no graph, so the tally has nothing to read. A
+> deterministic signal comes back one at a time, and only when somebody shows it changes what the
+> child says, for the better, across more than one pass.
+>
+> **What that changes here.** Section 1 leads with `speak` and gathers everything measured about
+> the child's prompt in one place, because the prompt is now the product. Section 2 marks which
+> half runs. The tally's rulings keep their numbers, their reasoning and their force, and are
+> marked **dormant** where their mechanism has no input. **Dormant is not refuted.**
+>
+> **The guess is OFF and must stay off until the tally is back on the path. This is a safety
+> condition, not a schedule.** Section 3 states it in full.
+>
+> **The 2026-08-12 status, superseded as a status and kept whole as the record of what the loop
+> cost**, because it is still the argument for running that loop and none of it is withdrawn.
+> `tallyIntroduced` and `turn` ship — 41 tests, mutation 96.67%, five survivors dismissed with
+> reasons in section 6. Every ruling in section 5 was settled on that date. **`speak` was unbuilt
+> then and is built now**, demo-grade, in `src/feynman/speak.ts`, with no eval and no labelled set.
 >
 > **What the loop cost, recorded because it is the argument for running it.** The red team wrote four
 > implementations that passed all fourteen tests and broke the piece; ten holes, none dismissed, two
@@ -17,14 +37,20 @@
 > one of them costs a single line to reverse. The red team at step 6 and mutation at step 9 both
 > attack the agent-written oracle, which is the check that this arrangement needs.
 >
-> This replaces the deterministic design of the same morning, and reverses
+> This replaces the deterministic design of 2026-08-12, and reverses
 > [`../decisions.md`](../decisions.md)'s *The child speaks only from your own words* of 2026-08-10.
 > That reversal belongs to `decisions.md` and is recorded there, not here.
 
 **Ruling numbers in section 5 are permanent addresses**, the same convention `AGENTS.md` uses for
-invariants. A ruling that dies keeps its number and its strikethrough. Five sites cite *this file's*
-ruling 6: `normalise.ts:7`, `voice.ts:7`, `voice.ts:30`, `validate.test.ts:1114` and
-`validate.test.ts:1245`.
+invariants. A ruling that dies keeps its number and its strikethrough. **A ruling that loses its
+input keeps everything and gains the word *dormant*.**
+
+**Where *this file's* ruling 6 is cited, corrected 2026-08-19.** `normalise.ts:7`, `speak.ts` in
+`say`'s own comment, `validate.test.ts:1114` and `validate.test.ts:1245`. **The two `voice.ts` sites
+in the old list are gone because `voice.ts` is deleted** — ruling 11 retired it and section 7 item 6
+carried out the deletion — and `say` moved into `speak.ts` with its comment, which is what that
+ticket required. The count fell from five sites to four by that move; it is recorded rather than
+silently corrected.
 
 **Two specs have a ruling 6, and most of the code cites one of them as a bare `(ruling 6)`.**
 [`extract.md`](extract.md)'s ruling 6 is the totality rule — a model that fails is a result, never a
@@ -32,36 +58,125 @@ throw — and it is cited at `extract.ts:77`, `validate.ts:20`, `validate.ts:108
 `validate.test.ts:734`, `:1405`, `:1430` and `:1468`. The first draft of this list claimed
 `validate.ts:20` for this file and was wrong. Write the file name when citing a ruling.
 
-## 1. What it does
+## 1. What it does, and `speak` is the whole of the live path
 
-You say a sentence. A model says one line back, as the child. Then a second pass reads that line and
-writes down anything the child said that you did not.
+You say a sentence. A model says one line back, as the child. **That is the turn, and since
+2026-08-19 there is nothing else in it** — no second pass over the child's line, no graph, no
+shapes, no ledger row. `session.ts`'s `take` calls `speak` and returns.
 
 The model is what makes the child worth talking to. It answers the sentence that just landed, it can
 ask a question that points forward, and it does not produce a non-sequitur every fifth turn. What it
 buys with that fluency is knowledge you never gave it, and that same knowledge can ratify a belief
-you do not hold. So the guarantee is not that the child cannot say such a thing. The guarantee is
-that it cannot say it without being written down.
+you do not hold. The old guarantee was not that the child cannot say such a thing, but that it
+cannot say it **without being written down**. **That guarantee is suspended**, because the thing
+that wrote it down is `tallyIntroduced` and the tally is dormant. The cost is stated in
+[`../decisions.md`](../decisions.md) and is not softened here: there are no findings at all until
+determinism returns, and Law 1 now rests on the child's own prompt instead of on a review phase.
+
+### What is measured about `speak`, gathered in one place
+
+The prompt is the product, so this is the part of the file that has evidence in it. Four things have
+been measured. Three of the four were found by a probe that refuted what somebody had assumed, so
+each is recorded with what it cost to learn.
+
+**1. The prompt is five worked examples, not a description of a voice. Settled by experiment
+2026-08-12.** The first version described the child in rules and quoted the openers it wanted —
+*wait*, *ohhh*, *how come*, *whoa*. A six-turn rig run returned six lines opening *ohhh*, every one
+a confirmation the adult could answer with *yeah exactly*, so the child never made anybody explain
+more, which is its whole job. **The obvious fix was tested and failed, which is what makes this a
+finding rather than a preference.** Deleting the quoted openers took *ohhh* to zero and the collapse
+moved: *So* then opened four of six and the lines stayed confirmations. Feeding the child its own
+recent openers back as a fact did nothing. Forbidding *ohhh* moved the token to *whoa*. **Naming the
+openers was never the cause.** *Sound like a child* is the cause: it hands the model a label and
+lets it fill that label from its own prior, and **a prior cannot be deleted, only outweighed by a
+sample.** The examples come from [`../transcripts/`](../transcripts/), where the distribution was
+already on disk — 275 real child lines, *oh\** opening 8% of them against the deployed child's 100%.
+They sit on foreign topics so a copied surface is visibly off-topic, and they disagree structurally
+so there is no shared frame to induct. Rejected: rules with a computed forbidden list, which is
+cheaper and which an ablation showed re-collapses.
+
+**2. Rewriting two of the five examples killed the dictionary question.** *What is X* ran at **five
+in sixteen** turns before and **zero in eleven** after. Nothing in the deterministic layer has ever
+produced a change that large, and this is one of the two prompt results the 2026-08-19 pivot rests
+on. What it says about the instrument is worth as much as the number: the examples are load-bearing
+at the level of individual lines, so an example is not decoration and rewriting one is a change to
+behaviour that needs re-running.
+
+**3. Repetition at temperature 0, and it is the open defect.** Examples buy the move, not the
+variation. At temperature 0 the strongest exemplar in the prompt is **the child's own previous
+lines**, which sit in the conversation and compound. **A rotating bank of a dozen examples dealt by
+turn index is the named remedy and it is not built.** Temperature stays 0 on every call, but not for
+the reason first given: a comment claimed byte-identical output three times of three, and re-probed
+across sessions it did not hold — turns 1-4 matched and turns 5-6 did not. **This runner is not
+byte-deterministic at 0.** It stays because nothing has shown a per-call temperature buys fluency
+the prompt cannot.
+
+**4. Cohere's shapes do NOT steer the register. Measured 2026-08-16, against a whole afternoon's
+assumption.** Five conditions — no shapes, `rootless`, `dangling`, `unlinkedPair`, `conflict` —
+against the same sentence produced **five near-identical mechanism questions**, and `dangling` and
+`rootless` produced the *same line* while their context text said opposite things. The model reads
+the quoted concept and ignores the kind. They also do not arm the guess: given a sentence that does
+not itself contain an unlinked pair, the child asks and never guesses even when the pair is supplied
+as a shape, because the block ends with *you do not have to use any of these* and the model takes
+that seriously. **What the shapes do buy is novelty, and it was found by removing them.** With the
+block cut the turn got 28% faster — 104.6s against 144.3s over five sentences — and the child then
+asked the same question three turns running, *where does the water go after it leaves the bowl*,
+reworded twice. With the shapes restored the same three turns were three different questions. So
+the shapes were the only thing in the prompt that changed between turns. Ruling 12 kept the block
+for a reason that has nothing to do with why it was written.
+
+**Findings 3 and 4 collide under the pivot, and this is the live hazard.** Cohere is off the path,
+`take` hands `speak` an **empty shape list**, and the rotating bank is still unbuilt. **The only
+mitigation repetition ever had was the block that finding 4 measured, and the pivot removed it.**
+Nothing measures how often the live child now repeats itself. It is ticket 1 in section 7.
+
+### The tally, and what it was for — DORMANT since 2026-08-19
+
+Everything in this subsection describes a piece that is built and not running. It is kept in force
+because nothing here was refuted; `take` builds no graph, so there is no input.
 
 **What the ledger is for.** It is a work list for the review phase, and that is the whole of it. A
 row is one thing Supply can pick up and close. It is not a record of the child's mistakes — this
 piece cannot tell true from false, ruling 13 — and it is not a score, which invariant 7 and ruling
 16 both forbid. It is not new either: [`../decisions.md`](../decisions.md)'s plant ledger of
 2026-08-10 is the same ledger with a narrower inlet, when only a `guess` could write to it.
+**There is no review phase on the live path now, so nothing picks a row up and nothing closes one.**
 
 **A link row is a debt** and Law 1 forbids ending the session with one open — invariant 5, quoted in
 section 4. **A word row is a note** and is owed nothing, because there is no proposition in it for
 anyone to close. Ruling 15.
 
+**What the two halves actually did, measured, and both are recorded because one of them was
+removed.**
+
+- **The debt half fired for the first time on 2026-08-17**, and only after Extract was taught to
+  read hedged declaratives. Until that change Extract returned no links on the child's lines — the
+  probe under ruling 7 found it read none of three — so the debt half had never had an input to
+  fire on. Its first firing is evidence the link check works when its extractor can see the line,
+  and it is the strongest thing the tally has.
+- **The word half was measured at roughly 3 useful rows in 16 and was taken off the panel on
+  2026-08-19.** That is a removal from the display, recorded here rather than performed silently.
+  Ruling 8 and ruling 15 are **not** reversed by it: a word note is still not a debt, and the word
+  check still runs when the model is unreachable. What the measurement says is that most word rows
+  were noise on screen, which is a presentation result, not a refutation of the check.
+
 The test for whether something belongs in the ledger at all is one question: **what would the review
-phase do with this row?** If the answer is nothing it is not already doing, it is not a row.
+phase do with this row?** If the answer is nothing it is not already doing, it is not a row. **That
+test cannot be applied today**, because there is no review phase to answer it, which is one more
+reason the tally waits rather than being redesigned.
 
 ## 2. Public API
 
 Two pieces, split at the model call, because only one half can be tested without a model.
+**Only the first half runs.** `speak` is on the live path; `tallyIntroduced` and `turn` are dormant
+from 2026-08-19 and are specified below unchanged, because they are what returns first when a
+signal is re-admitted.
 
-**Speak.** The model call. It is handed the conversation so far and the shapes Cohere found, and the
-shapes are context, never an instruction.
+**Speak — LIVE, and it is the turn.** The model call. It is handed the conversation so far and the
+shapes Cohere found, and the shapes are context, never an instruction. **The signature is unchanged
+and the live caller passes an empty `shapes` array**, because Cohere is off the path. The parameter
+stays: it is the seam a re-admitted signal comes back through, and section 1 finding 4 is the
+measurement that will decide whether it comes back.
 
 ```ts
 import type { Shape } from './cohere.js'
@@ -88,8 +203,10 @@ inside `shapes`. That is the mechanism of ruling 6: your stammer never reaches t
 cannot come back out. Nothing cleans the child's own line, and nothing should — the model wrote it,
 and it is not a rendering of your words.
 
-**Tally.** No model. It is handed what Extract made of the child's line and the graph of your own
-words, and it counts up what the child introduced. Ruling 13 names it.
+**Tally — DORMANT.** No model. It is handed what Extract made of the child's line and the graph of
+your own words, and it counts up what the child introduced. Ruling 13 names it. Both of its inputs
+come from pieces that are off the live path, so it is called by nothing in `session.ts` today. The
+code, its 41 tests and its oracle are untouched.
 
 ```ts
 import type { ExtractResult } from './extract.js'
@@ -145,12 +262,15 @@ what it returns without knowing how any of it was produced.
 export function say(phrase: string): string
 ```
 
-It lives in `voice.ts` today and moves into `speak.ts` when `voice.ts` is deleted. The five comments
-that cite ruling 6 move with it, or they point at nothing.
+**Done.** It lived in `voice.ts`; `voice.ts` is deleted under ruling 11 and `say` is exported from
+`speak.ts` with its comment, which is what section 7 item 5 records. Two of the five ruling 6
+cites went with the file; the header records the corrected list.
 
 The comparison key is `conceptOf` from [`../../src/feynman/cohere.ts`](../../src/feynman/cohere.ts)
-— `normalise` plus lowercase — **and inflection stripping, which does not exist yet.** Ruling 14
-owns it. Two mentions match when one's stemmed words are a subset of the other's, so *lifts* and
+— `normalise` plus lowercase — **and inflection stripping, which now exists.** Ruling 14 owns it,
+and the stemmer it specifies is built: it is `src/feynman/stem.ts`, a shared module with its own
+oracle in `stem.test.ts`, no longer private to `tally.ts`. Cohere took it, which is section 7
+item 7 discharged. Two mentions match when one's stemmed words are a subset of the other's, so *lifts* and
 *lifting* are one concept, *pushing the handle* sits inside *when you push the handle down*, and
 *the flapper lifting* and *lifting the flapper* are also one, because word order is not read.
 
@@ -160,8 +280,29 @@ failure. The two are not symmetrical, which is the whole argument in ruling 14.
 
 ## 3. What it must not do
 
+**Run the guess. OFF from 2026-08-19, and this is a safety condition, not a schedule.**
+[`../decisions.md`](../decisions.md)'s *The child may assert a guess* of 2026-08-10 permits the
+child to assert exactly one thing — a link between two of your own unlinked concepts — and it
+permits it **only** on a condition it carries in the same row: Butler & Roediger 2008 found that
+selecting lures leads students to acquire false knowledge, so **every plant must be disclosed and
+closed before the session ends.** The mechanism for that closure is a ledger row written by
+`tallyIntroduced` and discharged by the review phase. **Both are off the live path, so the condition
+has no mechanism at all.** A guess that runs now is a plant nobody records and nobody closes, which
+is the precise failure the condition exists to prevent. **The guess was built on 2026-08-17. It must
+not run until the tally is back on the path.** The decision row states the same thing in the same
+words, and this file states it as a ban because this is the file the guess is specified in.
+
+**How it stands in the code today, and why that is weaker than it sounds.** The guess is armed only
+by an `unlinkedPair` line in `speak`'s context block, and `take` passes an empty shape list, so
+nothing arms it live. That is **off by construction, not off by decision** — the instruction is
+still in the system prompt. **Re-admitting Cohere's shapes re-arms the guess without anybody
+deciding to.** Whoever puts shapes back must gate the guess separately, or land the tally first.
+
 - **End a session with an item open.** That is the failure this whole design exists to survive.
-- **Show a count of introduced items beside a finding.** Invariant 7, quoted below.
+  **No item is written today**, so nothing is open and nothing is closed; the obligation is
+  suspended with its mechanism, not satisfied.
+- **Show a count of introduced items beside a finding.** Invariant 7, quoted below. There are no
+  findings on the live path, so nothing can currently violate this — it binds the day one returns.
 - **Say your explanation was unclear.** It reports its own state, never a judgement of you.
 - **Re-extract your words.** The tally reads the child's line, and your side is already extracted —
   running Extract over your transcript a second time to diff it is invariant 9. **Clarified
@@ -185,8 +326,12 @@ same commit that wrote it added four lines to `AGENTS.md`, so every one of them 
 rule within the hour. Numbers are permanent addresses; lines are not.
 
 **Invariant 5** — *"Anything that asks the user a question supplies the answer. No feature ends on a
-finding."* The child asks on every turn. The ledger and its closure are what make the asking legal,
-so this is the whole design and not a constraint on it.
+finding."* The child asks on every turn. **What made that asking legal was the ledger and its
+closure, and neither is on the path** — the review phase closes nothing today, and any sentence in
+this file that says it does is stale and marked. Since 2026-08-19 invariant 5 is carried by the
+child's own prompt alone, which [`../decisions.md`](../decisions.md) calls weaker and honestly
+weaker. It is not repealed and it is not satisfied; it is unmet, on the record, until determinism
+returns.
 
 **Invariant 6** — *"Findings are phrased at the task, never the person: 'You said X but not how Y',
 not 'your explanation was shallow.'"* It governs grammar, not where a sentence came from, so it
@@ -223,6 +368,16 @@ and **is not being proposed as one**. It is a piece of this spec, it installs no
 stays open until `decisions.md` closes it.
 
 ## 5. Rulings and open questions
+
+**Status, 2026-08-19. Nothing below is refuted; several rulings have lost their input.** Read the
+marker as *no mechanism*, never as *withdrawn*.
+
+| Ruling | Status |
+|---|---|
+| 6 (`say` cleans your words), 11 (no model, nothing is said), 12 (the shape block) | **Live.** 6 and 11 run on every turn. 12 is live in form and empty in fact — see its own amendment. |
+| 7, 8, 9, 14 | **Dormant.** They govern `tallyIntroduced`, which has no input. Their code and tests are intact. |
+| 13, 15, 16, 17 | **Dormant, and each contains a sentence about the review phase that is now false.** Marked in place. |
+| 18 (`resay`) | **Unbuilt, and newly ambiguous under the pivot** — see the note in the ruling. |
 
 1. ~~**May the child say "I don't get it"?**~~ **SUPERSEDED 2026-08-12.** It asked which move object
    carried confusion. There are no move objects now.
@@ -295,9 +450,19 @@ stays open until `decisions.md` closes it.
     nine-move table nobody tests. **Recorded because it is thin:** the evidence for retiring it is
     *"a non-sequitur every fifth turn"*, and that comparison has no protocol and no artifact in the
     repo. It is not falsifiable as recorded.
-12. **Does the nudge stay?** **RULED 2026-08-12: it stays.** The shapes go to the model as context,
-    not as an instruction. Keep it, and drop it if the child reads stiff, because fluency is the thing being bought.
-    Rejected: no context at all, which gives the model nothing to reach for when your chain does not
+12. **Does the nudge stay?** **RULED 2026-08-12: it stays.** **AMENDED 2026-08-16 by measurement,
+    and DORMANT IN FACT from 2026-08-19.** The ruling stands and the reason for it has been
+    replaced by a measured one — section 1 finding 4 carries the numbers. The shapes do not steer
+    the register: five conditions gave five near-identical questions, and `dangling` and `rootless`
+    gave the same line. What they buy is **novelty between turns**, which was found by removing
+    them and watching the child ask one question three times. So the block is kept for a reason
+    that has nothing to do with why it was written, and the day the rotating example bank exists
+    this must be re-tested rather than assumed. **From 2026-08-19 the live caller passes no shapes
+    at all**, so the block is empty in practice and the repetition it was masking is unmeasured.
+
+    **The original ruling, unchanged.** The shapes go to the model as context, not as an
+    instruction. Keep it, and drop it if the child reads stiff, because fluency is the thing being
+    bought. Rejected: no context at all, which gives the model nothing to reach for when your chain does not
     close. Changes no signature, so it does not block.
 13. **What the tally is not, and what it is called.** **RULED 2026-08-12: `tallyIntroduced`**, in
     `tally.ts`. The old name was `audit`, and it misled its own owner on the day it was written,
@@ -305,10 +470,13 @@ stays open until `decisions.md` closes it.
     is correct. It does not. It counts up what the child brought in that you never said, which is
     what the new name says and what the `Introduced` type it returns is already called. **The
     boundary, and it is not
-    open:** this piece runs live, once per turn, and answers one question — *is this in what you
-    said?* It cannot tell a true statement from a false one. It consults nothing and it is not the
+    open:** this piece answers one question — *is this in what you said?* **The words *runs live,
+    once per turn* stood here until 2026-08-19 and are now false: it runs nowhere.** When it
+    returns it returns as a per-turn call, and the boundary is unchanged. It cannot tell a true statement from a false one. It consults nothing and it is not the
     end-of-session pass. **Checking an introduced item against knowledge is the review phase**, and
-    that work is [`supply.md`](supply.md)'s. This design is what makes Supply small: instead of
+    that work is [`supply.md`](supply.md)'s. **Supply shipped on 2026-08-17 and came off the live
+    path with everything else on 2026-08-19**, so today nothing checks an item and nothing closes
+    one. This design is what makes Supply small: instead of
     hunting for gaps with no ground truth, Supply is handed specific propositions and checks each
     one. The optional sources — a configured knowledge base, and the internet — belong to that phase.
     Neither is decided, and **the internet is named in no document in this repo**; it also touches
@@ -371,6 +539,14 @@ stays open until `decisions.md` closes it.
     **This does not touch the plant.** [`../decisions.md`](../decisions.md)'s guess row of 2026-08-10
     requires every plant to be disclosed and closed, on Butler & Roediger 2008. A plant connects two
     of your concepts, so a plant is a link, so a plant is a debt. That row is untouched.
+    **And from 2026-08-19 it has no mechanism, so the guess is OFF** — section 3 states the ban and
+    why it is a safety condition rather than a scheduling note.
+
+    **The word half was taken off the panel on 2026-08-19, measured at roughly 3 useful rows in
+    16.** This ruling is not reversed by that: a word row is still a note, still owed nothing, and
+    the check still runs when the model is unreachable. What was measured is that most word rows
+    were noise **on screen**, which is a display result. Recorded here because a removal that leaves
+    no trace reads as an oversight.
 
     **On the bound the roleplay gives, which is the part I do not accept.** The persona constrains
     register, not accuracy. A model playing a child says childlike things, and a childlike thing can
@@ -385,7 +561,9 @@ stays open until `decisions.md` closes it.
     Rejected: **every item is a debt**, which is the current text and which owes a closure on a word
     nobody can check. **And logging no words at all**, which ruling 8 already refused.
     Changes no signature, so it does not block.
-16. **The ledger is also an instrument, and it measures the fiction.** Raised by the owner on
+16. **The ledger is also an instrument, and it measures the fiction. DORMANT 2026-08-19 — the
+    instrument has no reading while the tally has no input, and its confound is moot because
+    Extract does not run.** Raised by the owner on
     2026-08-12. A child who introduces nothing is not listening to itself, it is reciting you, and
     it reads robotic. A child who introduces on every turn is not drawing on what you said. The
     count per turn is a cheap, deterministic signal sitting between those, and it needs no labels.
@@ -419,6 +597,8 @@ stays open until `decisions.md` closes it.
     **RULED 2026-08-12, in three parts.**
 
     **(a) Your response does not close the row.** Supply closes it, by checking the proposition.
+    **Stale from 2026-08-19 in fact, not in principle: nothing closes any row, because there is no
+    review phase on the live path.** The ruling is what should happen when one returns.
     Closing on engagement would discharge *"so the toilet fills up after it empties?"* on a confident
     *yes, exactly* — which is the one case the ledger exists for, and it would void
     [`../decisions.md`](../decisions.md)'s disclose-and-close condition on Butler & Roediger.
@@ -472,7 +652,12 @@ stays open until `decisions.md` closes it.
     confident *yes* discharge a falsehood. **And computing the four cells live**, which needs the
     truth of the claim and a model to judge it, at the moment there is a latency budget.
     Changes no signature, so it does not block.
-18. **`resay`: the child asks you to say it again.** **RULED 2026-08-12**, on the owner's
+18. **`resay`: the child asks you to say it again.** **UNBUILT, and re-read this under the pivot.**
+    A turn is one model call now, and `resay` puts a deterministic gate in front of that call. It is
+    not one of the signals [`../decisions.md`](../decisions.md) took off the path — it is a
+    transcription gate, not a finding — so the re-admission rule arguably does not reach it. Nobody
+    has ruled on that, and the person who builds it should get a ruling first rather than assume
+    either answer. **RULED 2026-08-12**, on the owner's
     instruction — the voice session stays, a typed fallback is not an option, and what is needed is
     a gate that catches a turn nobody could understand and forces a repeat. The move existed and was
     cut; it comes back with a different trigger.
@@ -491,10 +676,12 @@ stays open until `decisions.md` closes it.
     exists for.
 
     **What it must not use, and this one is counter-intuitive.** Not an out-of-vocabulary test.
-    `words.ts` holds 848 hand-written tokens and skips every word under five characters, so *"the
+    `words.ts` held 848 hand-written tokens and skipped every word under five characters, so *"the
     sto wa hot"* scores as fully known while *condenser*, *evaporator* and *gradient* score as
     mostly unknown. **The complement of that list is the subject matter of the session.** It
-    measures what you are explaining, not whether we heard it.
+    measures what you are explaining, not whether we heard it. **`words.ts` was deleted under ruling 11**
+    — section 7 item 6 — so the list is gone as well as rejected. The reasoning is kept because
+    anyone reaching for an out-of-vocabulary trigger would rebuild exactly that list.
 
     **What it uses instead** is the transcriber's own numbers, catalogued with their sources in
     [`../research/stt-signals.md`](../research/stt-signals.md), plus a repetition check — because a
@@ -538,6 +725,10 @@ stays open until `decisions.md` closes it.
     permanent loss whenever the gate misfires.
 
 ## 6. The oracle for `tallyIntroduced`
+
+**DORMANT with the piece, 2026-08-19, and intact.** The oracle, the red team's ten holes and the
+mutation record below all still describe `tally.ts` as it stands. They are the reason the tally can
+come back in an afternoon rather than be rebuilt.
 
 **Example 1 is the owner's. Everything else here is agent-written, on 2026-08-12, after he delegated
 it in as many words.** `extract.md` section 6 already carries the same split and the same marking on
@@ -584,7 +775,8 @@ the handle down"* are two different concepts and this counts as a new link.
 own experience before you say it is behaving normally.
 
 **What it settles, and what it opens.** Concepts no longer match on exact text. They match after
-inflection is stripped, which is work that does not exist yet — ruling 14 owns it.
+inflection is stripped, which is work ruling 14 owns and which **now exists**: `src/feynman/stem.ts`,
+shared with Cohere, with its own oracle.
 
 **And the direction of the error flips with it.** Exact matching over-reports, and an extra item
 costs the review phase one closure it did not need. Every step looser under-reports, and a missing
@@ -649,7 +841,10 @@ ledger holds less than the conversation did.
 not hold.** *Agent-written.* The line is still there, and the word check never needed a model.
 
 **4b. The same failure one step earlier.** One model serves both calls, so in practice the child
-does not speak either: `speak` returns `silent` and there is no line to tally.
+does not speak either: `speak` returns `silent` and there is no line to tally. **From 2026-08-19
+there is only one call**, so 4b is the only unreachable-model case that can happen at all, and 4a —
+the child spoke but the tally could not read it — needs a second call to exist before it can fire
+again.
 
 **Expected items: none.** *Agent-written.* `turn` gives an empty `child`, and that empty string is
 the record of the silence — no extra field earns its place, and anything counting turns can see it.
@@ -750,54 +945,74 @@ the file has no dead defensive code in it.
 
 ## 7. What this piece hands on
 
-**`tallyIntroduced` and `turn` are built.** 41 tests, mutation 96.67%, five survivors dismissed with
-reasons in the mutation record above. **`speak` is not built** — the model half has no code, no
-prompt and no eval, and the eval branch it takes is where that belongs.
+**`speak` is built and it is the product.** `src/feynman/speak.ts`, demo-grade: no eval, no labelled
+set, and a prompt that has been changed twice by measurement — section 1 findings 1 and 2.
+**`tallyIntroduced` and `turn` are built and dormant**: 41 tests, mutation 96.67%, five survivors
+dismissed with reasons in the mutation record above.
 
 Each item below is a ticket on the feature's map, not a paragraph for the next reader to find.
 
-**To whoever builds `speak`.**
+**On the child. These are the ones that matter now.**
 
-1. **`say` still lives in `voice.ts`.** It moves to `speak.ts` when `voice.ts` is deleted, and the
-   five comments citing this file's ruling 6 move with it or they point at nothing.
-2. **`notice.ts`, `voice.ts` and `words.ts` are retired by ruling 11 and not yet deleted**, because
-   `demo.ts` still runs on them. Deleting them is part of building `speak`, not a separate tidy.
-3. **`Spoken` gains `{ kind: 'resay' }`** under ruling 18, and the gate that produces it runs
-   *before* `speak` is called.
+1. **Build the rotating example bank** — a dozen examples dealt by turn index. It is the named
+   remedy for section 1 finding 3, and the pivot removed the one thing that was masking the problem,
+   so it is the top ticket in this file. When it lands, re-test the shape block instead of assuming
+   ruling 12 still holds.
+2. **Nothing counts repetition.** The rig's repeat counter compares whole strings, so six lines with
+   an identical opener read as zero repeats — it cannot see the defect a human sees instantly.
+   Ticket 1 cannot be evaluated until this exists.
+3. **`speak` has no eval.** Both prompt results in section 1 came from hand-read rig runs. The
+   re-admission rule the pivot installs — show a signal changes what the child says, for the better,
+   across more than one pass — is a bar that needs an instrument, and nobody has built one. This is
+   the largest hole in the file now that the child is the product.
+4. **The guess stays off, and re-arming it is an accident waiting to happen.** Section 3 carries the
+   ban and the mechanism. Whoever re-admits Cohere's shapes re-arms the guess unless they gate it
+   separately or land the tally first.
 
-**To Cohere.**
+**Done since this list was written, recorded rather than quietly dropped.**
 
-4. **Take the stemmer.** It is private to `tally.ts` today, and `conceptOf` has the same defect it
-   fixes: *lifts* and *lifting* are two nodes in your own graph. When Cohere adopts it, it becomes a
-   shared module with its own oracle, which nobody has written.
+5. **Old ticket 1 — `say` moves out of `voice.ts`: done.** It is exported from `speak.ts`, its
+   ruling 6 comment came with it, and the header carries the corrected cite list.
+6. **Old ticket 2 — `notice.ts`, `voice.ts` and `words.ts` deleted: done**, under ruling 11.
+7. **Old ticket 4 — Cohere takes the stemmer: done.** It is `src/feynman/stem.ts`, a shared module
+   with its own oracle in `stem.test.ts`, and both callers use it. `cohere.md` ruling 6 owns it now.
 
-**To Session.**
+**Waiting on the tally. Unchanged, unrefuted, and with no input.**
 
-5. **The ledger row is yours** — its columns, its persistence and its `closed` predicate. Ruling 10.
-6. **The response pairing is yours.** Ruling 17: mark a row engaged when the concept it waits on
-   appears in the links of the next thing you say. Engaged never means closed.
-7. **Supersession filtering is yours, and nothing does it today.** A superseded turn's links still
-   resolve, so the graph holds claims you retracted. `decisions.md`'s *The `Doc` is the turn* carries
-   the full list.
+8. **The ledger row is Session's** — its columns, its persistence and its `closed` predicate. Ruling
+   10. Nothing writes a row today.
+9. **The response pairing is Session's.** Ruling 17: mark a row engaged when the concept it waits on
+   appears in the links of the next thing you say. Engaged never means closed. It needs both a row
+   and Extract's links, so it waits on two returns rather than one.
+10. **Supersession filtering is Session's, and nothing does it.** The bite is deferred rather than
+    fixed: with no graph being built there is no retracted claim sitting in one. It returns the day
+    Extract does, and `decisions.md`'s *The `Doc` is the turn* carries the full list.
+11. **`Spoken` gains `{ kind: 'resay' }`** under ruling 18, and the gate that produces it runs
+    *before* `speak` is called. Unbuilt. Read the ruling's 2026-08-19 note first: nobody has ruled
+    on whether a deterministic gate in front of the one model call needs to clear the re-admission
+    bar.
 
-**To Extract.**
+**To Extract, which is also off the live path.**
 
-8. **`unavailable` is overloaded.** An empty turn returns `unavailable: 'nothing to read'`, and the
-   tally logs that as `unread` — a note saying the model could not read a turn it was never asked to
-   read. The two need separating.
-9. **`asDoc` needs the turn id**, and `demo.ts` bypasses `extract` entirely, so threading it through
-   `extract` alone leaves the only runnable entry point unconverted.
+12. **`unavailable` is overloaded.** An empty turn returns `unavailable: 'nothing to read'`, and the
+    tally logs that as `unread` — a note saying the model could not read a turn it was never asked
+    to read. Still true in the code; nothing hits it today.
+13. **`asDoc` needs the turn id**, and `demo.ts` bypasses `extract` entirely, so threading it
+    through `extract` alone leaves a runnable entry point unconverted.
 
 **Undecided, and each blocks something.**
 
-10. **Is the child's line a `Doc` in the same namespace as yours?** Extract runs over both. With a
+14. **Is the child's line a `Doc` in the same namespace as yours?** Extract ran over both. With a
     turn-ordinal `unit_id` your *"okay"* and the child's *"okay"* collide, which is `anchor.md`
-    ruling C's hole one level up.
-11. **Nobody has read `whisper-server`'s `/inference` response body**, so ruling 18's gate does not
+    ruling C's hole one level up. It blocks nothing while Extract is off the path, and blocks the
+    tally's return the moment it is back.
+15. **Nobody has read `whisper-server`'s `/inference` response body**, so ruling 18's gate does not
     know whether its signals exist on the route this app uses.
-12. **Ruling 14's subset match is the loosest thing here** and the first place to look when the
+16. **Ruling 14's subset match is the loosest thing here** and the first place to look when the
     ledger is wrong. It over-matches, which under-reports, which is the Law 1 direction.
 
-**What nothing measures.** Whether an item the tally writes down is one worth closing. That is
-Supply's judgement and `decisions.md` records the decision to ship it unmeasured. This piece adds
-no measurement and claims none.
+**What nothing measures.** Two things now, where there was one. Whether an item the tally writes
+down is one worth closing — that is Supply's judgement and `decisions.md` records the decision to
+ship it unmeasured. **And whether the child is any good**, which was somebody else's problem while
+the child was a component and is this file's problem now that it is the product. This piece adds no
+measurement and claims none.
