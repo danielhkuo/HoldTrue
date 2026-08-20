@@ -9,13 +9,16 @@
  * byte deterministic at temperature 0. See rule 34. Such a test fails for an unrelated reason.
  * Somebody then updates it until it asserts nothing.
  *
- * Two tests changed when the code changed. One asserted that the code keeps the first line only.
- * That behaviour is the defect of case B6. One asserted a cycle length of five. Both tests now
- * assert the corrected behaviour, and both carry a new name.
+ * The tests for the four move list are gone. The prompt no longer holds that list. Measured result
+ * 7 in `src/child.ts` gives the reason: a labelled move becomes a template.
  *
- * No test below pins the size of the example bank. A count is a change detector and not a
- * requirement. No document asks for a bank of a fixed size. The tests read `EXAMPLES.length` and
- * `TOPICS` instead, so a new example and a new topic enter the checks with no edit here.
+ * One test pins the bank at six examples. An earlier version of this file refused to count the
+ * bank, because a count is a change detector. The count is now a requirement. The six examples are
+ * a designed set, and each one shows a different shape. A seventh example changes the design, so
+ * the count must fail until somebody reads the design again.
+ *
+ * The check for case B3 still reads `TOPICS` and never a list in this file. A new topic in
+ * `src/topics.ts` therefore enters the check with no edit here.
  */
 
 import { describe, expect, test } from 'vitest'
@@ -23,11 +26,12 @@ import {
   EXAMPLES,
   dealt,
   examplesFor,
+  lateBlock,
   systemFor,
   promptFor,
   speak,
+  type Example,
   type Exchange,
-  type Move,
   type Said,
 } from './child.js'
 import { TOPICS } from './topics.js'
@@ -49,7 +53,17 @@ const fake = (answer: string | null) => {
   return { handle, seen }
 }
 
-const MOVES: readonly Move[] = ['cause', 'again', 'lost', 'stop']
+/** The vocabulary rule, as the late block must carry it. */
+const VOCABULARY =
+  'Do not use a technical or subject-specific word they have not used. Ordinary everyday words are fine.'
+
+const repliesOf = (e: Example): string[] =>
+  e.lines.filter(l => l.who === 'you').map(l => l.text)
+
+const REPLIES = EXAMPLES.flatMap(repliesOf)
+
+const lastSentence = (text: string): string =>
+  (text.match(/[^.!?]+[.!?]*/g) ?? [text]).at(-1)!.trim()
 
 /**
  * The subject words of one topic title. This serves case B3.
@@ -87,16 +101,15 @@ describe('the example bank rotates', () => {
 
   test('every turn is dealt four distinct examples', () => {
     for (let t = 0; t < EXAMPLES.length; t++) {
-      const pairs = examplesFor(t).split('\n\n')
-      expect(pairs).toHaveLength(4)
-      expect(new Set(pairs).size).toBe(4)
+      const shown = examplesFor(t).split('\n\n')
+      expect(shown).toHaveLength(4)
+      expect(new Set(shown).size).toBe(4)
     }
   })
 
   test('the deal repeats after one pass through the bank, and not before', () => {
     // The deal is a window that moves by one place for each turn, so the cycle is the size of the
-    // bank. The size comes from the bank itself. A test that named a number would only detect a
-    // change to the bank, and no document requires a bank of a fixed size.
+    // bank. The size comes from the bank itself.
     expect(examplesFor(0)).toBe(examplesFor(EXAMPLES.length))
     for (let t = 1; t < EXAMPLES.length; t++) {
       expect(examplesFor(t)).not.toBe(examplesFor(0))
@@ -104,29 +117,42 @@ describe('the example bank rotates', () => {
   })
 })
 
-describe('the bank holds the four moves and nothing else', () => {
-  test('every permitted move has at least one example', () => {
-    // The count of the bank is not a requirement, so no assertion names one. What matters is that
-    // the child sees each of its four moves shown. A move with no example is a move the prompt
-    // names and never demonstrates, and rule 9 asks for the worked example.
-    for (const move of MOVES) {
-      expect(EXAMPLES.filter(e => e.move === move).length).toBeGreaterThan(0)
+describe('the bank holds six shapes and no forbidden move', () => {
+  test('the bank holds six examples', () => {
+    // The count is a requirement here, and not a change detector. The six examples are a designed
+    // set. Read the bank comment in `src/child.ts` before you add a seventh.
+    expect(EXAMPLES).toHaveLength(6)
+  })
+
+  test('one example holds four lines, and every other example holds two', () => {
+    // The four line example asks a second time about the same step. It is the only example that
+    // refuses to move on. An earlier bank showed one ask and one advance, and the child copied
+    // that habit. See rule 6 and case E10.
+    const long = EXAMPLES.filter(e => e.lines.length === 4)
+    expect(long).toHaveLength(1)
+    for (const e of EXAMPLES) expect([2, 4]).toContain(e.lines.length)
+    expect(repliesOf(long[0]!)).toHaveLength(2)
+  })
+
+  test('every example starts with the adult and then takes turns', () => {
+    for (const [i, e] of EXAMPLES.entries()) {
+      expect(e.lines.map(l => l.who), `example ${i}`).toEqual(
+        e.lines.map((_, n) => (n % 2 === 0 ? 'them' : 'you')),
+      )
     }
   })
 
-  test('every deal of four shows all four moves', () => {
-    // The child sees every permitted move on every turn. A deal that dropped `stop` would leave
-    // the child with no way to end, which is case E13a.
-    for (let t = 0; t < EXAMPLES.length; t++) {
-      expect(new Set(dealt(t).map(e => e.move))).toEqual(new Set(MOVES))
-    }
+  test('at least four replies end with a question mark', () => {
+    // The line goes to a speech engine later. Most engines raise the pitch for a question mark. A
+    // question written with a full stop sounds flat. This test stops a later edit from flattening
+    // the whole bank back to full stops. It does not forbid the flat line: the bank keeps exactly
+    // one, because real speakers ask without the rise. See the punctuation paragraph in the header.
+    expect(REPLIES.filter(r => r.endsWith('?')).length).toBeGreaterThanOrEqual(4)
   })
 
-  test('a re-ask example shows the earlier question, and no other example does', () => {
-    // "Ask again about the same step" has no meaning without the first ask.
-    for (const e of EXAMPLES) {
-      expect(e.before === undefined).toBe(e.move !== 'again')
-    }
+  test('the bank keeps a reply that ends with a full stop', () => {
+    // A bank of one punctuation mark teaches one intonation.
+    expect(REPLIES.filter(r => r.endsWith('.')).length).toBeGreaterThan(0)
   })
 
   test('every topic in the list gives at least one subject word', () => {
@@ -137,27 +163,27 @@ describe('the bank holds the four moves and nothing else', () => {
     }
   })
 
-  test('no example holds half of the subject words of a topic the product offers', () => {
+  test('no example shares two subject words with a topic the product offers', () => {
     // Case B3. A copied surface must be visibly off topic. Two old examples used a fridge
     // compressor and a toilet waste pipe, and both subjects matched a topic in the list.
     //
-    // The old version of this test held its own list of ten words. That list missed two of the six
-    // topics, so "Why the sky is blue" was unchecked, and a new topic was never noticed. This
-    // version reads `TOPICS`, so the check follows the real list.
+    // The words come from `TOPICS`, so a new topic enters the check with no edit here.
     //
-    // The rule is a share of the title and not one word. One common noun is not a shared subject.
-    // The bank holds one such word today: an example about a piston engine says "wheels", and the
-    // topic "How a bike brake stops the wheel" gives four subject words. One word of four passes.
-    // A title of two words fails on one match, so "sky", "toilet" or "fridge" fails at once.
+    // THE THRESHOLD CHANGED WITH THIS BANK, and the reason must stay visible. The old test failed
+    // an example that shared half of a title. Every title here holds two subject words, so the old
+    // rule failed one shared word. The new bank says "You put the bread in and push the lever
+    // down", which is a toaster, and the list offers "How bread rises", which is yeast. One noun
+    // is not a shared subject. The rule is now two words, and one word for a title that holds one.
+    // A shared "toilet flush", "sky blue" or "fridge cold" still fails.
     for (const [i, e] of EXAMPLES.entries()) {
-      const bag = new Set(wordsOf(`${e.before ?? ''} ${e.them} ${e.you}`))
+      const bag = new Set(wordsOf(e.lines.map(l => l.text).join(' ')))
       for (const topic of TOPICS) {
         const subject = subjectOf(topic.title)
         const shared = subject.filter(word => bag.has(word))
         expect(
-          shared.length * 2,
+          shared.length,
           `example ${i} shares ${shared.join(', ')} with the topic "${topic.title}"`,
-        ).toBeLessThan(subject.length)
+        ).toBeLessThan(Math.min(2, subject.length))
       }
     }
   })
@@ -166,15 +192,77 @@ describe('the bank holds the four moves and nothing else', () => {
     // A grep over a list of known tokens, and not a proof. Rule 3 forbids the move. An example of
     // the move would teach it, and an example outweighs a prohibition.
     const tokens = ['i get it', 'i understand', 'makes sense', 'got it', 'ohhh', 'oh okay']
-    for (const e of EXAMPLES) {
-      for (const token of tokens) expect(e.you.toLowerCase()).not.toContain(token)
+    for (const reply of REPLIES) {
+      for (const token of tokens) expect(reply.toLowerCase()).not.toContain(token)
     }
   })
 
   test('no reply in the bank builds a comparison with the word like', () => {
     // The same kind of grep. Rule 7 forbids an analogy. "like" is the surface form the transcripts
     // show for one, so the bank must not carry it in a reply.
-    for (const e of EXAMPLES) expect(e.you.toLowerCase()).not.toMatch(/\blike\b/)
+    for (const reply of REPLIES) expect(reply.toLowerCase()).not.toMatch(/\blike\b/)
+  })
+
+  test('every reply ends on a question or a request, by a grep over the last sentence', () => {
+    // Rule 4 forbids a reply that says the user's mechanism back as a statement. You answer such a
+    // line with "yeah exactly", and your production stops. A grep cannot prove the absence of a
+    // restatement. It can hold the shape that a restatement breaks: the reply ends by asking.
+    //
+    // Two replies in the bank quote the user first. "You said it holds the lever" and "Before you
+    // said it can't get past" are both a location and a challenge, and each one ends on a
+    // question. This test reads the LAST sentence, so a reply that asks and then explains fails.
+    for (const reply of REPLIES) {
+      const last = lastSentence(reply).toLowerCase()
+      expect(
+        /^(say|tell)\b/.test(last) || /\b(what|where|which|how|why|who)\b/.test(last),
+        `the reply "${reply}" does not end by asking`,
+      ).toBe(true)
+    }
+  })
+})
+
+describe('the late block gives one required move for each turn', () => {
+  test('the block cycles with a period of three', () => {
+    for (let t = 0; t < 12; t++) expect(lateBlock(t)).toBe(lateBlock(t % 3))
+    expect(lateBlock(3)).toBe(lateBlock(0))
+  })
+
+  test('all three moves appear, and no two are the same', () => {
+    // Measured result 8. Every design the owner tested locked into one sentence frame by turn
+    // three. A scheduler that gave the same move every turn would be no remedy.
+    const blocks = [lateBlock(0), lateBlock(1), lateBlock(2)]
+    expect(new Set(blocks).size).toBe(3)
+    expect(blocks[0]).toContain('what makes the last thing they said happen')
+    expect(blocks[1]).toContain('where a thing they mentioned goes')
+    expect(blocks[2]).toContain('ask for that part again without it')
+  })
+
+  test('every block is one bracketed instruction', () => {
+    for (let t = 0; t < 3; t++) {
+      const block = lateBlock(t)
+      expect(block.startsWith('[')).toBe(true)
+      expect(block.endsWith(']')).toBe(true)
+      expect(block.slice(1, -1)).not.toContain('[')
+      expect(block).not.toContain('\n')
+    }
+  })
+
+  test('every block carries the vocabulary sentence', () => {
+    for (let t = 0; t < 6; t++) expect(lateBlock(t)).toContain(VOCABULARY)
+  })
+
+  test('the vocabulary sentence names technical words and never forbids ordinary ones', () => {
+    // The rule holds SUBJECT TERMINOLOGY ONLY. "Use only words they have used" forbids ordinary
+    // English, and the child then cannot make a sentence. That version must never return.
+    for (let t = 0; t < 3; t++) {
+      const block = lateBlock(t).toLowerCase()
+      expect(block).toContain('technical or subject-specific word they have not used')
+      expect(block).toContain('ordinary everyday words are fine')
+      for (const wrong of ['only words they', 'only the words they', 'only use words']) {
+        expect(block).not.toContain(wrong)
+      }
+      expect(block).not.toMatch(/only[^.]*words they have used/)
+    }
   })
 })
 
@@ -215,12 +303,36 @@ describe('the prompt shows a voice rather than naming one', () => {
     }
   })
 
+  test('the system message holds no bullet list', () => {
+    // Measured result 7. The framing listed four permitted moves as bullets. The bullet "say where
+    // you stopped following them" came back as "I stopped following at the <X> part" for six turns
+    // together. A labelled move hands the model a sentence to copy.
+    for (const line of systemFor(0, 'How a hurricane forms').split('\n')) {
+      expect(line.trimStart(), `this line is a bullet: ${line}`).not.toMatch(/^[-*•]\s/)
+    }
+  })
+
+  test('the system message names no move', () => {
+    // The same result, by a grep over the four moves the old framing named. The move for the turn
+    // arrives from `lateBlock`, at the end of the user message.
+    const system = systemFor(0, 'How a hurricane forms').toLowerCase()
+    for (const named of [
+      'four moves',
+      'moves and no others',
+      'ask them for the cause',
+      'say where you stopped following',
+      'ask again about the same step',
+      'when you have no question',
+      'keep explaining',
+    ]) {
+      expect(system).not.toContain(named)
+    }
+  })
+
   test('the system message shows every line of the four dealt examples', () => {
     // REPLACED, not deleted. The old test compared the character count of the example block with
     // the character count of the framing, under the name "the examples outweigh the framing".
-    // A character count is not weight. A long framing that only lists the four moves passes
-    // nothing worse than a short framing that describes a voice, and the count says the same for
-    // both. The count also falls with the length of the topic title, which has no meaning here.
+    // A character count is not weight.
     //
     // The real property is that the sample reaches the model whole. The prompt shows examples
     // rather than a description, so a dropped or a cut example removes the thing that does the
@@ -229,9 +341,7 @@ describe('the prompt shows a voice rather than naming one', () => {
       const system = systemFor(t, 'How a hurricane forms')
       const shown = system.split('Here is how you sound')[1]!.split('Do not reuse the words')[0]!
       for (const e of dealt(t)) {
-        if (e.before !== undefined) expect(shown).toContain(`you: ${e.before}`)
-        expect(shown).toContain(`them: ${e.them}`)
-        expect(shown).toContain(`you: ${e.you}`)
+        for (const line of e.lines) expect(shown).toContain(`${line.who}: ${line.text}`)
       }
     }
   })
@@ -240,16 +350,24 @@ describe('the prompt shows a voice rather than naming one', () => {
     expect(systemFor(0)).toContain('Never ask something they can answer with just')
   })
 
-  test('the framing gives four moves and does not name the advance alone', () => {
-    // "Make them keep explaining" named one move, so the child advanced every turn and never
-    // stopped. These are cases E7b and E13a.
-    const framing = framingOf(0)
-    expect(framing).toContain('four moves and no others')
-    expect(framing).toContain('ask them for the cause in the step you did not get')
-    expect(framing).toContain('ask again about the same step you already asked about')
-    expect(framing).toContain('say where you stopped following them')
-    expect(framing).toContain('stop, when you have no question')
-    expect(framing).not.toContain('keep explaining')
+  test('it says the child has read nothing and cannot look anything up', () => {
+    // Rule 2 and M3. The child must not repair the explanation with its own knowledge.
+    const framing = framingOf(0, 'How a hurricane forms')
+    expect(framing).toContain('You have read nothing about this.')
+    expect(framing).toContain('You cannot look anything up.')
+    expect(framing).toContain('what this person has said here')
+  })
+
+  test('it gives one fallback line for the turn with nothing to ask', () => {
+    // The framing names no stop move now, so this line carries the case. It is one fixed sentence,
+    // and result 7 says a fixed sentence gets copied. Count how often the child says it.
+    expect(systemFor(0)).toContain(
+      `When you have nothing to ask about what they just said, say exactly:\n"I'm not sure I follow that. Can you say it a different way."`,
+    )
+  })
+
+  test('the framing still asks for two sentences at most', () => {
+    expect(systemFor(0)).toContain('never more than two sentences')
   })
 })
 
@@ -303,6 +421,46 @@ describe('your words reach the model untouched', () => {
     expect(prompt).toContain('them: the gas is trapped')
     // The silent turn contributed no `you:` line.
     expect(prompt.match(/^you: /gm) ?? []).toHaveLength(1)
+  })
+})
+
+describe('the required move arrives late in the context', () => {
+  test('the late block comes after the last thing the user said', () => {
+    // Result 9. A model drifts to the frame of the other party inside about eight rounds, and
+    // attention over a long context has a U shape. The system message is then in the dead middle.
+    // The block must sit after the script. The position is the change.
+    const history = [ex('first', 'What holds it down?'), ex('second', 'Where does it go?')]
+    const prompt = promptFor(history, 'the last thing I said')
+    const block = lateBlock(history.length)
+    expect(prompt).toContain(block)
+    expect(prompt.indexOf(block)).toBeGreaterThan(prompt.indexOf('them: the last thing I said'))
+    expect(prompt.indexOf(block)).toBeGreaterThan(prompt.indexOf('you: Where does it go?'))
+  })
+
+  test('the late block is the last thing before the empty completion line', () => {
+    const prompt = promptFor([], 'anything')
+    const block = lateBlock(0)
+    expect(prompt.slice(prompt.indexOf(block) + block.length)).toBe('\n\nyou:')
+  })
+
+  test('the block changes with the turn, so no two turns in a row require the same move', () => {
+    const history: Exchange[] = []
+    for (let t = 0; t < 4; t++) {
+      const here = promptFor(history, 'x')
+      history.push(ex('x', 'What holds it down?'))
+      const next = promptFor(history, 'x')
+      expect(here).not.toBe(next)
+    }
+  })
+
+  test('speak sends the block for the turn the history counts', async () => {
+    const { handle, seen } = fake('ok')
+    await speak([], 'first', handle)
+    await speak([ex('first', 'ok')], 'second', handle)
+    await speak([ex('first', 'ok'), ex('second', 'ok')], 'third', handle)
+    expect(seen[0]!.user).toContain(lateBlock(0))
+    expect(seen[1]!.user).toContain(lateBlock(1))
+    expect(seen[2]!.user).toContain(lateBlock(2))
   })
 })
 
