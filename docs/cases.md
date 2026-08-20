@@ -19,9 +19,9 @@ must point at the case number instead.
 - **Both.** The child prevents the fault. The end phase finds the fault that the child lets through.
 - **Code.** Plain code owns the case. No model is involved.
 
-**The owner named Reviewer is a design, not a build.** `src/` holds the live phase only. No code runs
-Check, Diff, Probe or Close. A case with the owner Reviewer has no builder today. A case with the
-owner Both has a partial builder at best. See [`architecture.md`](architecture.md) for what exists.
+**The owner named Reviewer now has a builder.** `src/` holds Check, Diff, Probe and Close, and
+`POST /api/end` runs them. No eval measures what the end phase produces. A case with the owner
+Reviewer therefore has a builder and no measurement. See [`architecture.md`](architecture.md).
 
 **This file and [`product.md`](product.md) hold different facts.** This file holds the case and its
 one sentence. `product.md` holds the enforcement table, which says for each rule whether the product

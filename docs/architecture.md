@@ -1,7 +1,8 @@
 # Architecture
 
 HoldTrue has two phases. The live phase is a conversation. The end phase is a review. The owner
-built the live phase only. The end phase is a design, and no code in `src/` runs any part of it.
+built both phases. `src/` holds Check, Diff, Probe and Close, and `POST /api/end` runs them.
+No eval measures what the end phase produces.
 
 This document names every part, and gives the input, the output and the kind. A part is a model call
 or plain code. The document says which one.
@@ -14,13 +15,12 @@ or plain code. The document says which one.
          v
     [ CHILD    model ]  one short line back, one model call per turn
          v
-  ................  nothing below this line exists in src/  ................
          v
-    the user presses the End button    -- a design, not code
+    the user presses the End button
          v
-    TRANSCRIPT          every turn marked "user" or "child"  -- a design, not code
+    TRANSCRIPT          every turn marked "user" or "child"
          v
-  END PHASE  --  a design, not code
+  END PHASE  --  built, and measured by nothing
     [ 1 CHECK  model ]  mechanism, claims, intrusions
          v
     [ 2 DIFF   code  ]  ids and flags only, never text
@@ -52,34 +52,38 @@ reason. The live phase produces no findings. It produces the transcript.
 
 ## The transcript
 
-The transcript is one ordered list of turns. Each turn carries a speaker mark, a kind and the text.
+The transcript is one ordered list of turns. Each turn carries a speaker mark, the text and an
+index. `src/types.ts` sets this shape. The index is the position of the turn in the list.
 
 ```json
 { "topic": "How a fridge makes things cold", "turns": [
-    { "speaker": "user",  "kind": "said",   "text": "the compressor squishes the gas" },
-    { "speaker": "child", "kind": "said",   "text": "Why does that make it hot?" },
-    { "speaker": "child", "kind": "silent", "reason": "the backend is not running" } ] }
+    { "speaker": "user",  "text": "the compressor squishes the gas", "index": 0 },
+    { "speaker": "child", "text": "Why does that make it hot?",      "index": 1 } ] }
 ```
 
 Three rules hold for every transcript:
 
 - Every turn carries a speaker mark. The mark is `user` or `child`.
 - The code must not infer the mark from the text. The server sets the mark when it appends the turn.
-- A child turn that produced no line keeps its place and carries a reason.
+- Every turn carries an index. Check reads the index. Probe reads the index.
+
+A turn holds no kind field and no reason field. A child turn that gave no line never enters the
+transcript. `src/server.ts` holds that reason beside the transcript. The screen then shows the
+silence.
 
 The mark exists for one reason. The child invents things. A recorded probe shows the child asking
 about a door that the user never mentioned. Without the mark, Check reads that invented door as a
 claim of the user. Close then corrects the user for a sentence the child wrote.
 
 Check must take the claims from the user turns only. Check must use the child turns for one purpose.
-That purpose is to find a child line that asserts a cause the user's words do not contain. The live
-phase stores turns in pairs today, and the server must flatten the pairs into this marked list. No code implements the
-flattening.
+That purpose is to find a child line that asserts a cause the user's words do not contain.
+`src/session.ts` holds the marked list, and the marked list is the one source. `src/server.ts`
+derives the pairs for the child prompt from that list.
 
 ## The session end
 
 The design ends a session with a button. The user presses the button. That press is the only end
-signal in the design. No code implements the button.
+signal. `src/page.html` holds the button, and the button calls `POST /api/end`.
 
 A child that goes quiet is a feature for a later build. No code implements quiet. No document may say that
 quiet ends a session today. The session end starts the end phase. A session must not end with a
@@ -87,7 +91,8 @@ question open. The last child question stays open until Close answers it.
 
 ## The end phase
 
-Four parts run in order. Part 2 is plain code. Parts 1, 3 and 4 are model calls. No code implements any part.
+Four parts run in order. Part 2 is plain code. Parts 1, 3 and 4 are model calls. `src/` holds all
+four parts, and `POST /api/end` runs them.
 
 ### 1. Check -- a model
 
@@ -97,21 +102,29 @@ reports, and Check does not decide what the app shows.
 Output has four fields:
 
 - `mechanism` -- a list of links. Each link carries an `id`, a `cause`, a `relation`, an `effect`
-  and a `covered` flag. A covered link also carries the `span` of the user's words that covers it.
-- `claims` -- the claims of the user. Each claim carries an `id`, a truth value and a `span`.
+  and a `covered` flag. A covered link also carries the `span` of the user words that cover it.
+- `claims` -- the claims of the user. Each claim carries an `id`, a `text`, a `correct` flag and a
+  `span`. The `correct` flag false means the statement is untrue. No field is named `truth`.
 - `intrusions` -- the child lines that assert a cause the user's words do not contain. Each
-  intrusion carries an `id`.
-- `verdict` -- present only when the app supplies a probe answer. It names one link `id` and says
-  whether the answer supplies that link.
+  intrusion carries an `id`, a `turnIndex` and a `text`. The `turnIndex` names the child turn. The
+  `text` holds the words of that child turn. Probe reads the `turnIndex`, and Close reads the
+  `text`.
+- `verdict` -- present only when the app supplies a probe answer. It carries a `rowId` and a
+  `supplied` flag. The `rowId` names one Diff row, such as `omission:L2`. The `rowId` never holds a
+  link id, such as `L2`.
+
+A `span` is not a string. A `span` is a pair of numbers: `start` and `end`. Both numbers are
+offsets into the joined user text. `src/types.ts` sets this shape.
 
 ```json
 { "mechanism": [
     { "id": "L1", "cause": "the compressor", "relation": "compresses", "effect": "the gas",
-      "covered": true, "span": "the compressor squishes the gas" },
+      "covered": true, "span": { "start": 0, "end": 31 } },
     { "id": "L2", "cause": "compression", "relation": "raises", "effect": "the temperature",
-      "covered": false } ],
-  "claims":     [ { "id": "C1", "truth": false, "span": "the coils make the cold" } ],
-  "intrusions": [ { "id": "I1" } ] }
+      "covered": false, "span": null } ],
+  "claims":     [ { "id": "C1", "text": "the coils make the cold", "correct": false,
+                    "span": { "start": 32, "end": 55 } } ],
+  "intrusions": [ { "id": "I1", "turnIndex": 3, "text": "Is it the fan that pushes it up?" } ] }
 ```
 
 ### Why identity lives in Check and not in Diff
@@ -127,15 +140,20 @@ judgement at all.
 
 ### 2. Diff -- plain code
 
-Input: the Check output. Output: an ordered list of rows. Each row carries one `id` and one type.
+Input: the Check output. Output: an ordered list of rows.
+
+Each row carries a `kind`, its own `id` and the id of its source. A contradiction row carries a
+`claimId`. An intrusion row carries an `intrusionId`. An omission row carries a `linkId`. The row
+`id` holds the kind and the source id, with a colon between them, such as `omission:L2`. Probe and
+Close read the source id, and they then find the entry in the Check output.
 
 Diff reads three things and nothing else. It reads the `id` of a link, a claim or an intrusion. It
-reads the truth value of a claim. It reads the `covered` flag of a link. Diff never reads `cause`,
-`relation`, `effect`, `span` or any other text. Diff never compares text.
+reads the `correct` flag of a claim. It reads the `covered` flag of a link. Diff never reads
+`cause`, `relation`, `effect`, `span` or any other text. Diff never compares text.
 
 The arithmetic:
 
-- a `contradiction` row for every claim whose truth value is false;
+- a `contradiction` row for every claim whose `correct` flag is false;
 - an `intrusion` row for every entry in `intrusions`;
 - an `omission` row for every link whose `covered` flag is false.
 
@@ -143,8 +161,8 @@ Diff emits every contradiction first, then every intrusion, then every omission.
 matters more than an invented step, and an invented step matters more than a step the user left out.
 
 **The property a test must check.** Take one Check output. Replace every text field with a
-different string. Keep every `id`, every truth value and every `covered` flag. Diff must return the
-same rows in the same order. A test that passes this property proves that Diff reads no text.
+different string. Keep every `id`, every `correct` flag and every `covered` flag. Diff must return
+the same rows in the same order. A test that passes this property proves that Diff reads no text.
 
 Two more tests hold. Diff is a pure function, so the same input always returns the same output. Diff
 makes no model call and holds no prompt.
@@ -155,7 +173,9 @@ fold Diff into Probe.
 
 ### 3. Probe -- a model
 
-Input: the first row of the Diff output, and the marked transcript. Output: one question.
+Input: the first row of the Diff output, the Check output and the marked transcript. Output: one
+question. Probe reads the source id of the row, and Probe then finds the entry in the Check output.
+An intrusion row gives the `turnIndex`, and Probe takes the user words before that turn.
 
 Probe runs once, and it takes the first row and no other row. The user answers. The app sends the
 answer to Check, and Check returns the `verdict` field for that row.
@@ -166,15 +186,18 @@ and Probe must not supply the answer.
 
 ### 4. Close -- a model
 
-Input: every row, the probe question, the answer of the user, and the verdict.
+Input: every row, the Check output, the verdict and the model. `src/close.ts` takes these four
+things in this order. Close never receives the probe question. Close never receives the answer of
+the user. Check reads that answer, and the verdict carries the result.
 
 Close runs for every row. Output is one short statement per row. The statement gives the claim of
 the user first, in the words of the user. It gives the missing mechanism, or the correction, second.
 
-Close uses the verdict for the probed row. For every other row, Close must state that the user did
-not say the link. Close must not state that the user does not know the link. The app asked no
-question about those rows, so the app holds no evidence about them. Close must not show a score, a
-rating, a grade or a progress bar. Close must not say that an explanation was unclear.
+Close uses the verdict for the probed row. Close finds that row with the `rowId` of the verdict.
+For every other row, Close must state that the user did not say the link. Close must not state that
+the user does not know the link. The app asked no question about those rows, so the app holds no
+evidence about them. Close must not show a score, a rating, a grade or a progress bar. Close must
+not say that an explanation was unclear.
 
 ## The omniscient toggle
 
@@ -250,23 +273,34 @@ must name a configuration that it cannot support.
 
 ## What exists today
 
-The live phase runs. Five files hold it:
+Both phases run. Five files hold the live phase:
 
 - `src/child.ts` holds the child prompt and the one turn;
-- `src/model.ts` holds the Ollama backend;
+- `src/model.ts` holds the Ollama backend and the Anthropic API key backend;
 - `src/server.ts` holds the routes and the one in-memory session;
 - `src/topics.ts` holds the curated topic list;
-- `src/page.html` holds the page.
+- `src/page.html` holds the page and the End session button.
 
-Two more files exist. `src/rig.ts` makes two models talk and counts repetition, and it judges
-nothing. `src/child.test.ts` holds the tests for the child.
+Six files hold the end phase:
 
-The end phase does not exist. The code holds no Check, no Diff, no Probe and no Close. It holds no
-toggle, no marked transcript, no consent screen and no API key path. Ollama is the only backend in
-the code today. The code also breaks rule 50 today. `src/model.ts` reads `GET /api/tags` and takes
-the first model in the list. The user makes no choice. `src/server.ts` reads the model name once at
-start, so the screen can name a model that never answered. The end button does not exist, and the "Start another" button only resets the
-session.
+- `src/types.ts` holds the shared types;
+- `src/check.ts` holds Check;
+- `src/diff.ts` holds Diff;
+- `src/probe.ts` holds Probe;
+- `src/close.ts` holds Close;
+- `src/session.ts` holds the marked transcript and the order of the five steps.
+
+`src/server.ts` runs the end phase at `POST /api/end`.
+
+Four test files exist. They are `src/child.test.ts`, `src/diff.test.ts`, `src/model.test.ts` and
+`src/session.test.ts`. Check, Probe and Close hold no test file. No test can judge what a model
+writes. Rule 33 and rule 34 forbid such a test. `src/e2e.ts` runs the end-to-end check against a
+real service. Rule 31 asks for that check. `src/rig.ts` makes two models talk and counts
+repetition, and it judges nothing.
+
+`src/model.ts` obeys rule 50 today. It reads no tag list. It holds no default model name. The user
+names the model at startup, for both backends. `src/model.ts` reports the model that answered, and
+never the model in the setting. Rule 24 holds there.
 
 The topic gate does not exist. The topic list in `src/topics.ts` is curated. The page also offers a
 button named "Something else". That button does not open a text box. It starts a session with the

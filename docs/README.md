@@ -2,8 +2,8 @@
 
 This document lists every document and gives the precedence order. It restates nothing else.
 
-HoldTrue is a study application. [`product.md`](product.md) says what it is. Only the live phase
-exists. The end phase is a design. [`architecture.md`](architecture.md) describes both.
+HoldTrue is a study application. [`product.md`](product.md) says what it is. Both phases now run.
+No eval measures the end phase. [`architecture.md`](architecture.md) describes both.
 
 ## The documents
 

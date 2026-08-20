@@ -6,7 +6,7 @@ This file owns four things: the numbered rules, the evidence rule, the testing p
 writing standard. It owns nothing else. `docs/README.md` maps the documents and gives the
 precedence order. `docs/product.md` says what the product is. `docs/architecture.md` says how it
 works. `docs/decisions.md` gives the reason for each design choice. It also lists the open decisions.
-Only the live phase runs today. `docs/architecture.md` lists what exists in `src/`.
+Both phases run today. `docs/architecture.md` lists what exists in `src/`.
 
 ## The rules
 
@@ -101,7 +101,9 @@ is not a fact. Rule 27 keeps it out of the product.
 48. The app must disclose where the text goes. The app must take the user's consent before the
     first send. Do not invent a retention policy, a training policy or a deletion policy.
     `docs/decisions.md` holds these three as open decisions for the owner.
-49. Every document must describe the end phase as a design, never as a thing that runs.
+49. Every document must describe a part as built only when `src/` holds it. Check, Diff, Probe and
+    Close now exist, and `POST /api/end` runs them. A document must not call the end phase a design.
+    A document must still name every part that `src/` does not hold.
 50. The app must not ship a default model. The user makes one choice at startup.
     `docs/architecture.md` owns the model layer.
 
