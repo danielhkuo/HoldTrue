@@ -197,7 +197,8 @@ real control. Diff has an oracle. The child's line has no oracle, whoever writes
 
 ## The build order
 
-This file is the only place the build order lives. The owner built nothing in this list.
+This file is the only place the build order lives. The owner built every item in this list on
+2026-08-19. The list stays because it records the order and the reason for each step.
 
 1. **The model layer.** The startup choice, Ollama or a key. Every part below makes a model call.
 2. **The disclosure and the consent screen.** The key path sends your text off the device. The
@@ -217,14 +218,26 @@ The topic gate is not in this list. Decision 11 records why.
 
 The owner must answer each of these before release. Do not invent an answer.
 
-1. **The privacy terms.** Decision 13 requires a disclosure and a consent. It does not answer these
-   questions:
-   - How long does a provider keep your text?
-   - May a provider train on your text?
-   - How does a user delete the text?
-2. **The end signal design.** Decision 10 specifies a button. No code implements it. The owner must decide whether a quiet child
-   ever ends a session, and what rule makes the child quiet.
+1. ~~**The privacy terms.**~~ **ANSWERED 2026-08-20.** See decision 15.
+2. **The end signal design.** The button is built. `src/page.html` holds it and it calls
+   `POST /api/end`. What stays open is the child. The owner must decide whether a quiet child ever
+   ends a session, and what rule makes the child go quiet. Case E13b covers this.
 3. **The topic gate.** Decision 11 accepts no gate. The owner must decide whether the app checks a
    topic that the user types, and what a failed check does to the session.
 4. **Is the end phase worth running with the toggle off?** A small startup model runs Check. This
    model may not hold ground truth about the mechanism. An unverified finding may be worse than no finding.
+
+## 15. HoldTrue saves nothing, and the provider speaks for itself
+
+**Decided.** The app makes one promise, and the promise covers the app only. HoldTrue writes no text
+to a disk. HoldTrue keeps one session in memory. HoldTrue loses that session when the process stops.
+
+The app makes no promise about a provider. The owner does not control OpenAI, Anthropic or Meta. The
+app must name the provider that receives the text. The app must tell the user to read the terms of
+that provider.
+
+**Why.** A promise about another company is a promise the owner cannot keep. A user needs to know
+two things: what this app does, and where the text goes. The app can answer both.
+
+**The rejected alternative.** The owner rejects a promise about retention, training or deletion at a
+provider. Such a promise needs a contract that does not exist.

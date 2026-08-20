@@ -91,7 +91,7 @@ is not a fact. Rule 27 keeps it out of the product.
 22. The app must not promise that nothing leaves the device. An API key sends text to a provider.
     State this plainly. Do not repeat the old sentence from the retired documents.
 44. The design ends a session with a button. A child that goes quiet is a later build. No document
-    may say that quiet ends a session today. No code implements the button.
+    may say that quiet ends a session today. `src/page.html` holds the button.
 45. The app must not use the startup model in place of the provided model without telling the user.
     A silent fall back labels an unverified session verified.
 46. The end phase can fail to run. Then the app must state on the screen that no review ran. The

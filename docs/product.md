@@ -127,7 +127,7 @@ The product must produce these.
 [`cases.md`](cases.md) holds the register. Read a case there before you change one here.
 
 A later build adds the quiet turn. The child then goes quiet when it has no question. The owner did
-not build the quiet turn. The design ends the session with a button. No code implements the button.
+not build the quiet turn. A button ends the session, and `src/page.html` holds it.
 
 ## The guards
 
