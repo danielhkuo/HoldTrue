@@ -11,6 +11,7 @@
   "scripts": {
     "app": "npx --yes tsx src/server.ts",
     "rig": "npx --yes tsx src/rig.ts",
+    "e2e": "vite-node src/e2e.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

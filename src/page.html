@@ -1,3 +1,35 @@
+<!--
+  The page. It holds the four screens of the app: setup, pick, talk and review.
+
+  Setup takes the one model choice. The app ships no default model. Rule 50.
+  Pick shows the curated topics, the omniscient toggle and the consent checkbox. Rules 19, 20, 48.
+  Talk shows the conversation and the End session button. Case E13a and rule 44.
+  Review prints the findings as text. It names the model and the verified label. Rules 16 and 21.
+  The page reads GET /api/state on load, so a reload recovers the transcript. Case B13.
+
+  THE STATED FLAG. A finding with the stated flag false carries no words of a model. Close wrote
+  that text itself when the row got no statement. The page prints such a row as a blank row. It
+  states that the model wrote no statement, and it gives the reason that the row carries. The
+  label above the list must hold for every row below it, so the label changes when the list holds
+  a blank row. See rules 21, 24 and 46 and `src/close.ts`.
+
+  The page must not do these things:
+  - It must not log the API key. It must not put the key in a web address. It must not store it.
+  - It must not show a score, a rating, a grade, a progress bar, a count or a percentage.
+  - It must not print a fault inside the child bubble. A fault renders as an error.
+  - It must not show an empty findings list when no review ran. It must state the failure.
+  - It must not print a row with the stated flag false as a finding that a model wrote.
+  - It must not promise that the words of the user stay on this machine. Rule 22.
+
+  The routes, as `src/server.ts` serves them:
+    GET  /api/boot   -> { who, setup, sends, provided, topics, disclosure }
+    GET  /api/state  -> { setup, topic, omniscient, history, turns, ended, question, review, source }
+    POST /api/setup  -> { kind, model } | { kind, provider, key, model? }  -> { who, sends }
+    POST /api/start  -> { topic, omniscient, consent }                     -> { topic, label }
+    POST /api/turn   -> { said }                    -> { kind: "turn", you, child, seconds }
+    POST /api/end    -> {} | { answer }             -> { kind: "probe" | "review", … }
+  A fault carries the field `error`, and a good reply does not. The page reads that field.
+-->
 <!doctype html>
 <html lang="en">
   <head>
@@ -24,27 +56,48 @@
       button.go:hover:not(:disabled) { background: #27272a; }
       button.go:disabled { opacity: .4; cursor: default; }
       button.quiet { background: var(--bg); color: var(--fg); border: 1px solid var(--border); padding: 6px 12px; font-size: 13px; font-weight: 500; }
-      button.quiet:hover { background: var(--subtle); }
-      textarea {
+      button.quiet:hover:not(:disabled) { background: var(--subtle); }
+      button.quiet:disabled { opacity: .4; cursor: default; }
+      textarea, input[type="text"], input[type="password"] {
         font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--border);
-        border-radius: var(--radius); padding: 8px 11px;
+        border-radius: var(--radius); padding: 8px 11px; width: 100%;
       }
-      textarea:focus { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px rgb(9 9 11 / .06); }
+      textarea:focus, input:focus { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px rgb(9 9 11 / .06); }
       ::placeholder { color: #a1a1aa; }
+      input[type="radio"], input[type="checkbox"] { accent-color: var(--fg); margin: 0; }
 
-      /* pick */
-      #pick { grid-template-rows: 1fr; place-items: center; overflow-y: auto; }
-      .wrap { max-width: 560px; padding: 48px 24px; width: 100%; }
+      /* the three centred screens */
+      #setup, #pick, #review { grid-template-rows: 1fr; place-items: start center; overflow-y: auto; }
+      .wrap { max-width: 560px; padding: 48px 24px 72px; width: 100%; }
       .lede { font-size: 26px; font-weight: 600; letter-spacing: -.02em; margin: 0 0 6px; }
       .sub { color: var(--muted); margin: 0 0 28px; font-size: 14px; }
+      .caveat { margin-top: 28px; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+      .caveat p { margin: 0 0 4px; }
       .card {
         display: block; width: 100%; text-align: left; background: var(--bg); color: inherit;
         border: 1px solid var(--border); border-radius: 8px; padding: 13px 15px; margin-bottom: 8px;
         font-weight: 500;
       }
-      .card:hover { background: var(--subtle); }
+      .card:hover:not(:disabled) { background: var(--subtle); }
+      .card:disabled { opacity: .45; cursor: default; }
       .own { border-style: dashed; font-weight: 400; color: var(--muted); }
-      .caveat { margin-top: 28px; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+
+      /* setup */
+      .opt { border: 1px solid var(--border); border-radius: 8px; padding: 13px 15px; margin-bottom: 8px; }
+      .opt.picked { border-color: var(--ring); }
+      .opt .head { display: flex; gap: 10px; align-items: baseline; font-weight: 500; cursor: pointer; }
+      .opt .where { font-size: 12.5px; color: var(--muted); margin: 4px 0 0 24px; line-height: 1.55; }
+      .opt .panel { margin: 12px 0 2px 24px; display: none; }
+      .opt.picked .panel { display: block; }
+      .panel label { display: block; font-size: 12.5px; color: var(--muted); margin: 10px 0 4px; }
+
+      /* the toggle block on pick */
+      .block { border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 22px; }
+      .switch { display: flex; gap: 10px; align-items: baseline; font-weight: 500; cursor: pointer; }
+      .switch input:disabled { cursor: default; }
+      .disclose { font-size: 12.5px; color: var(--muted); margin: 8px 0 0 24px; line-height: 1.6; }
+      .agree { display: flex; gap: 10px; align-items: baseline; margin: 15px 0 0; font-size: 13px; cursor: pointer; }
+      .where-list { font-size: 12px; color: var(--muted); margin: 8px 0 0 24px; padding: 0; list-style: none; line-height: 1.6; }
 
       /* talk */
       #talk { grid-template-columns: minmax(0, 1fr); }
@@ -60,15 +113,74 @@
       .who { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
       .child { padding-left: 14px; border-left: 2px solid var(--border); }
       .silent { color: var(--muted); font-style: italic; }
-      .note { font-size: 12px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
       form { border-top: 1px solid var(--border); padding: 12px 24px; display: flex; gap: 8px; align-items: flex-end; }
       form textarea { flex: 1; resize: none; min-height: 40px; max-height: 180px; }
       .dots::after { content: '·'; animation: d 1.2s steps(3, end) infinite; }
       @keyframes d { 0% { content: '·'; } 33% { content: '· ·'; } 66% { content: '· · ·'; } }
+
+      /* A fault is a fault. It never sits inside the child bubble. */
+      .alert { max-width: 62ch; border: 1px solid var(--ring); border-radius: 8px; padding: 11px 13px; background: var(--subtle); }
+      .alert .who { color: var(--fg); font-weight: 600; }
+      .alert p { margin: 0 0 6px; }
+      .alert p:last-child { margin-bottom: 0; }
+
+      /* review */
+      .label { font-size: 12.5px; color: var(--muted); line-height: 1.7; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+      .label b { color: var(--fg); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; font-size: 11px; }
+      .finding { margin-bottom: 24px; max-width: 62ch; }
+      /* A row that no model wrote. It never looks like the text of a model. */
+      .finding.blank { border-left: 2px solid var(--border); padding-left: 14px; }
+      .finding.blank .who { color: var(--fg); }
+      .finding.blank .said { color: var(--muted); }
+      .why { font-size: 13px; color: var(--muted); margin-top: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .said { font-size: 15px; }
+      .question { font-size: 17px; line-height: 1.5; margin: 0 0 16px; max-width: 58ch; }
+      .actions { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
     </style>
   </head>
   <body>
-    <section id="pick" class="screen on">
+    <!-- 1. SETUP. One choice, and no default. Rule 50. -->
+    <section id="setup" class="screen on">
+      <div class="wrap">
+        <p class="lede">Choose the model that answers.</p>
+        <p class="sub">
+          The app has no default. You make one choice now. That model plays the child, and it
+          reviews the session when the omniscient toggle stays off.
+        </p>
+
+        <div class="opt picked" id="opt-ollama">
+          <label class="head"><input type="radio" name="backend" value="ollama" checked /> Run Ollama on this machine</label>
+          <p class="where">Ollama answers from this machine. A local session does not send your words to a provider.</p>
+          <div class="panel">
+            <label for="ollama-model">The model name, as Ollama lists it</label>
+            <input type="text" id="ollama-model" placeholder="llama3.1:8b" autocomplete="off" spellcheck="false" />
+          </div>
+        </div>
+
+        <div class="opt" id="opt-key">
+          <label class="head"><input type="radio" name="backend" value="apiKey" /> Use an API key</label>
+          <p class="where">The provider answers. Your words go to Anthropic. Read the terms of that provider first.</p>
+          <div class="panel">
+            <label for="key">The API key</label>
+            <input type="password" id="key" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" />
+            <label for="key-model">The model name, as the provider lists it. The app chooses no model for you.</label>
+            <input type="text" id="key-model" placeholder="claude-opus-5" autocomplete="off" spellcheck="false" />
+            <p class="where" style="margin-left:0">
+              The app holds the key in memory for this session only. It writes no key to the disk,
+              to a log or to a web address.
+            </p>
+          </div>
+        </div>
+
+        <p style="margin-top:18px"><button class="go" id="use">Use this model</button></p>
+        <div id="setup-error"></div>
+
+        <div class="caveat" id="storage"></div>
+      </div>
+    </section>
+
+    <!-- 2. PICK. The topics, the omniscient toggle and the consent. Rules 19, 20, 48. -->
+    <section id="pick" class="screen">
       <div class="wrap">
         <p class="lede">Explain it to the child.</p>
         <p class="sub">
@@ -76,22 +188,39 @@
           from memory, one step at a time, without looking anything up. A ten-year-old will keep
           asking.
         </p>
+
+        <div class="block">
+          <label class="switch" for="omni">
+            <input type="checkbox" id="omni" />
+            <span>Let the model that HoldTrue provides review this session</span>
+          </label>
+          <p class="disclose" id="omni-disclose"></p>
+          <ul class="where-list" id="destinations"></ul>
+          <label class="agree" for="consent">
+            <input type="checkbox" id="consent" />
+            <span id="consent-text"></span>
+          </label>
+        </div>
+
         <div id="cards"></div>
         <button class="card own" id="own">Something else — start with a blank box</button>
+        <div id="pick-error"></div>
+
         <p class="caveat">
-          Typed rather than spoken, one conversation at a time, and nothing is saved. A turn takes
-          about twenty seconds because it is a real model thinking.
+          Typed rather than spoken, one conversation at a time. A turn takes a while, because a real
+          model reads it. The model that answers now is <span id="pick-who"></span>.
         </p>
       </div>
     </section>
 
+    <!-- 3. TALK. The conversation, and the button that ends the session. Case E13a, rule 44. -->
     <section id="talk" class="screen">
       <main>
         <header>
           <h1 id="topic">Explaining</h1>
           <span style="display:flex;gap:10px;align-items:center">
             <span class="meta" id="who"></span>
-            <button class="quiet" id="again">Start another</button>
+            <button class="quiet" id="end">End session</button>
           </span>
         </header>
         <div id="log"></div>
@@ -102,70 +231,226 @@
       </main>
     </section>
 
+    <!-- 4. REVIEW. The one question first, then the findings as text. Rules 14, 16, 21, 46. -->
+    <section id="review" class="screen">
+      <div class="wrap">
+        <div id="running" hidden>
+          <p class="lede">The review is reading the session<span class="dots"></span></p>
+          <p class="sub">This takes a while. The review reads every turn, and it makes more than one model call.</p>
+        </div>
+
+        <div id="probe" hidden>
+          <p class="lede">One question.</p>
+          <p class="sub">
+            Answer this in your own words. The answer separates a step you did not say from a step
+            you do not know. Nothing else separates the two.
+          </p>
+          <p class="question" id="probe-question"></p>
+          <textarea id="probe-answer" rows="3" placeholder="your answer…"></textarea>
+          <div class="actions">
+            <button class="go" id="probe-send">Answer</button>
+            <button class="quiet" id="probe-skip">I cannot answer this</button>
+          </div>
+          <div id="probe-error"></div>
+        </div>
+
+        <div id="findings" hidden>
+          <p class="lede">The review.</p>
+          <p class="label" id="review-label"></p>
+          <div id="finding-list"></div>
+          <p style="margin-top:32px"><button class="quiet" id="again">Start another</button></p>
+        </div>
+      </div>
+    </section>
+
     <script type="module">
       const $ = id => document.getElementById(id)
       const show = which => {
         for (const s of document.querySelectorAll('.screen')) s.classList.toggle('on', s.id === which)
       }
+      const el = (tag, cls, text) => {
+        const node = document.createElement(tag)
+        if (cls) node.className = cls
+        if (text !== undefined) node.textContent = text
+        return node
+      }
 
-      const boot = await (await fetch('/api/boot')).json()
-      // Law 2: nothing is asserted anonymously, and the honest word is part of the name.
-      $('who').textContent = `${boot.who.model_id} · ${boot.who.calibration}`
+      /**
+       * One place for a request. A fault carries the `error` field, and a good reply does not.
+       * The key travels in the body of a POST. It never goes into a web address.
+       */
+      const call = async (path, body) => {
+        const res = await fetch(path, {
+          method: body === undefined ? 'GET' : 'POST',
+          headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+          body: body === undefined ? undefined : JSON.stringify(body),
+        })
+        const data = await res.json().catch(() => null)
+        if (data === null) throw new Error(`The server returned a body this page cannot read.`)
+        if (data.error) throw new Error(data.error.message ?? 'The server stated a fault with no message.')
+        if (!res.ok) throw new Error(`The server returned status ${res.status}.`)
+        return data
+      }
+      const reason = err => String(err?.message ?? err)
 
-      for (const t of boot.topics) {
-        const b = document.createElement('button')
-        b.className = 'card'
-        b.textContent = t.title
-        b.addEventListener('click', () => begin(t.title))
-        $('cards').appendChild(b)
+      /** A fault renders as a fault, in a box of its own. */
+      const alertInto = (parent, ...lines) => {
+        parent.replaceChildren()
+        const box = el('div', 'alert')
+        box.append(el('div', 'who', 'error'))
+        for (const line of lines) box.append(el('p', null, line))
+        parent.append(box)
       }
-      $('own').addEventListener('click', () => begin('Explaining'))
-      $('again').addEventListener('click', () => show('pick'))
 
-      const add = (cls, who, text) => {
-        const el = document.createElement('div')
-        el.className = `row ${cls}`
-        el.innerHTML = '<div class="who"></div><div class="body"></div>'
-        el.querySelector('.who').textContent = who
-        el.querySelector('.body').textContent = text
-        $('log').appendChild(el)
-        $('log').scrollTop = $('log').scrollHeight
-        return el
+      // ---------------------------------------------------------------- state
+
+      const app = { who: null, sends: false, provided: false, omniscient: false, disclosure: null }
+
+      /** The attribution names the thing that answered. A setting can print a lie. Rule 24. */
+      const name = who => (typeof who?.model_id === 'string' ? who.model_id : 'an unnamed model')
+
+      const adopt = (who, sends) => {
+        app.who = who ?? null
+        app.sends = sends === true
+        $('who').textContent = who ? `${name(who)} · ${who.calibration ?? 'uncalibrated'}` : ''
+        $('pick-who').textContent = who ? name(who) : 'not chosen yet'
       }
-      const note = text => {
-        const el = document.createElement('div')
-        el.className = 'note'
-        el.textContent = text
-        $('log').appendChild(el)
-        $('log').scrollTop = $('log').scrollHeight
+
+      // ------------------------------------------------------------- 1. setup
+
+      const backendPicked = () => document.querySelector('input[name="backend"]:checked')?.value ?? 'ollama'
+      const paintOptions = () => {
+        $('opt-ollama').classList.toggle('picked', backendPicked() === 'ollama')
+        $('opt-key').classList.toggle('picked', backendPicked() === 'apiKey')
       }
-      const render = e => {
-        add('you', 'you', e.you)
-        const body = add('child', 'child', '').querySelector('.body')
-        if (e.child.kind === 'said') body.textContent = e.child.line
-        else { body.className = 'body silent'; body.textContent = `(silent — ${e.child.reason})` }
-        note(`${e.seconds.toFixed(1)}s`)
+      for (const radio of document.querySelectorAll('input[name="backend"]')) {
+        radio.addEventListener('change', paintOptions)
       }
+
+      $('use').addEventListener('click', async () => {
+        $('setup-error').replaceChildren()
+        const kind = backendPicked()
+        const model = (kind === 'ollama' ? $('ollama-model') : $('key-model')).value.trim()
+
+        if (kind === 'ollama' && model === '') {
+          alertInto($('setup-error'), 'Name the model that Ollama runs. The app does not choose one for you.')
+          return
+        }
+        const key = $('key').value
+        if (kind === 'apiKey' && key.trim() === '') {
+          alertInto($('setup-error'), 'Enter the API key. The app sends the key to the provider with every request.')
+          return
+        }
+        // Rule 50. The app ships no default model. Both backends need a name from the user.
+        if (kind === 'apiKey' && model === '') {
+          alertInto($('setup-error'), 'Name the model that the provider runs. The app does not choose one for you.')
+          return
+        }
+
+        // The key sits in this body and nowhere else. No console line ever holds it.
+        const body =
+          kind === 'ollama'
+            ? { kind: 'ollama', model }
+            : { kind: 'apiKey', provider: 'anthropic', key, model }
+
+        $('use').disabled = true
+        try {
+          const data = await call('/api/setup', body)
+          $('key').value = ''
+          adopt(data.who, data.sends)
+          disclose()
+          show('pick')
+        } catch (err) {
+          alertInto($('setup-error'), reason(err))
+        } finally {
+          $('use').disabled = false
+        }
+      })
+
+      // -------------------------------------------------------------- 2. pick
+
+      /**
+       * The consent line names the destination that this session uses. Rule 48.
+       * The page never says that the words stay on this machine when a provider answers. Rule 22.
+       */
+      const consentLine = () => {
+        const near = app.sends
+          ? `Send my words to the provider that runs ${name(app.who)}`
+          : `Send my words to ${name(app.who)} on this machine`
+        return app.omniscient
+          ? `${near}, and send this whole session to the service that HoldTrue operates.`
+          : `${near}.`
+      }
+
+      const disclose = () => {
+        app.omniscient = $('omni').checked && app.provided
+        if (!app.provided) $('omni').checked = false
+
+        $('omni-disclose').textContent = !app.provided
+          ? 'The app holds no provided model, so this toggle stays off. The app does not put your own model in its place. The app marks the findings unverified.'
+          : app.omniscient
+            ? 'A model that HoldTrue provides reads this session. The session goes to a remote service that HoldTrue operates. The app marks the findings verified.'
+            : `${name(app.who)} reads this session. The app marks the findings unverified, because your own model checks your own explanation.`
+
+        $('consent-text').textContent = consentLine()
+        gate()
+      }
+
+      /** No topic starts until the user gives consent. The consent comes before the first send. */
+      const gate = () => {
+        const ready = $('consent').checked && app.who !== null
+        for (const card of document.querySelectorAll('#cards .card')) card.disabled = !ready
+        $('own').disabled = !ready
+      }
+
+      $('omni').addEventListener('change', disclose)
+      $('consent').addEventListener('change', gate)
 
       const begin = async title => {
-        await fetch('/api/start', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ topic: title }),
-        })
+        $('pick-error').replaceChildren()
+        try {
+          await call('/api/start', { topic: title, omniscient: app.omniscient, consent: true })
+        } catch (err) {
+          alertInto($('pick-error'), `The app did not start the session. ${reason(err)}`)
+          return
+        }
         $('topic').textContent = title
-        $('log').innerHTML = ''
+        $('log').replaceChildren()
+        $('probe-answer').value = ''
+        $('end').disabled = false
         show('talk')
         $('t').focus()
       }
 
-      // A reload recovers the conversation from the server rather than showing a blank screen
-      // that is secretly mid-conversation.
-      const state = await (await fetch('/api/state')).json()
-      if (state.history.length > 0) {
-        $('topic').textContent = state.topic
-        for (const e of state.history) render(e)
-        show('talk')
+      // -------------------------------------------------------------- 3. talk
+
+      const add = (cls, who, text) => {
+        const node = el('div', `row ${cls}`)
+        node.append(el('div', 'who', who), el('div', 'body', text))
+        $('log').append(node)
+        $('log').scrollTop = $('log').scrollHeight
+        return node
+      }
+      /** A fault of the server goes in the log as an error, never as a line of the child. */
+      const failInLog = text => {
+        const box = el('div', 'alert')
+        box.append(el('div', 'who', 'error'), el('p', null, text))
+        $('log').append(box)
+        $('log').scrollTop = $('log').scrollHeight
+      }
+      /** A silent child is the result of the turn, so it belongs in the bubble. Rule 23. */
+      const paintChild = (body, said) => {
+        if (said?.kind === 'said') {
+          body.className = 'body'
+          body.textContent = said.line
+        } else {
+          body.className = 'body silent'
+          body.textContent = `(silent — ${said?.reason ?? 'the model gave no line'})`
+        }
+      }
+      const render = e => {
+        add('you', 'you', e.you)
+        paintChild(add('child', 'child', '').querySelector('.body'), e.child)
       }
 
       /** Every route into a turn goes through here, so swapping typing for speech is one change. */
@@ -178,21 +463,11 @@
         const pending = add('child', 'child', '')
         pending.querySelector('.body').className = 'body dots'
         try {
-          const res = await fetch('/api/turn', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ said }),
-          })
-          const e = await res.json()
-          if (!res.ok) throw new Error(e.error ?? 'turn failed')
-          const body = pending.querySelector('.body')
-          if (e.child.kind === 'said') { body.className = 'body'; body.textContent = e.child.line }
-          else { body.className = 'body silent'; body.textContent = `(silent — ${e.child.reason})` }
-          note(`${e.seconds.toFixed(1)}s`)
+          const turn = await call('/api/turn', { said })
+          paintChild(pending.querySelector('.body'), turn.child)
         } catch (err) {
-          const body = pending.querySelector('.body')
-          body.className = 'body silent'
-          body.textContent = String(err.message ?? err)
+          pending.remove()
+          failInLog(`The app did not get that turn. ${reason(err)} Say it again.`)
         } finally {
           $('b').disabled = false
           $('t').focus()
@@ -207,6 +482,236 @@
       $('t').addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('f').requestSubmit() }
       })
+
+      // The user ends the session. The child never ends it. Case E13a and rule 44.
+      $('end').addEventListener('click', () => {
+        $('end').disabled = true
+        endPhase({})
+      })
+
+      // ------------------------------------------------------------ 4. review
+
+      const stage = which => {
+        for (const id of ['running', 'probe', 'findings']) $(id).hidden = id !== which
+      }
+
+      /** One call into the end phase. The first call opens it. The second call carries the answer. */
+      const endPhase = async body => {
+        stage('running')
+        show('review')
+        try {
+          const data = await call('/api/end', body)
+          if (data.kind === 'probe') askProbe(data.question)
+          else paintReview(data.review, data.source)
+        } catch (err) {
+          stateless('The app could not run the review.', reason(err))
+        }
+      }
+
+      /** The probe asks one question about the first row. Rules 14 and 41. */
+      const askProbe = question => {
+        $('probe-error').replaceChildren()
+        $('probe-question').textContent = question
+        $('probe-send').disabled = false
+        $('probe-skip').disabled = false
+        stage('probe')
+        show('review')
+        $('probe-answer').focus()
+      }
+
+      const answer = async value => {
+        $('probe-send').disabled = true
+        $('probe-skip').disabled = true
+        stage('running')
+        try {
+          const data = await call('/api/end', value === null ? {} : { answer: value })
+          if (data.kind === 'probe') askProbe(data.question)
+          else paintReview(data.review, data.source)
+        } catch (err) {
+          askProbe($('probe-question').textContent)
+          alertInto($('probe-error'), `The app did not take that answer. ${reason(err)}`)
+        }
+      }
+      $('probe-send').addEventListener('click', () => {
+        const value = $('probe-answer').value
+        if (value.trim() === '') return
+        answer(value)
+      })
+      // A user who cannot answer gives no verdict. Close then says only that you did not say the
+      // link. It never says that you do not know the link. Rule 42.
+      $('probe-skip').addEventListener('click', () => answer(null))
+
+      /** No review ran. The app states that, and it states that the questions stay open. Rule 46. */
+      const stateless = (...lines) => {
+        // No model answered, so the page names no model and prints no verified label. Rule 24.
+        $('review-label').replaceChildren()
+        $('review-label').hidden = true
+        const list = $('finding-list')
+        list.replaceChildren()
+        const box = el('div', 'alert')
+        box.append(el('div', 'who', 'no review ran'))
+        for (const line of lines) box.append(el('p', 'said', line))
+        box.append(el('p', 'said', 'The questions the child asked stay open. Nothing answered them.'))
+        list.append(box)
+        stage('findings')
+        show('review')
+      }
+
+      /** The word for one row. It is a word, never a number, never a rank and never a grade. */
+      const heading = kind =>
+        kind === 'contradiction' ? 'a claim that is not so'
+        : kind === 'intrusion' ? 'the child supplied this step'
+        : 'a step you did not say'
+
+      /**
+       * A row that no model wrote. Close sets the stated flag false for such a row.
+       * The page reads the flag, and it never reads the text to make this decision.
+       */
+      const blank = finding => finding?.stated === false
+
+      /**
+       * The reason that one blank row carries.
+       *
+       * Close writes "This row has no statement." and then the reason. The page removes that
+       * first sentence, because the row above already says it. The page changes no other word.
+       */
+      const reasonOf = finding =>
+        String(finding?.text ?? '').replace(/^\s*This row has no statement\.\s*/, '').trim()
+
+      /**
+       * One row of the list.
+       *
+       * A row with the stated flag false gets its own shape. It names the row, it states that the
+       * model wrote no statement for the row, and it gives the reason. It never looks like the
+       * text of a model, because no model wrote it.
+       */
+      const paintFinding = finding => {
+        const kind = heading(finding.row?.kind)
+        if (!blank(finding)) {
+          const node = el('div', 'finding')
+          node.append(el('div', 'who', kind), el('div', 'said', finding.text))
+          return node
+        }
+        const node = el('div', 'finding blank')
+        node.append(el('div', 'who', `no statement · ${kind}`))
+        node.append(el('div', 'said', 'The model wrote no statement for this row. The app has nothing to show you here, and this question stays open.'))
+        const why = reasonOf(finding)
+        if (why !== '') node.append(el('div', 'why', why))
+        return node
+      }
+
+      /**
+       * The findings, as text.
+       * This screen prints no score, no rating, no grade, no bar, no count and no percentage.
+       * The label gives the verified word, the reason for that word, and the model that answered.
+       *
+       * The label must hold for every row below it. A blank row carries no words of a model, so
+       * the label must not say that the model wrote the whole list. The label names the exception
+       * instead, and each blank row states the same thing again in its own place.
+       */
+      const paintReview = (review, source) => {
+        if (review?.kind !== 'reviewed') {
+          stateless(review?.reason ?? 'The app holds no review for this session.')
+          return
+        }
+
+        const findings = review.findings ?? []
+        const gaps = findings.some(blank)
+        const label = $('review-label')
+        label.hidden = false
+        label.replaceChildren()
+        label.append(el('b', null, review.verified ? 'verified' : 'unverified'))
+        label.append(document.createTextNode(
+          review.verified
+            ? gaps
+              ? ' — a model that HoldTrue provides read this session. It wrote the findings below, except where a row states that it wrote no statement.'
+              : ' — a model that HoldTrue provides read this session and wrote the findings below.'
+            : gaps
+              ? ' — the model you chose read your own explanation. It wrote the findings below, except where a row states that it wrote no statement.'
+              : ' — the model you chose read your own explanation and wrote the findings below.',
+        ))
+        label.append(el('br'))
+        label.append(document.createTextNode(
+          source ? `${name(source)} answered.` : 'The app did not record which model answered.',
+        ))
+        if (source?.reason) label.append(document.createTextNode(` ${source.reason}.`))
+
+        const list = $('finding-list')
+        list.replaceChildren()
+        if (findings.length === 0) {
+          // Diff found no row, so no question stayed open. This is a statement, not a grade.
+          list.append(el('p', 'said', 'The review found no wrong claim, no supplied step and no missing step in this session.'))
+        } else {
+          for (const finding of findings) list.append(paintFinding(finding))
+        }
+        stage('findings')
+        show('review')
+      }
+
+      $('again').addEventListener('click', () => {
+        $('consent').checked = false
+        gate()
+        stage('running')
+        show('pick')
+      })
+
+      // --------------------------------------------------- load, and recover
+
+      // A reload recovers the session from the server. It never shows a blank screen to a user who
+      // sits in the middle of a conversation. Case B13.
+      const [boot, state] = await Promise.all([
+        call('/api/boot').catch(() => null),
+        call('/api/state').catch(() => null),
+      ])
+
+      if (boot === null || state === null) {
+        show('setup')
+        alertInto($('setup-error'), 'The app cannot reach the server.', 'Start the server, then load this page again.')
+      } else {
+        app.provided = boot.provided === true
+        app.disclosure = boot.disclosure ?? null
+        $('omni').disabled = !app.provided
+
+        for (const topic of boot.topics ?? []) {
+          const card = el('button', 'card', topic.title)
+          card.addEventListener('click', () => begin(topic.title))
+          $('cards').append(card)
+        }
+        $('own').addEventListener('click', () => begin('Explaining'))
+
+        // The server owns the disclosure text, so one file states where the words go. Rules 22, 47.
+        for (const line of app.disclosure?.destination ?? []) {
+          $('destinations').append(el('li', null, line))
+        }
+        for (const line of [...(app.disclosure?.storage ?? []), app.disclosure?.terms].filter(Boolean)) {
+          $('storage').append(el('p', null, line))
+        }
+
+        adopt(boot.who, boot.sends)
+        if (state.omniscient) $('omni').checked = app.provided
+        disclose()
+
+        if (!state.setup) {
+          show('setup')
+        } else if (state.review) {
+          paintReview(state.review, state.source)
+        } else if (state.question) {
+          askProbe(state.question)
+        } else if (state.ended) {
+          // The end phase runs in another tab, or it ran before this reload. The page states that,
+          // and it starts no second review. A second review would ask a second model call.
+          stage('running')
+          show('review')
+          $('running').append(el('p', 'sub', 'Load this page again to read the findings.'))
+        } else if (state.topic !== '') {
+          $('topic').textContent = state.topic
+          $('log').replaceChildren()
+          for (const e of state.history ?? []) render(e)
+          show('talk')
+        } else {
+          show('pick')
+        }
+      }
     </script>
   </body>
 </html>
