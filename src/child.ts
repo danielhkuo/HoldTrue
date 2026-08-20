@@ -47,24 +47,55 @@
  * Every result above is n≈1. One local model produced them over three days. No replication attempt
  * has run. Treat the results as the best evidence available. Re-measure before you rewrite the
  * prompt, and not after.
+ * ─────────────────────────────────────────────────────────────────────────────────────────────
+ * THE MOVE LIST, THE DRIFT AND THE GROOVE. THE OWNER TESTED ELEVEN PROMPT DESIGNS LIVE. THE THREE
+ * RESULTS BELOW COME FROM THOSE TESTS. NOBODY HAS MEASURED THE CODE THAT THE RESULTS PRODUCED.
  *
- * FOUR CHANGES ARRIVED AFTER THE MEASUREMENTS. NOBODY HAS MEASURED THEM.
- *   1. The bank holds twelve examples. It held five. Three examples serve each permitted move.
- *   2. The framing lists the four permitted moves. It replaced the instruction "make them keep
- *      explaining". That instruction named one move only, so the child always advanced. See cases
- *      E7b and E13a.
- *   3. `speak` keeps two sentences of the answer. It kept the first line only, and a two line
+ * Measured result 7. A labelled list of moves in the system prompt becomes a template. The list
+ * held the bullet "say where you stopped following them". The child then said "I stopped following
+ * at the <X> part" for six turns together. A named move hands the model a sentence to copy. The
+ * framing below therefore names no move. `lateBlock` carries one required move for each turn.
+ *
+ * Measured result 8. All eleven designs locked into one sentence frame by turn three. A prompt
+ * does not fix this. The remedy changes the required move for each turn. A deterministic scheduler
+ * picks the move. The model does not choose it. `lateBlock` is that scheduler.
+ *
+ * Result 9 comes from the literature. It is not a measurement of this build. A model adopts the
+ * frame of the other party inside about eight rounds. See Li et al., arXiv 2402.10962. This
+ * citation is unfiled. `docs/research/evidence-base.md` does not hold it. Rule 27 does not apply,
+ * because the claim describes a model and not a person. Attention over a long context has a U
+ * shape. See "Lost in the Middle", also unfiled. A system prompt sits in the dead middle by turn
+ * eight. The remedy states the governing rule again near the END of the context, on every turn.
+ * That remedy beat every other remedy in the later rounds. `promptFor` puts `lateBlock` after the
+ * whole script for this reason. The position is the whole point. Do not move the block into
+ * `systemFor`.
+ *
+ * The punctuation of the bank is a performance instruction. The line goes to a speech engine
+ * later. Most engines raise the pitch for a question mark. A question with a full stop sounds
+ * flat, and flat sounds bored. The bank holds seven replies. Four replies end with a question mark.
+ * Two imperatives end with a full stop. One question, "Which one.", keeps a flat full stop on
+ * purpose. Real
+ * speakers ask a question without the rise. `docs/transcripts/round-1.md` holds "What's a siphon."
+ * at line 32 and "Where's it carrying it to though." at line 196. The corpus of 275 child lines
+ * ends 143 lines with a question mark and 125 lines with a full stop. Keep the mixture. A bank of
+ * one punctuation mark teaches one intonation.
+ *
+ * The framing no longer names the lost move or the stop move. The examples show the lost move, so
+ * rule 40 still holds. The fallback line replaces the stop move. Cases E6a, E7b and E13a need a
+ * new measurement against this design.
+ *
+ * Two changes from the previous build survive here, and nobody has measured them either.
+ *   1. `speak` keeps two sentences of the answer. It kept the first line only, and a two line
  *      answer lost its question. See case B6.
- *   4. `systemFor` takes the topic. The server held the topic and sent nothing, so turn one had no
+ *   2. `systemFor` takes the topic. The server held the topic and sent nothing, so turn one had no
  *      subject. See case B7. The parameter carries a default, because `src/server.ts` has another
  *      owner and must still compile.
  *
- * Two examples left the bank in change 1. One used a fridge compressor. One used a toilet waste
- * pipe. Both subjects match a topic in `src/topics.ts`. See case B3.
- *
- * One known risk carries no measurement. Three of the twelve examples end the child's turn with no
- * question. Nobody has counted how often the child now stops. Count that rate before you add a
- * fourth stop example.
+ * Two risks in the bank carry no measurement. The example about the hump and the pipe describes a
+ * siphon, and the topic list offers "How a toilet flushes". No word is shared, so case B3 passes,
+ * and the subject is still close. The fallback line is a fixed sentence, and result 7 says the
+ * model copies a fixed sentence. Count how often the child says the fallback line before you add
+ * a second one.
  * ─────────────────────────────────────────────────────────────────────────────────────────────
  */
 
@@ -82,38 +113,30 @@ export type Exchange = {
   readonly seconds: number
 }
 
-/**
- * The four moves the child can make. The child has no other move.
- *
- *   - `cause` asks for the cause in the step the child did not get. Case E7a.
- *   - `again` asks about the same step a second time. Case E10.
- *   - `lost` says where the child stopped following. Case E6a.
- *   - `stop` ends the child's turn with no question. Case E13a.
- *
- * The label never reaches the prompt. It orders the bank, and it lets a test read the bank.
- */
-export type Move = 'cause' | 'again' | 'lost' | 'stop'
+/** One line of a worked example. `them` is the adult. `you` is the child. */
+export type Line = {
+  readonly who: 'them' | 'you'
+  readonly text: string
+}
 
 /**
- * One worked example. `them` is the adult. `you` is the child.
+ * One worked example. It holds two lines, or four lines for a re-ask.
  *
- * `before` holds an earlier child question. Only a `again` example needs it. The re-ask has no
- * meaning without the first ask.
+ * The example carries no label for its move. A label in the prompt becomes a template. See
+ * measured result 7. The lines are the whole example.
  */
 export type Example = {
-  readonly move: Move
-  readonly before?: string
-  readonly them: string
-  readonly you: string
+  readonly lines: readonly Line[]
 }
 
 /**
  * The example bank. This is the control surface of the product.
  *
- * The bank holds twelve examples and three examples for each move. The order repeats the four
- * moves, so any four examples in a row hold all four moves.
+ * The bank holds six examples. Each example holds a different shape. One example holds four lines.
+ * That example asks a second time about the same step, and it is the only example that refuses to
+ * move on. An earlier bank showed one ask and then an advance, and the child copied that habit.
  *
- * Four properties hold for every example. All four are invisible in the text. All four are easy to
+ * Five properties hold for every example. All five are invisible in the text. All five are easy to
  * destroy when you tidy the bank.
  *
  *   - The topic is foreign. No topic here matches a topic in `src/topics.ts`. A copied surface is
@@ -123,85 +146,65 @@ export type Example = {
  *     `docs/transcripts/round-2.md` hold the lines.
  *   - The bank holds no forbidden move. No reply says that the child understands. No reply says
  *     the user's mechanism back as a statement. No reply offers an analogy. See rules 3, 4 and 7.
+ *   - The punctuation is mixed on purpose. A question mark drives the rise in a speech engine.
+ *     Read the punctuation paragraph in the header before you change a mark.
  */
 export const EXAMPLES: readonly Example[] = [
   {
-    move: 'cause',
-    them: "the air moves faster over the top of the wing, that's Bernoulli's principle",
-    you: "What's making it go faster up there though.",
+    lines: [
+      { who: 'them', text: 'You put the bread in and push the lever down and it stays down.' },
+      { who: 'you', text: 'What holds it down?' },
+    ],
   },
   {
-    move: 'again',
-    before: 'Why is there a bulge on the far side too.',
-    them: 'The stretching thing, I said. The moon stretches the whole planet, water and all.',
-    you: 'Yeah but the far side. What pulls the water out there.',
+    lines: [
+      { who: 'them', text: "There's a magnet in there I think." },
+      { who: 'you', text: "What's the magnet holding onto?" },
+      { who: 'them', text: 'The lever bit. It just holds it.' },
+      { who: 'you', text: 'You said it holds the lever. What makes it let go?' },
+    ],
   },
   {
-    move: 'lost',
-    them: 'so over thousands of years the ones with the longer necks end up being most of them',
-    you: 'I stopped following at the thousands of years part.',
+    lines: [
+      { who: 'them', text: "It's gravity, that's all it is." },
+      { who: 'you', text: "I don't know what gravity means. Say that bit again without it." },
+    ],
   },
   {
-    move: 'stop',
-    them: 'and those memory cells stay in there for years, sometimes your whole life',
-    you: 'Can I go outside now.',
+    lines: [
+      { who: 'them', text: 'And then the pressure just drops.' },
+      { who: 'you', text: 'Where does the pressure go?' },
+    ],
   },
   {
-    move: 'cause',
-    them: 'and the middle of it, the eye, that part is actually dead calm',
-    you: 'Calm? I thought the middle would be the worst part!',
+    lines: [
+      {
+        who: 'them',
+        text: "The water can't get past the hump. ... and then it goes over the hump and down the pipe.",
+      },
+      { who: 'you', text: "Before you said it can't get past. Now it goes over. Which one." },
+    ],
   },
   {
-    move: 'again',
-    before: "Why can't the electrons just go through the middle.",
-    them: "They can't go through the middle, that's just how a battery is built.",
-    you: "The middle part though. What's stopping them in there.",
-  },
-  {
-    move: 'lost',
-    them: 'then the chyme hits the small intestine and the bile breaks the fat up',
-    you: 'You lost me at chyme.',
-  },
-  {
-    move: 'stop',
-    them: "honestly I don't know if the microphone hears its own sound, I never looked it up",
-    you: 'We should look it up after dinner.',
-  },
-  {
-    move: 'cause',
-    them: 'the leaves have these little holes in them called stomata',
-    you: 'And the holes are what, just open all the time?',
-  },
-  {
-    move: 'again',
-    before: 'How does the up and down turn into the wheels going round.',
-    them: "There's a rod down to the crankshaft, and the crankshaft is bent. That's what does it.",
-    you: 'But what does the bend do to the rod though.',
-  },
-  {
-    move: 'lost',
-    them: 'the gases up there work like a blanket, so the heat takes way longer to get out',
-    you: 'Hold on, I got lost way back at the blanket.',
-  },
-  {
-    move: 'stop',
-    them: 'and then it soaks into the ground and works its way back down to the river',
-    you: "I'm gonna go start the poster now.",
+    lines: [
+      { who: 'them', text: "Honestly I don't know that part." },
+      { who: 'you', text: "Say the last bit you're sure about." },
+    ],
   },
 ]
 
-/** One example as a script fragment. The move label never appears here. */
-const render = (e: Example): string =>
-  `${e.before === undefined ? '' : `you: ${e.before}\n`}them: ${e.them}\nyou: ${e.you}`
+/** One example as a script fragment. */
+const render = (e: Example): string => e.lines.map(l => `${l.who}: ${l.text}`).join('\n')
 
 /**
- * Four examples, dealt by turn index. No two turns in a row see the same four.
+ * Four examples, dealt by turn index. No two turns in a row get the same four.
  *
  * The deal is by position and never random. A run must repeat, and this runner is already not byte
- * deterministic without help. The bank orders the moves in a cycle, so four examples in a row hold
- * all four moves. The child then sees every permitted move on every turn.
+ * deterministic without help. The window moves by one place for each turn, so the deal repeats
+ * after one pass through the bank.
  *
- * Twelve examples give twelve deals before the cycle repeats. The old bank gave five.
+ * The window holds four of the six examples. The child then sees two thirds of the bank on every
+ * turn, and the pair of examples it does not see changes every turn.
  */
 export const dealt = (turnIndex: number): readonly Example[] =>
   Array.from({ length: 4 }, (_, i) => EXAMPLES[(turnIndex + i) % EXAMPLES.length]!)
@@ -210,30 +213,63 @@ export const examplesFor = (turnIndex: number): string =>
   dealt(turnIndex).map(render).join('\n\n')
 
 /**
+ * The vocabulary rule. Every late block carries this sentence.
+ *
+ * The rule holds SUBJECT TERMINOLOGY ONLY. Never write it as "use only words they have used".
+ * That version forbids ordinary English, and the child then cannot make a sentence.
+ */
+const VOCABULARY =
+  'Do not use a technical or subject-specific word they have not used. Ordinary everyday words are fine.'
+
+/**
+ * The three required moves, in the order the scheduler uses.
+ *
+ * Every move is valid after every possible thing the user says. The block therefore holds no
+ * condition, and the model has no branch to get wrong.
+ */
+const LATE_BLOCKS: readonly string[] = [
+  `[Ask what makes the last thing they said happen. ${VOCABULARY}]`,
+  `[Ask where a thing they mentioned goes, or what happens to it next. ${VOCABULARY}]`,
+  `[Pick a word they used as if it were an explanation. Say you do not know what it means, and ask for that part again without it. ${VOCABULARY}]`,
+]
+
+/**
+ * The required move for one turn. `promptFor` puts it after the whole script.
+ *
+ * The scheduler picks the move. The model does not choose it. Measured result 8 gives the reason:
+ * every design the owner tested locked into one sentence frame by turn three.
+ *
+ * The block sits late in the context on purpose. See result 9.
+ */
+export const lateBlock = (turnIndex: number): string =>
+  LATE_BLOCKS[turnIndex % LATE_BLOCKS.length]!
+
+/**
  * The system message for one turn. The function is pure, so a test needs no model.
  *
  * The subject reaches the model here. The server holds the topic, and turn one has no other
  * subject. See case B7. An empty topic falls back to the phrase the server uses.
  *
- * The move list is the instruction to act. It replaced "make them keep explaining". That
- * instruction named the advance and nothing else, so the child advanced every turn and never
- * stopped. See cases E7b and E13a.
+ * This message names no move. A named move becomes a template. See measured result 7. The move
+ * for the turn arrives from `lateBlock`, at the end of the user message.
  */
 export const systemFor = (turnIndex: number, topic = ''): string => {
   const subject = topic.trim() === '' ? 'how something works' : topic.trim()
   return `You are a curious 10-year-old. An adult is explaining something to you, out
 loud, from memory. The subject is: ${subject}. You are listening.
 
-Say ONE short line back. You have four moves and no others:
-- ask them for the cause in the step you did not get;
-- ask again about the same step you already asked about;
-- say where you stopped following them;
-- stop, when you have no question.
+You have read nothing about this. You cannot look anything up. You know only
+what this person has said here.
+
+Say ONE short line back.
 
 You are the one who does not know. Never explain anything back to them, and
 never tell them their explanation was bad.
 
 Never ask something they can answer with just "yes" or "yeah exactly".
+
+When you have nothing to ask about what they just said, say exactly:
+"I'm not sure I follow that. Can you say it a different way."
 
 Here is how you sound. These are other conversations, about other things:
 
@@ -254,12 +290,18 @@ never more than two sentences.`
  * "and", and the final full stop. The user then typed "so what happens after that?" and the model
  * received "what happens after that". That is an unmeasured edit to the only input the product
  * has. Voice arrives later. The cleaning then belongs at the transcription boundary, and not here.
+ *
+ * The late block goes AFTER the script and before the empty line. The position is the change. A
+ * model drifts to the frame of the other party inside about eight rounds, and the system message
+ * is then in the dead middle of the context. See result 9. The turn index comes from the length of
+ * the history, so this function and `systemFor` always count the same turn.
  */
 export const promptFor = (history: readonly Exchange[], you: string): string => {
   const script = history
     .flatMap(e => [`them: ${e.you}`, ...(e.child.kind === 'said' ? [`you: ${e.child.line}`] : [])])
     .join('\n')
-  return `${script === '' ? '' : `${script}\n`}them: ${you}\n\nyou:`
+  const head = script === '' ? '' : `${script}\n`
+  return `${head}them: ${you}\n\n${lateBlock(history.length)}\n\nyou:`
 }
 
 /**
