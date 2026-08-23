@@ -18,8 +18,11 @@
  * - It must not name a model in the attribution that did not answer.
  * - It must not read, judge or edit the words of the user.
  *
- * Two notes on the Ollama request. Temperature 0 does not buy byte-determinism on this runner.
- * It stays because nothing shows that a higher temperature buys fluency the prompt cannot.
+ * Two notes on the Ollama request. A caller can pass a temperature. The default stays 0. No
+ * evidence shows a higher temperature buys fluency the prompt cannot. Temperature 0 also does
+ * not buy byte-determinism on this runner. `docs/proposals/director-experiment.md` owns the
+ * sampling flag. Only `temperature` goes to a backend. `min_p`, `top_p` and a penalty stay out,
+ * because not every backend holds them.
  * The request sends no `format` field. Five probes on 2026-08-12 showed that this backend
  * ignores `format`. A bogus format value returned HTTP 200.
  *
@@ -168,7 +171,7 @@ const readAnthropic = (json: unknown): AskResult => {
  * The handle holds no state except the name of the model that answered, and the last reason.
  * The handle makes no call until the caller asks. `identify` therefore makes no network call.
  */
-export const open = (backend: Backend): ModelHandle => {
+export const open = (backend: Backend, temperature = 0): ModelHandle => {
   const runtime = backend.kind === 'ollama' ? `ollama @ ${host()}` : `anthropic @ ${ANTHROPIC_URL}`
 
   /** No backend has a default. Rule 50. The caller names the model, or no model is chosen. */
@@ -188,7 +191,7 @@ export const open = (backend: Backend): ModelHandle => {
           model: configured,
           stream: false,
           think: false,
-          options: { temperature: 0 },
+          options: { temperature },
           messages: [
             { role: 'system', content: system },
             { role: 'user', content: user },
@@ -210,7 +213,7 @@ export const open = (backend: Backend): ModelHandle => {
       {
         model: configured,
         max_tokens: ANTHROPIC_MAX_TOKENS,
-        temperature: 0,
+        temperature,
         system,
         messages: [{ role: 'user', content: user }],
       },
@@ -257,5 +260,5 @@ export const open = (backend: Backend): ModelHandle => {
  * The caller must give the model name. Without a name `identify` reports that no model is chosen,
  * and `ask` returns null with that reason. This function never reads `/api/tags`.
  */
-export const ollama = (model?: string): ModelHandle =>
-  open(model === undefined ? { kind: 'ollama' } : { kind: 'ollama', model })
+export const ollama = (model?: string, temperature = 0): ModelHandle =>
+  open(model === undefined ? { kind: 'ollama' } : { kind: 'ollama', model }, temperature)

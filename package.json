@@ -11,6 +11,7 @@
   "scripts": {
     "app": "npx --yes tsx src/server.ts",
     "rig": "npx --yes tsx src/rig.ts",
+    "experiment": "npx --yes tsx src/experiment.ts",
     "discriminate": "npx --yes tsx src/discriminate.ts",
     "e2e": "vite-node src/e2e.ts",
     "test": "vitest run",

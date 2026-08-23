@@ -100,6 +100,7 @@
  */
 
 import type { ModelHandle } from './model.js'
+import { direct } from './director.js'
 
 /** What the child said, or why it did not. Silence is a result, never an exception. */
 export type Said =
@@ -218,7 +219,7 @@ export const examplesFor = (turnIndex: number): string =>
  * The rule holds SUBJECT TERMINOLOGY ONLY. Never write it as "use only words they have used".
  * That version forbids ordinary English, and the child then cannot make a sentence.
  */
-const VOCABULARY =
+export const VOCABULARY =
   'Do not use a technical or subject-specific word they have not used. Ordinary everyday words are fine.'
 
 /**
@@ -283,6 +284,19 @@ never more than two sentences.`
 }
 
 /**
+ * The flags on the child. Every flag defaults off. `docs/proposals/director-experiment.md` owns
+ * the design. A flag changes the prompt string only. No flag adds a model call. Rule 1.
+ */
+export type Options = {
+  /** The prompt holds the last child line only. An earlier child line does not appear. */
+  readonly hideOwnLines: boolean
+  /** The words the person said pick the move. The turn number does not. */
+  readonly director: boolean
+}
+
+export const DEFAULTS: Options = { hideOwnLines: false, director: false }
+
+/**
  * The user message. It holds the conversation as a script. It ends on an empty `you:` line.
  *
  * The words of the user go in UNTOUCHED. See rule 10. The old build sent them through a cleaner.
@@ -295,13 +309,31 @@ never more than two sentences.`
  * model drifts to the frame of the other party inside about eight rounds, and the system message
  * is then in the dead middle of the context. See result 9. The turn index comes from the length of
  * the history, so this function and `systemFor` always count the same turn.
+ *
+ * With `hideOwnLines` the script holds the last child line only. A repeated phrase raises its
+ * own probability with every repeat. The child's own lines are the strongest example in the
+ * prompt. See measured result 5. The child still reads its own last question, so a fragment
+ * answer keeps its meaning.
  */
-export const promptFor = (history: readonly Exchange[], you: string): string => {
+export const promptFor = (
+  history: readonly Exchange[],
+  you: string,
+  options: Partial<Options> = {},
+): string => {
+  const { hideOwnLines, director } = { ...DEFAULTS, ...options }
+  const lastSaid = [...history].reverse().findIndex(e => e.child.kind === 'said')
+  const lastSaidIndex = lastSaid === -1 ? -1 : history.length - 1 - lastSaid
   const script = history
-    .flatMap(e => [`them: ${e.you}`, ...(e.child.kind === 'said' ? [`you: ${e.child.line}`] : [])])
+    .flatMap((e, i) => [
+      `them: ${e.you}`,
+      ...(e.child.kind === 'said' && (!hideOwnLines || i === lastSaidIndex)
+        ? [`you: ${e.child.line}`]
+        : []),
+    ])
     .join('\n')
   const head = script === '' ? '' : `${script}\n`
-  return `${head}them: ${you}\n\n${lateBlock(history.length)}\n\nyou:`
+  const block = director ? direct(history, you) : lateBlock(history.length)
+  return `${head}them: ${you}\n\n${block}\n\nyou:`
 }
 
 /**
@@ -329,8 +361,9 @@ export const speak = async (
   you: string,
   model: ModelHandle,
   topic = '',
+  options: Partial<Options> = {},
 ): Promise<Said> => {
-  const answer = await model.ask(systemFor(history.length, topic), promptFor(history, you))
+  const answer = await model.ask(systemFor(history.length, topic), promptFor(history, you, options))
   // The model layer holds the reason for the last failed ask. The child passes that reason
   // through, so a dead backend, a rejected key, a timeout and a wrong model name each keep a
   // distinct message on the screen. Rule 25.

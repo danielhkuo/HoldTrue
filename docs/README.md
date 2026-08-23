@@ -13,7 +13,7 @@ No eval measures the end phase. [`architecture.md`](architecture.md) describes b
 | [`product.md`](product.md) | What the product is, the two laws, the four mechanisms, the eligibility rule, the retired promise and the enforcement table. |
 | [`cases.md`](cases.md) | The case register. Every behaviour the product must produce, and every behaviour it must stop. One line for each. |
 | [`architecture.md`](architecture.md) | The two phases, the four end-phase parts, the model layer and the omniscient toggle. |
-| [`proposals/`](proposals/) | A design that nobody has ruled on and nobody has built. |
+| [`proposals/`](proposals/) | A design that nobody has ruled on and nobody has built. The owner approved and built [`director-experiment.md`](proposals/director-experiment.md); its runs are in `measurements/director/`. |
 | [`decisions.md`](decisions.md) | Every reason, every rejected alternative, the build order and the open decisions. |
 | [`research/`](research/) | Three kinds of evidence. See below. |
 | [`transcripts/`](transcripts/) | 18 generated conversations. See below. |
@@ -28,8 +28,9 @@ The folder holds three kinds of file. Each kind has its own rule.
 - Learning evidence: [`evidence-base.md`](research/evidence-base.md). `AGENTS.md` gates this file.
 - Engineering figures: [`extraction-benchmarks.md`](research/extraction-benchmarks.md) and the four
   speech-to-text files `stt-*.md`. Each figure carries its source where you use it.
-- Ungated material: [`feynman-edge-cases.md`](research/feynman-edge-cases.md) and
-  [`prior-art/`](research/prior-art/). A claim in these two files must not reach the user until the
+- Ungated material: [`feynman-edge-cases.md`](research/feynman-edge-cases.md),
+  [`repetition-council.md`](research/repetition-council.md) and
+  [`prior-art/`](research/prior-art/). A claim in these three files must not reach the user until the
   owner files it in `evidence-base.md`. A document may cite such a claim. The document must mark the
   citation as unfiled. `AGENTS.md` rule 27 owns this rule. `feynman-edge-cases.md` also holds the measured
   data about real children.

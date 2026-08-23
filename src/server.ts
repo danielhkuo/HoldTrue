@@ -61,6 +61,19 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const ADDRESS = '127.0.0.1'
 const PORT = Number(process.env.PORT ?? 4517)
 
+/**
+ * The three child flags. Each defaults off. A value of "1" turns one on.
+ * `docs/proposals/director-experiment.md` owns the design. The flags change the prompt and the
+ * temperature only. `POST /api/turn` does not change. The sampling flag reaches the child only.
+ * The end phase never sees it, and always runs at temperature 0.
+ */
+const flag = (name: string): boolean => (process.env[name] ?? '') === '1'
+const CHILD_OPTIONS = {
+  hideOwnLines: flag('CHILD_HIDE_OWN_LINES'),
+  director: flag('CHILD_DIRECTOR'),
+}
+const TEMPERATURE = flag('CHILD_SAMPLING') ? 0.8 : 0
+
 /** A request body larger than this is a fault. The cap stops one request from filling memory. */
 const MAX_BODY_BYTES = 1_000_000
 
@@ -118,6 +131,11 @@ type Beat = {
 let startup: ModelHandle | null = null
 /** True when the startup backend sends the words off this machine. */
 let startupSends = false
+/**
+ * The child's handle. It is `startup` unless the sampling flag is on. The end phase never uses
+ * this handle. The end phase always uses `startup`, so the sampling flag never reaches it.
+ */
+let childModel: ModelHandle | null = null
 
 /**
  * The provided model for the omniscient toggle. It is separate from the startup choice.
@@ -265,6 +283,7 @@ const handleSetup = async (req: IncomingMessage, res: ServerResponse): Promise<v
   }
 
   startup = open(backend)
+  childModel = TEMPERATURE === 0 ? startup : open(backend, TEMPERATURE)
   startupSends = backend.kind === 'apiKey'
   json(res, 200, { who: await startup.identify(), sends: startupSends })
 }
@@ -327,7 +346,7 @@ const handleStart = async (req: IncomingMessage, res: ServerResponse): Promise<v
 
 const handleTurn = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
   // Rule 50. No setup means no model. The app states that, and it picks nothing.
-  if (startup === null) {
+  if (startup === null || childModel === null) {
     return fault(
       res,
       409,
@@ -362,7 +381,7 @@ const handleTurn = async (req: IncomingMessage, res: ServerResponse): Promise<vo
   session = withUser
   const started = Date.now()
   // Rule 1. One model call for each turn. Case B7. The topic goes to the model.
-  const child = await speak(history, said, startup, live.topic)
+  const child = await speak(history, said, childModel, live.topic, CHILD_OPTIONS)
   const seconds = (Date.now() - started) / 1000
 
   // A silent child turn carries no text, so the marked transcript holds spoken turns only. The
