@@ -299,6 +299,20 @@ describe('the ollama request', () => {
 
     expect(await ollama('llama3.2').ask('s', 'u')).toBe('Wait why does that make it hot?')
   })
+
+  test('the request sends temperature 0 by default', async () => {
+    const calls = answers(ollamaBody('hi'))
+    await ollama('llama3.2').ask('s', 'u')
+
+    expect(bodyOf(calls[0]!)['options']).toEqual({ temperature: 0 })
+  })
+
+  test('the request sends the temperature the caller gave', async () => {
+    const calls = answers(ollamaBody('hi'))
+    await ollama('llama3.2', 0.8).ask('s', 'u')
+
+    expect(bodyOf(calls[0]!)['options']).toEqual({ temperature: 0.8 })
+  })
 })
 
 describe('the anthropic request', () => {
@@ -339,6 +353,13 @@ describe('the anthropic request', () => {
     await open({ ...key, model: 'claude-opus-5' }).ask('s', 'u')
 
     expect(bodyOf(calls[0]!)['model']).toBe('claude-opus-5')
+  })
+
+  test('the request sends the temperature the caller gave', async () => {
+    const calls = answers(anthropicBody('hi'))
+    await open({ kind: 'apiKey', provider: 'anthropic', key: 'k', model: 'm' }, 0.8).ask('s', 'u')
+
+    expect(bodyOf(calls[0]!)['temperature']).toBe(0.8)
   })
 
   test('ask joins every text block of the answer', async () => {

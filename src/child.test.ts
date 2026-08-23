@@ -544,3 +544,64 @@ describe('a turn is total', () => {
     expect(seen[0]!.system).not.toBe(seen[1]!.system)
   })
 })
+
+describe('speak passes the flags to the prompt', () => {
+  test('with hideOwnLines the user message holds the last child line only', async () => {
+    const { handle, seen } = fake('What holds it?')
+    const history = [ex('a', 'FIRST LINE'), ex('b', 'SECOND LINE')]
+    await speak(history, 'c', handle, '', { hideOwnLines: true })
+    expect(seen[0]?.user).toContain('SECOND LINE')
+    expect(seen[0]?.user).not.toContain('FIRST LINE')
+  })
+})
+
+describe('flag hideOwnLines: the prompt holds the last child line only', () => {
+  const history: Exchange[] = [
+    ex('the lever pulls the cable', 'What does the cable pull?'),
+    ex('the pads I think', 'What do the pads do?'),
+    ex('they squeeze the rim', 'What makes them squeeze?'),
+  ]
+
+  test('the prompt holds every them line', () => {
+    const prompt = promptFor(history, 'the cable does', { hideOwnLines: true })
+    expect(prompt).toContain('them: the lever pulls the cable')
+    expect(prompt).toContain('them: the pads I think')
+    expect(prompt).toContain('them: they squeeze the rim')
+  })
+
+  test('the prompt holds the last child line', () => {
+    const prompt = promptFor(history, 'the cable does', { hideOwnLines: true })
+    expect(prompt).toContain('you: What makes them squeeze?')
+  })
+
+  test('the prompt holds no earlier child line', () => {
+    const prompt = promptFor(history, 'the cable does', { hideOwnLines: true })
+    expect(prompt).not.toContain('What does the cable pull?')
+    expect(prompt).not.toContain('What do the pads do?')
+  })
+
+  test('without the flag the prompt holds every child line', () => {
+    const prompt = promptFor(history, 'the cable does')
+    expect(prompt).toContain('What does the cable pull?')
+    expect(prompt).toContain('What do the pads do?')
+    expect(prompt).toContain('What makes them squeeze?')
+  })
+
+  test('with the flag the prompt still ends on the late block and an empty you line', () => {
+    const prompt = promptFor(history, 'x', { hideOwnLines: true })
+    expect(prompt).toContain(lateBlock(3))
+    expect(prompt).toMatch(/\n\nyou:$/)
+  })
+})
+
+describe('flag director: the words pick the move', () => {
+  test('with the flag the prompt ends on the director block', () => {
+    const prompt = promptFor([], 'the lever pulls the cable', { director: true })
+    expect(prompt).toMatch(/\[They said "(lever|pulls|cable)"\. Ask what makes/)
+    expect(prompt).not.toContain(lateBlock(0))
+  })
+
+  test('without the flag the prompt ends on the rotated block', () => {
+    expect(promptFor([], 'the lever pulls the cable')).toContain(lateBlock(0))
+  })
+})
