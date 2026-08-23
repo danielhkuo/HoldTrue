@@ -1,7 +1,11 @@
 # What the transcriber tells us it got wrong
 
+> **Deleted documents.** This file names `philosophy.md`, `decisions.md`, the `specs/` folder and the
+> `features/` folder. The owner deleted the old versions on 2026-08-19. A name is a historical
+> reference and not a link. `docs/decisions.md` records the deletion.
+
 **Engineering research, 2026-08-12.** Read from the source and the paper, every claim carrying its
-URL. Written because the repeat-gate in [`../specs/child-speech.md`](../specs/child-speech.md)
+URL. Written because the repeat-gate in `specs/child-speech.md`
 ruling 18 needs a signal, and because the three earlier speech-to-text files evaluated seven engines
 against four criteria — rule compliance, platform, word error rate, fairness — and **none of them
 asked whether an engine can say which words it is unsure of.**
@@ -67,7 +71,7 @@ Those are different failures, and only the first is what ruling 18 is for.
 **Nobody has read `/inference`'s response body.** Issue [#23](https://github.com/danielhkuo/HoldTrue/issues/23)
 resolved the engine to whisper.cpp behind `whisper-server`, and the server's own README documents
 `/inference` and `/load` — not the OpenAI-shaped route the table above describes.
-[`../specs/supply.md`](../specs/supply.md) still carries *"whether there is a `confidence` field"*
+`specs/supply.md` still carries *"whether there is a `confidence` field"*
 as an open question. Until someone runs the server and reads what comes back, the table above
 describes a route this app may not be using.
 

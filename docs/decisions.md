@@ -13,27 +13,9 @@ This file records the decisions of 2026-08-19. It owns these items:
 binding. Do not cite them. Do not recover them from git. The research in `docs/research/` and the
 transcripts in `docs/transcripts/` survive. They are evidence, not rulings.
 
-**Nothing in the end phase exists.** The live phase runs. `src/` holds these files:
-
-- `child.ts`
-- `model.ts`
-- `server.ts`
-- `topics.ts`
-- `rig.ts`
-- `page.html`
-- `child.test.ts`
-
-The app does not have these parts:
-
-- the toggle
-- the marked transcript
-- the topic gate
-- Check
-- Diff
-- Probe
-- Close
-
-Every decision below is a design. No decision below is a description of running code.
+**Both phases run.** The owner built every item in the build order on 2026-08-19.
+`docs/architecture.md` lists every file in `src/` under "What exists today". The app does not have
+a topic gate. Decision 11 records why. No eval measures what the end phase produces.
 
 ## 1. Two phases
 

@@ -18,8 +18,8 @@ No eval measures the end phase. [`architecture.md`](architecture.md) describes b
 | [`research/`](research/) | Three kinds of evidence. See below. |
 | [`transcripts/`](transcripts/) | 18 generated conversations. See below. |
 
-[`decisions.md`](decisions.md) also records the documents the owner deleted on 2026-08-19. Older
-files still link to the deleted paths. Those links are dead.
+[`decisions.md`](decisions.md) also records the documents the owner deleted on 2026-08-19. A
+research file may name a deleted document. The name is a historical reference and not a link.
 
 ## The research folder
 

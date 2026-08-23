@@ -1,5 +1,9 @@
 # Evidence base: what may be claimed, and what may not
 
+> **Deleted documents.** This file names `philosophy.md`, `decisions.md`, the `specs/` folder and the
+> `features/` folder. The owner deleted the old versions on 2026-08-19. A name is a historical
+> reference and not a link. `docs/decisions.md` records the deletion.
+
 > **Reference doc.** Every empirical claim this product may make, its source, and the exact
 > strength licensed. Built 2026-07-28 from primary-source retrieval after an audit found
 > prior citations unsupported.
@@ -31,7 +35,7 @@ Three uncited numbers about *causal and open information extraction* — the 97%
 across-sentence figure, "~0.535 F1 for the best frontier model measured", and "95% precision at 9%
 recall" — were traced on 2026-08-07 and found misread, misattributed and untraceable respectively.
 They are **not** rows above, and that is deliberate. This file gates claims about how people learn;
-those are engineering measurements, which [`philosophy.md`](../philosophy.md) puts in a separate
+those are engineering measurements, which `philosophy.md` puts in a separate
 category. Mixing them here would blunt the one thing this file does well, which is having a sharp
 scope.
 

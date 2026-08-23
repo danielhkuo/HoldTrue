@@ -5,7 +5,7 @@ description: Review the changes since a fixed point (commit, branch, tag, or mer
 
 > Derived from `code-review` in Matt Pocock's skills collection (MIT, see
 > `../LICENSE-mattpocock`). Modified for this repo: standards sources point at `AGENTS.md`,
-> and a refutation stage runs before aggregation. See *The daily review* in `docs/workflow.md`.
+> and a refutation stage runs before aggregation. `AGENTS.md` rule 30 requires this review.
 
 Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 
@@ -30,20 +30,20 @@ Before going further, confirm the fixed point resolves (`git rev-parse <fixed-po
 
 Look for the originating spec, in this order:
 
-1. Issue references in the commit messages (`#123`, `Closes #45`, GitLab `!67`, etc.) — fetch via the workflow in `docs/agents/issue-tracker.md`.
+1. Issue references in the commit messages (`#123`, `Closes #45`, etc.) — fetch with `gh issue view`.
 2. A path the user passed as an argument.
-3. A PRD/spec file under `docs/`, `specs/`, or `.scratch/` matching the branch name or feature.
+3. A case in `docs/cases.md`, a decision in `docs/decisions.md`, or a file under `docs/proposals/`
+   that matches the branch name or the feature.
 4. If nothing is found, ask the user where the spec is. If they say there isn't one, the **Spec** sub-agent will skip and report "no spec available".
 
 ### 3. Identify the standards sources
 
-**In this repo the standards source is `AGENTS.md`.** It carries a numbered list of
-invariants, a stack table of use-this-not-that decisions, macOS rules, and a testing section
-listing banned assertion patterns. Every finding against it must cite the invariant number or
-the section by name.
+**In this repo the standards source is `AGENTS.md`.** It carries numbered rules in seven
+groups, an evidence rule, a testing section and a writing standard. Every finding against it must
+cite the rule number. A document change must also meet rule 37, Simplified Technical English.
 
-`docs/philosophy.md` and `docs/features/*.md` hold the reasoning behind those rules. Read them
-only when a finding turns on *why* a rule exists.
+`docs/decisions.md` holds the reasoning behind the rules. Read it only when a finding turns on
+*why* a rule exists.
 
 On top of whatever the repo documents, the Standards axis always carries the **smell baseline** below — a fixed set of Fowler code smells (_Refactoring_, ch.3) that applies even when a repo documents nothing. Two rules bind it:
 

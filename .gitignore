@@ -1,8 +1,7 @@
 # macOS
 .DS_Store
 
-# Node. package-lock.json IS tracked — it pins the exact Electron/Node toolchain
-# the FTS5 verification in AGENTS.md was measured against.
+# Node. Git tracks package-lock.json. It pins the toolchain.
 node_modules/
 .vitest/
 coverage/
@@ -11,9 +10,7 @@ reports/
 dist/
 out/
 
-# Claude Code local state. .claude/skills/ IS tracked (project skills like
-# verify), so these must be listed here rather than in .git/info/exclude —
-# that file is local-only and a fresh clone would start tracking them.
+# Claude Code local state. Git tracks .claude/skills/ and .claude/launch.json.
 .claude/settings.local.json
 .claude/scheduled_tasks.json
 .claude/scheduled_tasks.lock
@@ -28,29 +25,15 @@ out/
 
 # Agent scratch output
 .superpowers/
-
-# Xcode user-specific state
-xcuserdata/
-*.xcuserstate
-
-# Xcode / Swift build artifacts
-DerivedData/
-.build/
-*.ipa
-*.dSYM.zip
-*.dSYM
-
-# codebase-memory-mcp local index (optional team artifact: .codebase-memory/graph.db.zst)
 .codebase-memory/
 .gstack/
 
-# Third-party transcripts, kept locally as test material only. This repo is public,
-# and a full transcript of somebody else's talk is their copyright, not ours. Short
-# excerpts used as segmentation fixtures are committed; the whole file is not.
+# Third-party transcripts. This repository is public. A full transcript of somebody else's talk
+# is their copyright. Keep it local.
 re.txt
 transcripts-local/
 
-# Secrets — never commit. Templates live in .env.example (committed).
+# Secrets. Never commit them.
 .env
 .env.keys
 .env.local

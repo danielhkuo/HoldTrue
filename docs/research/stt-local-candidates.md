@@ -1,5 +1,9 @@
 # STT: Apple SpeechAnalyzer, whisper.cpp, Vosk
 
+> **Deleted documents.** This file names `philosophy.md`, `decisions.md`, the `specs/` folder and the
+> `features/` folder. The owner deleted the old versions on 2026-08-19. A name is a historical
+> reference and not a link. `docs/decisions.md` records the deletion.
+
 > **The remaining three candidates from [issue 23](https://github.com/danielhkuo/HoldTrue/issues/23).**
 > With [`stt-cloud-byok.md`](stt-cloud-byok.md) and [`stt-parakeet.md`](stt-parakeet.md) this
 > completes the ticket's candidate list.
@@ -9,12 +13,12 @@
 > facts come from Apple's WWDC25 session and from third-party implementations reading the same
 > API; **the Apple accuracy figure is third-party (Argmax), not published by Apple.** Vosk and
 > whisper.cpp figures are from their own project pages. Flagged where each claim comes from.
-> Verify before any of it reaches [`decisions.md`](../decisions.md).
+> Verify before any of it reaches `decisions.md`.
 
 ## The rule test, which is what actually separates them
 
 The stack rule is *"no bundled inference — Ollama, or bring your own API key."* Its stated
-rationale in [`decisions.md`](../decisions.md) is concrete: no signing entitlements, no
+rationale in `decisions.md` is concrete: no signing entitlements, no
 notarization complications, no giant installer. Judged against that, the three candidates land
 in three different places.
 

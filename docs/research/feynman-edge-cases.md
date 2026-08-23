@@ -1,6 +1,6 @@
 # The Feynman loop: what carries the effect, and where a model breaks it
 
-> **What this is.** Input to a rewrite of [`../philosophy.md`](../philosophy.md), compiled
+> **What this is.** Input to a rewrite of `philosophy.md`, compiled
 > 2026-08-19 from four parallel investigations: the technique's active ingredients, the risks a
 > child-as-audience introduces, the divergences between an LLM and a real child, and the concrete
 > edge cases in the shipped build.

@@ -1,6 +1,10 @@
 # Extraction benchmarks: what the published numbers actually measure
 
-> **Engineering measurements, not learning evidence.** [`philosophy.md`](../philosophy.md) scopes
+> **Deleted documents.** This file names `philosophy.md`, `decisions.md`, the `specs/` folder and the
+> `features/` folder. The owner deleted the old versions on 2026-08-19. A name is a historical
+> reference and not a link. `docs/decisions.md` records the deletion.
+
+> **Engineering measurements, not learning evidence.** `philosophy.md` scopes
 > the evidence gate to claims about *how people learn*, and says in as many words that engineering
 > measurements are a separate category, not gated there, but required to carry their source. This
 > file is where they carry it. Nothing below is a claim about learning, and nothing below may be
@@ -471,7 +475,7 @@ failure mode is **silence, not over-assertion.** Three consequences, and they ar
 rather than context. Extract's prompt has to defend against **recall**, which is the reverse of the
 false-positive worry the ANCHOR-RE row below records. A missed link is not a harmless absence here:
 it reaches Cohere as a hole, and the child asks about a step the user did explain, which is the
-failure [`../specs/child-speech.md`](../specs/child-speech.md) and [`supply.md`](../specs/supply.md)
+failure `specs/child-speech.md` and `specs/supply.md`
 both name as likeliest. And **a propose-then-verify split is the wrong trade for this shape** —
 ANCHOR-RE buys precision at a cost in recall, and precision is the half that is already almost free.
 **2026 preprint, unreviewed**, and the genre is still biomedical and multi-domain written text rather

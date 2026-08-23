@@ -9,19 +9,16 @@ order: Check, Diff, Probe and Close. `docs/architecture.md` describes both phase
 
 ## What the code holds today
 
-`src/` holds the live phase and nothing else. The seven files are `child.ts`, `model.ts`,
-`server.ts`, `topics.ts`, `rig.ts`, `page.html` and `child.test.ts`. The code does not hold Check,
-Diff, Probe or Close. The code does not hold the omniscient toggle, the marked transcript, the quiet
-turn or the topic gate. Every statement below about the end phase describes a design. No statement
-below describes a thing that runs. The build takes typed input. The build does not accept voice. The
-server holds one session in memory. The server writes nothing to disk. The findings appear once. The
-app loses them when the process stops.
+Both phases run. `docs/architecture.md` lists every file in `src/` under "What exists today". The
+build takes typed input. The build does not accept voice. The app does not have a topic gate. The
+server holds one session in memory. The server writes nothing to disk. The findings appear once.
+The app loses them when the process stops. No eval measures what the end phase produces.
 
-## A session, as designed
+## A session
 
-This list is the design. Steps 1, 3 and 4 run today. Steps 2, 5, 6, 7 and 8 do not.
+Every step in this list runs today.
 
-1. You pick a topic from the curated list. A box for your own topic is a design, not code.
+1. You pick a topic from the curated list. You cannot type your own topic.
 2. You set the omniscient toggle. The app names the destination. The app takes your consent.
 3. You explain the mechanism from memory. The app shows you no source text.
 4. The child says one short line back. It asks about one step in what you just said. It can press

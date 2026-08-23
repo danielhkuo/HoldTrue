@@ -1,7 +1,11 @@
 # Measurement: the within-sentence rate
 
+> **Deleted documents.** This file names `philosophy.md`, `decisions.md`, the `specs/` folder and the
+> `features/` folder. The owner deleted the old versions on 2026-08-19. A name is a historical
+> reference and not a link. `docs/decisions.md` records the deletion.
+
 Build order step 0, first of the three falsification measurements. About a day, no application
-code. Reasoning in [`docs/features/feynman.md`](../../docs/features/feynman.md).
+code. Reasoning in `docs/features/feynman.md`.
 
 > **This measurement survives the model-knowledge pivot of 2026-08-07 and still has to be run.**
 > Extract still reads the user's own explanation, and invariant 8 still says it reads it one
@@ -24,7 +28,7 @@ comparison that could not happen. The model-knowledge pivot removed the notes fr
 path. The counterpart now comes from the model's own knowledge, and Compare — the piece that did
 that comparison — has no subject there. So the ceiling is a ceiling on the extracted link set,
 and **what that link set is for on the default path is open**, owned by
-[`docs/features/feynman.md`](../../docs/features/feynman.md) and not answered here. The count is
+`docs/features/feynman.md` and not answered here. The count is
 the same count either way, which is why it still runs first.
 
 **Nobody has published this number for spoken, from-memory explanation by a learner.** What is
@@ -111,7 +115,7 @@ places where your chain does not close. A flag on something you *did* explain is
 question**: the child asks you about a step you already covered.
 
 **Four kinds, so four numbers.** One combined figure hides a bad branch behind three good ones, or
-condemns three good branches for one bad one. [`../../docs/specs/cohere.md`](../../docs/specs/cohere.md)
+condemns three good branches for one bad one. `docs/specs/cohere.md`
 section 2 fixes the list, and changing that list changes what this measures.
 
 | Kind | What a false one costs you | Kill above |

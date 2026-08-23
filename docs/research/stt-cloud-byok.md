@@ -1,5 +1,9 @@
 # STT: the cloud bring-your-own-key branch
 
+> **Deleted documents.** This file names `philosophy.md`, `decisions.md`, the `specs/` folder and the
+> `features/` folder. The owner deleted the old versions on 2026-08-19. A name is a historical
+> reference and not a link. `docs/decisions.md` records the deletion.
+
 > **Partial answer to [issue 23](https://github.com/danielhkuo/HoldTrue/issues/23), "Which
 > speech-to-text engine."** Covers the three BYOK cloud vendors only. The four *local*
 > candidates the ticket names — Apple SpeechAnalyzer, whisper.cpp, NVIDIA Parakeet, Vosk —
@@ -10,19 +14,19 @@
 > on 2026-08-04 against primary sources, with URLs recorded per claim. Nobody has re-walked
 > those sources by hand. Treat every number here as *cited but unchecked* — in the sense
 > [`evidence-base.md`](evidence-base.md) means by "unverified, cite only after retrieval."
-> Verify before any of it enters [`decisions.md`](../decisions.md).
+> Verify before any of it enters `decisions.md`.
 
 ## Why this branch exists at all
 
 The stack rule is *"Ollama, or bring your own API key"*
-([`decisions.md`](../decisions.md)). Ollama does not serve ASR models, so a local engine has
+(`decisions.md`). Ollama does not serve ASR models, so a local engine has
 to find a served path or break the no-bundled-inference decision. A BYOK cloud API breaks
 nothing — it is the second half of the rule as written.
 
 It does collide with something else, and that collision is a decision, not a fact:
-[`philosophy.md`](../philosophy.md) opens with *"Nothing leaves the device unless you turn
+`philosophy.md` opens with *"Nothing leaves the device unless you turn
 something on."* Sending explanation audio to a vendor is precisely the class of thing
-[`decisions.md`](../decisions.md) already puts behind an explicit switch for cloud embedding
+`decisions.md` already puts behind an explicit switch for cloud embedding
 and web retrieval. **A cloud STT default would contradict that; a cloud STT option behind the
 same switch would not.** Nothing below settles which.
 

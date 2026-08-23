@@ -4,14 +4,14 @@ description: Diagnosis loop for hard bugs and performance regressions. Use when 
 ---
 
 > Derived from `diagnosing-bugs` in Matt Pocock's skills collection (MIT, see
-> `../LICENSE-mattpocock`). Modified for this repo: in Phase 5 the human writes the regression
-> assertion. Every other phase is unchanged. See *The oracle* in `docs/workflow.md`.
+> `../LICENSE-mattpocock`). Modified for this repo: Phase 5 follows the testing rules in
+> `AGENTS.md`. Every other phase is unchanged.
 
 # Diagnosing Bugs
 
 A discipline for hard bugs. Skip phases only when explicitly justified.
 
-When exploring the codebase, read `CONTEXT.md` (if it exists) to get a clear mental model of the relevant modules, and check ADRs in the area you're touching.
+When exploring the codebase, read `docs/architecture.md` to get a clear mental model of the modules, and `docs/decisions.md` for the reasoning in the area you're touching.
 
 ## Phase 1 — Build a feedback loop
 
@@ -30,7 +30,7 @@ Spend disproportionate effort here. **Be aggressive. Be creative. Refuse to give
 7. **Property / fuzz loop.** If the bug is "sometimes wrong output", run 1000 random inputs and look for the failure mode.
 8. **Bisection harness.** If the bug appeared between two known states (commit, dataset, version), automate "boot at state X, check, repeat" so you can `git bisect run` it.
 9. **Differential loop.** Run the same input through old-version vs new-version (or two configs) and diff outputs.
-10. **HITL bash script.** Last resort. If a human must click, drive _them_ with `scripts/hitl-loop.template.sh` so the loop is still structured. Captured output feeds back to you.
+10. **HITL bash script.** Last resort. If a human must click, drive _them_ with `hitl-loop.template.sh` in this skill's folder so the loop is still structured. Captured output feeds back to you.
 
 Build the right feedback loop, and the bug is 90% fixed.
 
@@ -59,7 +59,7 @@ Phase 1 is done when the loop is **tight** and **red-capable**: you can name **o
 - [ ] **Red-capable** — it drives the actual bug code path and asserts the **user's exact symptom**, so it can go red on this bug and green once fixed. Not "runs without erroring" — it must be able to _catch this specific bug_.
 - [ ] **Deterministic** — same verdict every run (flaky bugs: a pinned, high reproduction rate, per above).
 - [ ] **Fast** — seconds, not minutes.
-- [ ] **Agent-runnable** — you can run it unattended; a human in the loop only via `scripts/hitl-loop.template.sh`.
+- [ ] **Agent-runnable** — you can run it unattended; a human in the loop only via `hitl-loop.template.sh` in this skill's folder.
 
 If you catch yourself reading code to build a theory before this command exists, **stop — jumping straight to a hypothesis is the exact failure this skill prevents.** No red-capable command, no Phase 2.
 
@@ -119,19 +119,17 @@ A correct seam is one where the test exercises the **real bug pattern** as it oc
 
 If a correct seam exists:
 
-1. **Hand the minimised repro to the human and stop.** They write the assertion. In this repo
-   an agent may never author or modify a test assertion, including a regression test, and this
-   is the point where that rule is easiest to forget: you have the repro, the seam is obvious,
-   and writing the test yourself would feel like finishing the job. Give them the repro, the
-   seam you recommend, and the exact symptom to assert on. Then wait.
-2. Watch their test fail.
+1. **Write the regression test from the minimised repro.** Assert the user's exact symptom, not
+   the behaviour you expect to implement. `AGENTS.md` rules 32 to 36 bind the test: no Ollama,
+   no network, no model as judge, no golden transcript, and a name that states the assertion.
+2. Commit the test alone and watch it fail. The pre-commit hook blocks a test and its fix in
+   one commit.
 3. Apply the fix.
-4. Watch it pass.
+4. Watch it pass. Run `npm run check`.
 5. Re-run the Phase 1 feedback loop against the original (un-minimised) scenario.
 
-The reason is under *The oracle* in `docs/workflow.md`. A regression test written by whoever just diagnosed
-the bug tends to assert the behaviour they happen to have implemented, which is the failure
-mode the rule exists to prevent.
+A regression test written after the fix tends to assert the behaviour the fixer happened to
+implement. Writing it first, from the symptom, is what prevents that.
 
 ## Phase 6 — Cleanup + post-mortem
 
@@ -143,4 +141,4 @@ Required before declaring done:
 - [ ] Throwaway prototypes deleted (or moved to a clearly-marked debug location)
 - [ ] The hypothesis that turned out correct is stated in the commit / PR message — so the next debugger learns
 
-**Then ask: what would have prevented this bug?** If the answer involves architectural change (no good test seam, tangled callers, hidden coupling) hand off to the `/improve-codebase-architecture` skill with the specifics. Make the recommendation **after** the fix is in, not before — you have more information now than when you started.
+**Then ask: what would have prevented this bug?** If the answer involves architectural change (no good test seam, tangled callers, hidden coupling) write it down for the owner as a proposed decision for `docs/decisions.md`. Make the recommendation **after** the fix is in, not before — you have more information now than when you started.
