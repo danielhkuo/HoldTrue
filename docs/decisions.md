@@ -223,3 +223,20 @@ two things: what this app does, and where the text goes. The app can answer both
 
 **The rejected alternative.** The owner rejects a promise about retention, training or deletion at a
 provider. Such a promise needs a contract that does not exist.
+
+## 16. The opener guard fires on a pair, and stays
+
+**Decided 2026-08-24.** The owner delegated this ruling to the agent. The guard in
+`src/director.ts` stays as built. It reads the child's last two said lines. A shared opener adds
+one literal ban line to the next block.
+
+**Why.** Run C, with no guard, produced a block of six identical openers. That is the failure
+that reads as broken. The guard ends such a block at three, for zero model calls. Run H shows the
+mechanism fire and shows no harm and no leak.
+
+**The rejected alternatives.** A ban on the first repeat is rejected. A ban on every turn forces
+an alternation: ban A, the model picks B; ban B, it returns to A. That is the period-two rotation
+that measured result 2 predicts. It also puts one fixed string into nearly every block, and a
+fixed string in every block is the template risk of measured result 7. Dropping the guard is
+rejected. The F against H counts show no gain at one conversation, but the guard exists for the
+tail, and the tail is measured in run C.

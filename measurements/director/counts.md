@@ -170,3 +170,9 @@ show a gain at n=1, and no harm appeared. The owner has three options: keep the 
 cheap stop on long repeat blocks, drop it, or ban at the first use instead of the second so a
 block cannot reach length three. The third option contradicts nothing measured, and nobody has
 tested it.
+
+## The ruling on the guard, 2026-08-24
+
+The owner delegated the choice. Decision 16 in `docs/decisions.md` holds it. The guard stays as
+built. The first-repeat variant is rejected: it forces the period-two rotation. Dropping is
+rejected: run C measured the tail the guard caps.
