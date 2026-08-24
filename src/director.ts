@@ -9,7 +9,10 @@
  * This module is plain code. It calls no model. It judges no line. Rules 1 and 33 hold. It reads
  * words only, through `wordsIn` and `STOP_WORDS`. It never edits the person's words. Rule 10.
  *
- * `docs/proposals/director-experiment.md` owns the design, including the four rules in order.
+ * `docs/proposals/director-experiment.md` owns the design, including the five rules in order:
+ * contradiction, confession, word ban, cause and destination. Round 2 added the confession rule
+ * and three wordings for the cause, ban and destination moves. `direct` deals one wording by
+ * `history.length % 3`. The contradiction and the confession keep one wording each.
  */
 
 import { STOP_WORDS, wordsIn } from './words.js'
@@ -32,6 +35,49 @@ const PRESS_WEIGHT = 3
 
 const NEGATIONS: ReadonlySet<string> = new Set(["can't", 'cannot', "doesn't", 'never', "won't", "isn't"])
 const AFFIRMATIONS: ReadonlySet<string> = new Set(['can', 'does', 'goes', 'will', 'is'])
+
+/**
+ * The phrase for a confession. The match is case blind. It reads the newest `them:` line only.
+ *
+ * `docs/proposals/director-experiment.md`, section "Round 2", owns this pattern.
+ */
+const CONFESSION =
+  /\b(?:don'?t|do not|dunno|can'?t|cannot)\s+(?:know|remember)\b|\bnot\s+(?:really\s+)?sure\b|\bno idea\b/i
+
+/**
+ * Three wordings for each frequent move. `direct` deals one by `history.length % 3`. The word
+ * "{W}" is a placeholder. `direct` puts the target word in its place, inside the quotes that are
+ * already in the string. `docs/proposals/director-experiment.md`, section "Round 2", owns the
+ * three sets. No wording holds a question. A question sentence gives the model a line to copy.
+ */
+export const WORDINGS: {
+  readonly cause: readonly string[]
+  readonly ban: readonly string[]
+  readonly destination: readonly string[]
+} = {
+  cause: [
+    'They said "{W}". They did not say what makes that happen. Go after that missing piece.',
+    'Something causes "{W}", and they skipped it. Get them to say the step behind it.',
+    'The word "{W}" arrived with no cause behind it. Pull that cause out of them.',
+  ],
+  ban: [
+    'They keep leaning on the word "{W}" as if it explains the step. Say you do not know that word, and get the step without it.',
+    'The word "{W}" is doing all the work. Tell them the word means nothing to you, and get that part again in plain words.',
+    '"{W}" keeps standing in for the explanation. Get them to say the step another way, without it.',
+  ],
+  destination: [
+    'Something they mentioned goes somewhere, or turns into something else. Find out where, or what.',
+    'Pick a thing they mentioned, and chase what happens to it next.',
+    'A thing in their story moves on. Follow it one step further.',
+  ],
+}
+
+/** The wording for this turn, from the list, dealt by the length of the history. */
+const dealt = (list: readonly string[], history: readonly Exchange[]): string =>
+  list[history.length % list.length]!
+
+/** The wording with the target word in place of the placeholder. */
+const named = (wording: string, word: string): string => wording.replace('{W}', word)
 
 /** Content words only. */
 const content = (line: string): readonly string[] => wordsIn(line).filter(w => !STOP_WORDS.has(w))
@@ -105,15 +151,19 @@ export const direct = (history: readonly Exchange[], you: string): string => {
     return `[They said two things about "${noun}" that do not agree. Put both together and ask which one holds. ${VOCABULARY}]`
   }
 
+  if (CONFESSION.test(you)) {
+    return `[They said they are not sure of that part. Have them say the last part they are sure of. ${VOCABULARY}]`
+  }
+
   const open = debts(history, you)
     .filter(d => d.pressed < WRITE_OFF)
     .sort((a, b) => score(b, now) - score(a, now) || a.openedTurn - b.openedTurn)
   const top = open[0]
   if (top === undefined) {
-    return `[Ask where a thing they mentioned goes, or what happens to it next. ${VOCABULARY}]`
+    return `[${dealt(WORDINGS.destination, history)} ${VOCABULARY}]`
   }
   if (top.pressed === 2) {
-    return `[They keep using the word "${top.word}" as if it explains the step. Say you do not know that word and ask for the step without it. ${VOCABULARY}]`
+    return `[${named(dealt(WORDINGS.ban, history), top.word)} ${VOCABULARY}]`
   }
-  return `[They said "${top.word}". Ask what makes that happen. ${VOCABULARY}]`
+  return `[${named(dealt(WORDINGS.cause, history), top.word)} ${VOCABULARY}]`
 }

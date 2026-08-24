@@ -25,6 +25,8 @@ const RUNS: Record<string, Run> = {
   C: { options: { director: true }, temperature: 0 },
   D: { options: {}, temperature: 0.8 },
   E: { options: { hideOwnLines: true, director: true }, temperature: 0.8 },
+  F: { options: { director: true }, temperature: 0 },
+  G: { options: { hideOwnLines: true, director: true }, temperature: 0.8 },
 }
 
 const PERSON = `You are explaining how a bicycle brake works, out loud, to a curious 10-year-old. You go from memory. You are not a physicist.
@@ -42,7 +44,7 @@ const TOPIC = 'How a bicycle brake stops the wheel'
 const letter = (process.argv[2] ?? 'A').toUpperCase()
 const run = RUNS[letter]
 if (run === undefined) {
-  console.error(`Unknown run "${letter}". Use A, B, C, D or E.`)
+  console.error(`Unknown run "${letter}". Use A, B, C, D, E, F or G.`)
   process.exit(1)
 }
 const maxTurns = Number(process.argv[3] ?? 8)

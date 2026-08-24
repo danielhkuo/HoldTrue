@@ -15,6 +15,8 @@ from this folder may enter a document outside this folder.
 | C | director |
 | D | sampling, temperature 0.8 |
 | E | all three |
+| F | director, round 2 |
+| G | director round 2, hideOwnLines, sampling 0.8 |
 
 Run one with `npm run experiment -- A`. The script reads `OLLAMA_MODEL` for the model name. Both
 sides use the same model.

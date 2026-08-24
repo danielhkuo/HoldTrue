@@ -178,3 +178,79 @@ each flag. A flag that wins becomes the default in a later commit.
 It counts the shape of the child's line. It says nothing about whether the child is any good.
 One run of one conversation is not a rate. Every number is an engineering count about a machine.
 No figure from this experiment may enter a document outside `measurements/director/`.
+
+---
+
+# Round 2: the confession move, and the wordings
+
+**Status: designed on 2026-08-24 from the judgment in
+`docs/research/move-coverage-council.md`. Not built.**
+
+Round 1 measured two defects in the director. The block wording went into the child's line
+(run C, count 1 at 5). A confession got the cause move on an old word. Round 2 changes
+`src/director.ts` only. The flags, the handles and the server do not change.
+
+## Change 1: the confession rule
+
+`direct` gets one rule between the contradiction and the debts. The newest `them:` line matches
+this pattern, case blind:
+
+```
+\b(?:don'?t|do not|dunno|can'?t|cannot)\s+(?:know|remember)\b|\bnot\s+(?:really\s+)?sure\b|\bno idea\b
+```
+
+The block: `[They said they are not sure of that part. Have them say the last part they are sure of. ${VOCABULARY}]`
+
+The trigger is a literal phrase list. Plain code reads it. A false fire costs one gentle turn. A
+miss makes the child press an old word right after a confession, and the transcripts show the
+person then repeating a line word for word.
+
+## Change 2: three wordings for each frequent move
+
+The cause move, the word ban and the destination move each get three wordings. The turn index
+deals one: `history.length % 3`. Each wording is a direction. No wording holds a question
+sentence, so the model has no question to copy. Run C measured the copy: "Ask what makes that
+happen" became "What makes ... happen?" on every cause turn. The contradiction and the confession
+keep one wording each. They fire rarely.
+
+The wordings live in one exported constant, so a test can pin the deal without repeating the
+strings.
+
+- Cause, naming the word W: "They said "W". They did not say what makes that happen. Go after
+  that missing piece." / "Something causes "W", and they skipped it. Get them to say the step
+  behind it." / "The word "W" arrived with no cause behind it. Pull that cause out of them."
+- Ban: "They keep leaning on the word "W" as if it explains the step. Say you do not know that
+  word, and get the step without it." / "The word "W" is doing all the work. Tell them the word
+  means nothing to you, and get that part again in plain words." / ""W" keeps standing in for the
+  explanation. Get them to say the step another way, without it."
+- Destination: "Something they mentioned goes somewhere, or turns into something else. Find out
+  where, or what." / "Pick a thing they mentioned, and chase what happens to it next." / "A thing
+  in their story moves on. Follow it one step further."
+
+Every block still ends with the vocabulary sentence.
+
+## The runs
+
+| Run | Flags |
+|---|---|
+| F | director, round 2 |
+| G | director round 2, hideOwnLines, sampling 0.8 |
+
+Eight turns each. The same person prompt, the same model, the same five counts, two readers.
+Compare run F with run C and run A. Compare run G with run E and run D.
+
+## What each change claims
+
+- Change 2 must lower counts 1 and 2 in run F against run C. The falsifier: the child copies a
+  wording fragment such as "missing piece" into its lines, or counts 1 and 2 stay at run C level.
+- Change 1 has no count. Its check is direct: feed `direct` a confession and read the block. The
+  machine person rarely confesses, so the runs may never show it. The unit test carries the claim.
+- Run G against run E answers whether the director round 2 and sampling stack.
+
+## The tests
+
+- A confession in the newest line returns the confession block. An old debt does not outrank it.
+- "not sure" and "no idea" and "can't remember" trigger. "the pressure" does not.
+- The cause block at three consecutive turn indexes carries three different wordings.
+- The dealt wording matches the exported constant at index `history.length % 3`.
+- No wording contains a question mark.

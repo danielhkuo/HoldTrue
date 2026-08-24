@@ -29,8 +29,9 @@ The folder holds three kinds of file. Each kind has its own rule.
 - Engineering figures: [`extraction-benchmarks.md`](research/extraction-benchmarks.md) and the four
   speech-to-text files `stt-*.md`. Each figure carries its source where you use it.
 - Ungated material: [`feynman-edge-cases.md`](research/feynman-edge-cases.md),
-  [`repetition-council.md`](research/repetition-council.md) and
-  [`prior-art/`](research/prior-art/). A claim in these three files must not reach the user until the
+  [`repetition-council.md`](research/repetition-council.md),
+  [`move-coverage-council.md`](research/move-coverage-council.md) and
+  [`prior-art/`](research/prior-art/). A claim in these files must not reach the user until the
   owner files it in `evidence-base.md`. A document may cite such a claim. The document must mark the
   citation as unfiled. `AGENTS.md` rule 27 owns this rule. `feynman-edge-cases.md` also holds the measured
   data about real children.
