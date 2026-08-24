@@ -135,6 +135,61 @@ describe('direct: the confession move', () => {
   })
 })
 
+describe('direct: the opener guard', () => {
+  test('two child lines with the same first three words put the ban line in the block', () => {
+    const history = [
+      ex('the lever moves', 'What moves the lever next?'),
+      ex('the cable pulls', 'What moves the cable next?'),
+    ]
+    const block = direct(history, 'the spring pushes')
+    expect(block).toContain('Do not start with:')
+  })
+
+  test('the ban line quotes those three words', () => {
+    const history = [
+      ex('the lever moves', 'What moves the lever next?'),
+      ex('the cable pulls', 'What moves the cable next?'),
+    ]
+    const block = direct(history, 'the spring pushes')
+    expect(block).toContain('Do not start with: "what moves the".')
+  })
+
+  test('two child lines with different openers add no ban line', () => {
+    const history = [
+      ex('the lever moves', 'What moves the lever?'),
+      ex('the cable pulls', 'Where does the cable go?'),
+    ]
+    const block = direct(history, 'the spring pushes')
+    expect(block).not.toContain('Do not start with:')
+  })
+
+  test('a history with one child line adds no ban line', () => {
+    const history = [ex('the lever moves', 'What moves the lever next?')]
+    const block = direct(history, 'the spring pushes')
+    expect(block).not.toContain('Do not start with:')
+  })
+
+  test('the guard reads the last two child lines only, an older repeat adds no ban line', () => {
+    const history = [
+      ex('the lever moves', 'What moves the lever next?'),
+      ex('the lever moves', 'What moves the lever again?'),
+      ex('the cable pulls', 'Where does the cable go?'),
+    ]
+    const block = direct(history, 'the spring pushes')
+    expect(block).not.toContain('Do not start with:')
+  })
+
+  test('the ban line still appears when the last exchange is silent and the two most recent said lines share an opener', () => {
+    const history: Exchange[] = [
+      ex('the lever moves', 'What moves the lever next?'),
+      ex('the cable pulls', 'What moves the cable next?'),
+      { you: 'the spring pushes', child: { kind: 'silent', reason: 'the model said nothing' }, seconds: 0 },
+    ]
+    const block = direct(history, 'the spring pushes again')
+    expect(block).toContain('Do not start with: "what moves the".')
+  })
+})
+
 describe('direct: the wordings rotate by history.length % 3', () => {
   test('the cause block at three consecutive turn indexes carries three different wordings', () => {
     const b0 = direct([], 'the lever pulls')
