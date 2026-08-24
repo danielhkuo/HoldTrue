@@ -12,7 +12,9 @@
  * `docs/proposals/director-experiment.md` owns the design, including the five rules in order:
  * contradiction, confession, word ban, cause and destination. Round 2 added the confession rule
  * and three wordings for the cause, ban and destination moves. `direct` deals one wording by
- * `history.length % 3`. The contradiction and the confession keep one wording each.
+ * `history.length % 3`. The contradiction and the confession keep one wording each. Round 3 added
+ * the opener guard. Every block passes through `wrap`, which bans the child's last repeated
+ * opener before the closing bracket.
  */
 
 import { STOP_WORDS, wordsIn } from './words.js'
@@ -92,6 +94,41 @@ const themLines = (history: readonly Exchange[], you: string): readonly string[]
 const youLines = (history: readonly Exchange[]): readonly string[] =>
   history.flatMap(e => (e.child.kind === 'said' ? [e.child.line] : []))
 
+/**
+ * The first three words of a child line. The match is lower case. Punctuation is stripped.
+ * A line under three words gives a shorter opener. The ban then quotes the words that exist.
+ *
+ * `docs/proposals/director-experiment.md`, section "Round 3", owns this rule.
+ */
+const opener = (line: string): string =>
+  line
+    .toLowerCase()
+    .replace(/[^\w\s]/g, '')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 3)
+    .join(' ')
+
+/**
+ * The ban line for the opener guard. Empty when the guard does not fire.
+ *
+ * The guard reads the last two child said-lines only. It ignores an older repeat. When both
+ * lines share the same first-three-words opener, the child gets one line that names those
+ * words. Round 2 made a new most-repeated shape. This guard caps that repeat. It is one string
+ * compare. No model judges anything. Rule 33 holds.
+ */
+const openerBan = (history: readonly Exchange[]): string => {
+  const said = youLines(history)
+  if (said.length < 2) return ''
+  const [first, second] = said.slice(-2) as [string, string]
+  const a = opener(first)
+  const b = opener(second)
+  return a !== '' && a === b ? ` Do not start with: "${a}".` : ''
+}
+
+/** The block, wrapped in brackets, with the opener guard applied before the closing bracket. */
+const wrap = (text: string, history: readonly Exchange[]): string => `[${text}${openerBan(history)}]`
+
 export const debts = (history: readonly Exchange[], you: string): readonly Debt[] => {
   const opened = new Map<string, number>()
   themLines(history, you).forEach((line, turn) => {
@@ -148,11 +185,17 @@ export const direct = (history: readonly Exchange[], you: string): string => {
 
   const noun = contradiction(lines)
   if (noun !== null) {
-    return `[They said two things about "${noun}" that do not agree. Put both together and ask which one holds. ${VOCABULARY}]`
+    return wrap(
+      `They said two things about "${noun}" that do not agree. Put both together and ask which one holds. ${VOCABULARY}`,
+      history,
+    )
   }
 
   if (CONFESSION.test(you)) {
-    return `[They said they are not sure of that part. Have them say the last part they are sure of. ${VOCABULARY}]`
+    return wrap(
+      `They said they are not sure of that part. Have them say the last part they are sure of. ${VOCABULARY}`,
+      history,
+    )
   }
 
   const open = debts(history, you)
@@ -160,10 +203,10 @@ export const direct = (history: readonly Exchange[], you: string): string => {
     .sort((a, b) => score(b, now) - score(a, now) || a.openedTurn - b.openedTurn)
   const top = open[0]
   if (top === undefined) {
-    return `[${dealt(WORDINGS.destination, history)} ${VOCABULARY}]`
+    return wrap(`${dealt(WORDINGS.destination, history)} ${VOCABULARY}`, history)
   }
   if (top.pressed === 2) {
-    return `[${named(dealt(WORDINGS.ban, history), top.word)} ${VOCABULARY}]`
+    return wrap(`${named(dealt(WORDINGS.ban, history), top.word)} ${VOCABULARY}`, history)
   }
-  return `[${named(dealt(WORDINGS.cause, history), top.word)} ${VOCABULARY}]`
+  return wrap(`${named(dealt(WORDINGS.cause, history), top.word)} ${VOCABULARY}`, history)
 }

@@ -254,3 +254,43 @@ Compare run F with run C and run A. Compare run G with run E and run D.
 - The cause block at three consecutive turn indexes carries three different wordings.
 - The dealt wording matches the exported constant at index `history.length % 3`.
 - No wording contains a question mark.
+
+---
+
+# Round 3: the opener guard
+
+**Status: designed on 2026-08-24 from three owner rulings. The rulings are in
+`measurements/director/counts.md` under "The rulings of 2026-08-24". Not built.**
+
+Round 2 produced a new most-repeated shape, "You said X. What ...?". The owner ruled: keep the
+frame, cap the repetition.
+
+## The change
+
+`direct` gets a guard after the move is chosen. Plain code reads the last two child lines in the
+history. When both start with the same three words (lower case, punctuation stripped), the block
+gains one line before the closing bracket: `Do not start with: "<the three words>".`
+
+The guard reads the child's lines, not the person's. Rule 10 is untouched. The guard is one
+string compare. No model judges anything. Rule 33 holds. The ban is a literal phrase.
+`docs/research/child-prompt-ab.md` measured that a literal phrase ban works and a shape ban does
+not.
+
+## The run
+
+Run H: the director round 2 plus the guard, temperature 0, eight turns, the same person prompt,
+the same counts, two readers. Compare with run F.
+
+## The claim and the falsifier
+
+The guard must lower count 1 against run F, or hold it at run F's level while count 2 falls. The
+falsifier is measured result 2 in `src/child.ts`: the collapse moves, and the lines rotate
+between two openers on a period of two. A reader must look for that rotation by name.
+
+## The tests
+
+- Two child lines with the same first three words put the ban line in the block.
+- The ban line quotes those three words.
+- Two child lines with different openers add no ban line.
+- A history with one child line adds no ban line.
+- The guard reads the last two child lines only. An older repeat adds no ban line.

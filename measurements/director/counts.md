@@ -115,3 +115,58 @@ the stack.
 
 Every number here is an engineering count about a machine. Rule 29 holds. No figure leaves this
 folder.
+
+---
+
+# The rulings of 2026-08-24
+
+The owner delegated rulings 1 and 2 and set the standard for 3.
+
+1. **An ordinary everyday word is not a rule break.** The vocabulary rule bans a technical or
+   subject-specific word the person has not used. It permits ordinary words. "Press", "ride",
+   "want" and "decide" are ordinary words. Count 5 in runs F and G is therefore 0 under this
+   ruling. The readers' method read the rule too widely.
+2. **A question about the rider is allowed, and watched.** No rule forbids it. Rule 19 gates the
+   topic, not a turn. A future run that spends more than two turns on the rider is a defect with
+   its own proposal.
+3. **The recap frame stays. The repetition gets a cap.** The opener guard in the round 3 design
+   carries it.
+
+---
+
+# Round 3: run H
+
+One run on 2026-08-24, after the opener guard entered `src/director.ts`. The guard reads the last
+two child said-lines. When both start with the same three words, the block bans that opener for
+the next turn. Run H repeats the run F tuple. The commit separates the rounds.
+
+| Run | 1. Openers | 2. Frames | 3. Covered | 4. Gap | 5. Breaks | 6. Fragments | 7. Two-opener rotation |
+|---|---|---|---|---|---|---|---|
+| F (baseline) | 2 / 2 | 3 / 2 | 2 / 3 | no | — | 0 | — |
+| H (guard) | 3 / 3 | 4 / 4 | 3 / 4 | no | 0 / 0 | 0 / 0 | no / no |
+
+Each cell is reader 1 / reader 2 (blind). Count 5 in run H uses the ruling of 2026-08-24: an
+ordinary word is not a break.
+
+## Against the claim
+
+**The claim: run H lowers count 1 against run F, or holds it while count 2 falls.** Not supported.
+Count 1 rose from 2 to 3. Count 2 rose from 3 or 2 to 4.
+
+**The falsifier did not fire either.** No two-opener rotation appeared. Measured result 2
+predicted the collapse would move. It did not move. The openers formed blocks instead.
+
+**The mechanism itself fired where it should.** The lines show it. Lines 3 and 4 share "what makes
+the". The guard then banned that opener, and line 5 opens with a new phrase. Lines 6 and 7 share
+"you said the". The guard banned it, and line 8 opens with a new phrase. The guard ends a repeat
+block at length three. It cannot prevent the block from forming, because it fires only after a
+pair exists.
+
+## The reading
+
+One run of one conversation is not a rate. Run F and run H differ by one conversation of noise as
+much as by the guard. The honest statement: the guard does what its code says, the counts do not
+show a gain at n=1, and no harm appeared. The owner has three options: keep the guard as a
+cheap stop on long repeat blocks, drop it, or ban at the first use instead of the second so a
+block cannot reach length three. The third option contradicts nothing measured, and nobody has
+tested it.
