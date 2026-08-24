@@ -597,7 +597,7 @@ describe('flag hideOwnLines: the prompt holds the last child line only', () => {
 describe('flag director: the words pick the move', () => {
   test('with the flag the prompt ends on the director block', () => {
     const prompt = promptFor([], 'the lever pulls the cable', { director: true })
-    expect(prompt).toMatch(/\[They said "(lever|pulls|cable)"\. Ask what makes/)
+    expect(prompt).toMatch(/\[They said "(lever|pulls|cable)"\. They did not say what makes/)
     expect(prompt).not.toContain(lateBlock(0))
   })
 

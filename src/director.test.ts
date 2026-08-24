@@ -4,11 +4,14 @@
  */
 
 import { describe, expect, test } from 'vitest'
-import { debts, direct } from './director.js'
+import { debts, direct, WORDINGS } from './director.js'
 import { VOCABULARY, type Exchange, type Said } from './child.js'
 
 const said = (line: string): Said => ({ kind: 'said', line })
 const ex = (you: string, line: string): Exchange => ({ you, child: said(line), seconds: 0 })
+
+/** A `them:` line built only from stop words. */
+const filler = ex('it is the', 'okay')
 
 describe('debts: the words the person said, and how often the child pressed each', () => {
   test('a content word the person said is a debt', () => {
@@ -49,7 +52,9 @@ describe('direct: the words pick the move', () => {
   })
 
   test('a new word gets the cause move', () => {
-    expect(direct([], 'the lever pulls the cable')).toContain('Ask what makes that happen')
+    const block = direct([], 'the lever pulls the cable')
+    expect(block).toContain(WORDINGS.cause[0]!.replace('{W}', 'lever'))
+    expect(block).toMatch(/missing piece|step behind it|no cause behind it/)
   })
 
   test('a word pressed twice gets the word ban move', () => {
@@ -59,7 +64,8 @@ describe('direct: the words pick the move', () => {
     ]
     const block = direct(history, 'friction, like I said')
     expect(block).toContain('"friction"')
-    expect(block).toContain('Say you do not know that word')
+    expect(block).toContain(WORDINGS.ban[history.length % 3]!.replace('{W}', 'friction'))
+    expect(block).toMatch(/leaning on the word|doing all the work|standing in for the explanation/)
   })
 
   test('a word pressed three times is never named again', () => {
@@ -96,12 +102,57 @@ describe('direct: the words pick the move', () => {
   test('with no open debt the block carries the destination move', () => {
     const history = [ex('it is friction', 'What is friction?'), ex('friction', 'Friction how?'), ex('friction', 'What does friction do?')]
     const block = direct(history, 'friction')
-    expect(block).toContain('Ask where a thing they mentioned goes')
+    expect(block).toContain(WORDINGS.destination[history.length % 3])
+    expect(block).toMatch(/goes somewhere|what happens to it next|one step further/)
   })
 
   test('the block text changes when the target word changes', () => {
     const a = direct([], 'the lever pulls')
     const b = direct([], 'the spring pushes')
     expect(a).not.toBe(b)
+  })
+})
+
+describe('direct: the confession move', () => {
+  test('the confession rule outranks a debt that would otherwise fire the ban move', () => {
+    const history = [
+      ex('it is friction', 'What is friction doing?'),
+      ex('friction just does it', 'What does friction do to the wheel?'),
+    ]
+    const block = direct(history, "I don't know")
+    expect(block).toContain('They said they are not sure of that part')
+    expect(block).not.toMatch(/"[a-z]+"/)
+  })
+
+  test.each([
+    ["I'm not sure", true],
+    ['I have no idea', true],
+    ["I can't remember", true],
+    ['the pressure pushes it', false],
+  ])('%s: confession is %s', (line, expected) => {
+    const fires = direct([], line).includes('They said they are not sure of that part')
+    expect(fires).toBe(expected)
+  })
+})
+
+describe('direct: the wordings rotate by history.length % 3', () => {
+  test('the cause block at three consecutive turn indexes carries three different wordings', () => {
+    const b0 = direct([], 'the lever pulls')
+    const b1 = direct([filler], 'the lever pulls')
+    const b2 = direct([filler, filler], 'the lever pulls')
+    expect(new Set([b0, b1, b2]).size).toBe(3)
+  })
+
+  test('the dealt wording matches the exported constant at index history.length % 3', () => {
+    const histories = [[], [filler], [filler, filler]]
+    histories.forEach((history, index) => {
+      const block = direct(history, 'the lever pulls')
+      expect(block).toContain(WORDINGS.cause[index]!.replace('{W}', 'lever'))
+    })
+  })
+
+  test('no wording contains a question mark', () => {
+    const all = [...WORDINGS.cause, ...WORDINGS.ban, ...WORDINGS.destination]
+    for (const wording of all) expect(wording).not.toContain('?')
   })
 })
