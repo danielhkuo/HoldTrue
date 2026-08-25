@@ -201,13 +201,11 @@ The topic gate is not in this list. Decision 11 records why.
 The owner must answer each of these before release. Do not invent an answer.
 
 1. ~~**The privacy terms.**~~ **ANSWERED 2026-08-20.** See decision 15.
-2. **The end signal design.** The button is built. `src/page.html` holds it and it calls
-   `POST /api/end`. What stays open is the child. The owner must decide whether a quiet child ever
-   ends a session, and what rule makes the child go quiet. Case E13b covers this.
-3. **The topic gate.** Decision 11 accepts no gate. The owner must decide whether the app checks a
-   topic that the user types, and what a failed check does to the session.
-4. **Is the end phase worth running with the toggle off?** A small startup model runs Check. This
-   model may not hold ground truth about the mechanism. An unverified finding may be worse than no finding.
+2. ~~**The end signal design.**~~ **ANSWERED 2026-08-25.** See decision 17.
+3. ~~**The topic gate.**~~ **ANSWERED 2026-08-25.** See decision 18. The gate design itself is a
+   proposal. `docs/proposals/topic-gate.md` holds it, and the owner has not ruled on the design.
+4. ~~**Is the end phase worth running with the toggle off?**~~ **ANSWERED 2026-08-25.** See
+   decision 19.
 
 ## 15. HoldTrue saves nothing, and the provider speaks for itself
 
@@ -240,3 +238,38 @@ that measured result 2 predicts. It also puts one fixed string into nearly every
 fixed string in every block is the template risk of measured result 7. Dropping the guard is
 rejected. The F against H counts show no gain at one conversation, but the guard exists for the
 tail, and the tail is measured in run C.
+
+## 17. A button ends the session, like ending a call
+
+**Decided 2026-08-25.** The owner ruled. The end button stays, and it is the only end signal for
+the MVP. The model for the surface is a voice call screen: one control that ends, one that holds.
+The quiet child stays a later build. Rule 44 already says so. Case E13b stays open for that later
+build.
+
+## 18. The topic gate is required
+
+**Decided 2026-08-25.** The owner ruled. The app must check the topic. Decision 11 is reversed on
+the requirement. The design of the gate is not decided. `docs/proposals/topic-gate.md` holds two
+designs and a recommendation. The owner rules on the design separately.
+
+**Why.** Rule 19 scopes the product to a causal mechanism. Without a gate, only the curated list
+enforces the scope, and the owner wants the person to bring their own topic.
+
+## 19. One review, and the large model always runs it
+
+**Decided 2026-08-25.** The owner ruled. The app shows one kind of review. The end phase always
+runs on the provided model, the larger one. The unverified review is gone. The verified and
+unverified labels are gone, because one kind of review needs no label. The child keeps running on
+the startup model.
+
+**Why.** A finding from a model that may not know the mechanism can be wrong, and a wrong finding
+reaches a person as a claim about their own mind. The owner refuses that risk. One review, from
+the strongest model available, or no review with a stated failure.
+
+**The rejected alternative.** The dual label. It made the person read a trust taxonomy before
+reading their own gaps.
+
+**Open under this decision.** Two questions. First: the app holds no provided model, so does a
+session start at all, or start with a warning that no review will run? Rule 46 covers the stated
+failure either way. Second: the omniscient toggle loses its meaning and the code must lose it.
+`docs/proposals/one-review.md` holds the removal plan and both questions.

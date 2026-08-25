@@ -27,6 +27,7 @@ const RUNS: Record<string, Run> = {
   E: { options: { hideOwnLines: true, director: true }, temperature: 0.8 },
   F: { options: { director: true }, temperature: 0 },
   G: { options: { hideOwnLines: true, director: true }, temperature: 0.8 },
+  I: { options: { director: true }, temperature: 0 },
   // H carries the same flags as F. The opener guard in `director.ts` is the only difference.
   // `measurements/director/counts.md` records the commit that separates the two runs.
   H: { options: { director: true }, temperature: 0 },
@@ -47,7 +48,7 @@ const TOPIC = 'How a bicycle brake stops the wheel'
 const letter = (process.argv[2] ?? 'A').toUpperCase()
 const run = RUNS[letter]
 if (run === undefined) {
-  console.error(`Unknown run "${letter}". Use A, B, C, D, E, F, G or H.`)
+  console.error(`Unknown run "${letter}". Use A, B, C, D, E, F, G, H or I.`)
   process.exit(1)
 }
 const maxTurns = Number(process.argv[3] ?? 8)
@@ -57,8 +58,13 @@ if (modelName === undefined || modelName.trim() === '') {
   process.exit(1)
 }
 
+/**
+ * The child can run on a different model. Set OLLAMA_CHILD_MODEL to name it. The person keeps
+ * OLLAMA_MODEL. Run I uses this: a small child model against the same person model.
+ */
+const childModelName = process.env.OLLAMA_CHILD_MODEL?.trim() || modelName
 const person = ollama(modelName, 0.8)
-const child = ollama(modelName, run.temperature)
+const child = ollama(childModelName, run.temperature)
 const who = await child.identify()
 
 const history: Exchange[] = []

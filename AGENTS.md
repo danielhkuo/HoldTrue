@@ -59,9 +59,8 @@ evidence and marks it CANDIDATE. Rule 27 keeps a CANDIDATE claim out of the prod
 18. The product must not treat hesitation or a filled pause as a signal.
 19. The product must not run on a topic that is not a causal mechanism. The owner curates the
     topic list. The app does not have a topic gate. `docs/architecture.md` describes the page.
-20. The app must label the findings of a session with the omniscient toggle ON as verified. The app
-    must also disclose that such a session sends text to a remote service.
-21. The app must label the findings of a session with the toggle OFF as unverified.
+20. WITHDRAWN 2026-08-25. Decision 19 removes the labels. Rule 53 replaces this rule.
+21. WITHDRAWN 2026-08-25. Decision 19 removes the labels. Rule 53 replaces this rule.
 22. The app must not promise that nothing leaves the device. An API key sends text to a provider.
 44. A button ends a session. A child that goes quiet is a later build. No document may say that
     quiet ends a session today.
@@ -82,6 +81,12 @@ evidence and marks it CANDIDATE. Rule 27 keeps a CANDIDATE claim out of the prod
 25. A distinct failure must get a distinct reason. One message must not stand for a stopped
     backend, an unsupported model and a wrong model name.
 26. Do not recover the deleted documents from git history. The owner deleted them on purpose.
+
+### Added by decision 19
+
+53. The end phase must run on the provided model only. The startup model must never run the end
+    phase. An end phase that cannot run is a stated failure. Rule 46 owns the statement. The app
+    must still disclose where the text goes and take consent before the first send. Rule 48 holds.
 
 ## The evidence rule
 

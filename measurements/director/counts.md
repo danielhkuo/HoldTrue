@@ -176,3 +176,32 @@ tested it.
 The owner delegated the choice. Decision 16 in `docs/decisions.md` holds it. The guard stays as
 built. The first-repeat variant is rejected: it forces the period-two rotation. Dropping is
 rejected: run C measured the tail the guard caps.
+
+---
+
+# The small-child test: run I
+
+One run on 2026-08-25. The person stayed `muse-glimmer:30b-mlx`. The child ran on
+`phi4-mini:latest`, about 4B parameters. The flags matched run H: the round 3 director,
+temperature 0. One reader counted. The failure is visible on sight, so a second reader was not
+used.
+
+| Run | Child model | 1. Openers | 2. Frames | 3. Covered | Statements, not questions | Not a question at all |
+|---|---|---|---|---|---|---|
+| H | 30B | 3 | 4 | 3 | 0 | 0 |
+| I | 4B | 6 | 4 | 2 | 6 | 8 |
+
+## The verdict
+
+The small model held the knowledge guards and broke the behaviour guards. It used no analogy, no
+claim of understanding and no foreign subject word. It also asked nothing. Eight lines of eight
+end in a full stop. Six of eight say the person's mechanism back as a statement, which rule 4
+forbids: "So when you squeeze the brake lever, it makes the pads touch the wheel to stop it."
+Six of eight open with the same three words.
+
+The hypothesis was that a small child model would not lower output quality. This run refutes it
+for a 4B model. The child's quality does not come from knowledge. It comes from following the
+prompt, and the 4B model did not follow it. The two-model shape survives, but the child model has
+a floor somewhere between 4B and 30B, and only more runs can place it.
+
+Every number here is an engineering count about a machine. Rule 29 holds.

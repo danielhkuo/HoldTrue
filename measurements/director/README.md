@@ -18,6 +18,7 @@ from this folder may enter a document outside this folder.
 | F | director, round 2 |
 | G | director round 2, hideOwnLines, sampling 0.8 |
 | H | director round 2 + opener guard |
+| I | as H, and the child runs on a small model (`OLLAMA_CHILD_MODEL`) |
 
 Run one with `npm run experiment -- A`. The script reads `OLLAMA_MODEL` for the model name. Both
 sides use the same model.
