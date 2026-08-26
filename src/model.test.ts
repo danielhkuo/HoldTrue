@@ -10,7 +10,7 @@
  */
 
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { open, ollama, REASON, TIMEOUT_MS } from './model.js'
+import { open, ollama, openai, REASON, TIMEOUT_MS } from './model.js'
 
 type Call = { readonly url: string; readonly init: RequestInit }
 
@@ -41,6 +41,10 @@ const anthropicBody = (text: string, model = 'claude-opus-5') => ({
   model,
   content: [{ type: 'text', text }],
 })
+const openaiBody = (content: string, model = 'composer-2.5') => ({
+  model,
+  choices: [{ message: { content } }],
+})
 
 const bodyOf = (call: Call): Record<string, unknown> =>
   JSON.parse(String(call.init.body)) as Record<string, unknown>
@@ -51,6 +55,9 @@ const headersOf = (call: Call): Record<string, string> =>
 const key = { kind: 'apiKey', provider: 'anthropic', key: 'k-test' } as const
 /** The same backend with a named model. No backend has a default, so most tests need this. */
 const keyed = { ...key, model: 'claude-opus-5' } as const
+
+/** A base url that ends in the version segment a real OpenAI-compatible endpoint uses. */
+const oa = { kind: 'openai', baseUrl: 'http://localhost:8080/v1', key: 'k-test' } as const
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -376,6 +383,86 @@ describe('the anthropic request', () => {
   })
 })
 
+describe('the openai request', () => {
+  test('the request goes to the chat completions route of the base url', async () => {
+    const calls = answers(openaiBody('hi'))
+    await openai('http://localhost:8080/v1', 'k-test', 'composer-2.5').ask('s', 'u')
+
+    expect(calls[0]?.url).toBe('http://localhost:8080/v1/chat/completions')
+  })
+
+  test('a trailing slash on the base url does not double up in the route', async () => {
+    const calls = answers(openaiBody('hi'))
+    await openai('http://localhost:8080/v1/', 'k-test', 'composer-2.5').ask('s', 'u')
+
+    expect(calls[0]?.url).toBe('http://localhost:8080/v1/chat/completions')
+  })
+
+  test('the request carries the model, the temperature, the token budget and the two messages', async () => {
+    const calls = answers(openaiBody('hi'))
+    await openai('http://localhost:8080/v1', 'k-test', 'composer-2.5', 0.8).ask('SYSTEM', 'USER')
+
+    expect(bodyOf(calls[0]!)).toEqual({
+      model: 'composer-2.5',
+      temperature: 0.8,
+      max_tokens: 4096,
+      messages: [
+        { role: 'system', content: 'SYSTEM' },
+        { role: 'user', content: 'USER' },
+      ],
+    })
+  })
+
+  test('the request carries the bearer header', async () => {
+    const calls = answers(openaiBody('hi'))
+    await openai('http://localhost:8080/v1', 'sk-secret', 'composer-2.5').ask('s', 'u')
+
+    expect(headersOf(calls[0]!)['authorization']).toBe('Bearer sk-secret')
+  })
+
+  test('ask returns the content of the first choice', async () => {
+    answers(openaiBody('Wait why does that make it hot?'))
+
+    expect(
+      await openai('http://localhost:8080/v1', 'k-test', 'composer-2.5').ask('s', 'u'),
+    ).toBe('Wait why does that make it hot?')
+  })
+
+  test('an empty key sends the request without an authorization header', async () => {
+    const calls = answers(openaiBody('hi'))
+    const handle = openai('http://localhost:8080/v1', '  ', 'composer-2.5')
+
+    expect(await handle.ask('s', 'u')).toBe('hi')
+    expect(headersOf(calls[0]!)).not.toHaveProperty('authorization')
+  })
+
+  test('status 401 gives the reason that the endpoint rejected the key', async () => {
+    fails(401)
+    const handle = openai('http://localhost:8080/v1', 'k-test', 'composer-2.5')
+    await handle.ask('s', 'u')
+
+    expect(handle.lastReason?.()).toBe('the endpoint rejected the key')
+  })
+
+  test('status 404 gives the missing model name reason', async () => {
+    fails(404)
+    const handle = openai('http://localhost:8080/v1', 'k-test', 'no-such-model')
+    await handle.ask('s', 'u')
+
+    expect(handle.lastReason?.()).toBe('the model name does not exist')
+  })
+
+  test('a backend that does not answer gives the unreachable reason', async () => {
+    stubFetch(async () => {
+      throw new TypeError('fetch failed')
+    })
+    const handle = openai('http://localhost:8080/v1', 'k-test', 'composer-2.5')
+
+    expect(await handle.ask('s', 'u')).toBeNull()
+    expect(handle.lastReason?.()).toBe(REASON.UNREACHABLE)
+  })
+})
+
 describe('the request stops after two minutes', () => {
   test('the timeout is 120 seconds', () => {
     expect(TIMEOUT_MS).toBe(120_000)
@@ -420,6 +507,22 @@ describe('the attribution names the thing that answered', () => {
     const who = await open(key).identify()
 
     expect(who.runtime).toBe('anthropic @ https://api.anthropic.com/v1/messages')
+  })
+
+  test('identify names the base url as the runtime for the openai backend', async () => {
+    const who = await open(oa).identify()
+
+    expect(who.runtime).toBe('openai @ http://localhost:8080/v1')
+  })
+
+  test('identify names the openai model in the answer, not the model in the setting', async () => {
+    answers(openaiBody('hi', 'answered-name'))
+    const handle = openai('http://localhost:8080/v1', 'k-test', 'configured-name')
+    await handle.ask('s', 'u')
+    const who = await handle.identify()
+
+    expect(who.model_id).toBe('answered-name')
+    expect(who.reason).toBeUndefined()
   })
 
   test('identify never carries the API key', async () => {

@@ -605,3 +605,25 @@ describe('flag director: the words pick the move', () => {
     expect(promptFor([], 'the lever pulls the cable')).toContain(lateBlock(0))
   })
 })
+
+describe('flag anchor: the subject line', () => {
+  test('with { director: true, anchor: true } and a topic the user message holds the subject sentence; with anchor false it does not', async () => {
+    const topic = 'How a bicycle brake stops the wheel'
+
+    const on = fake('ok')
+    await speak([], 'the lever pulls the cable', on.handle, topic, {
+      director: true,
+      anchor: true,
+    })
+    expect(on.seen[0]!.user).toContain(
+      `The subject is ${topic}. Ask about the machine, not about them.`,
+    )
+
+    const off = fake('ok')
+    await speak([], 'the lever pulls the cable', off.handle, topic, {
+      director: true,
+      anchor: false,
+    })
+    expect(off.seen[0]!.user).not.toContain('The subject is')
+  })
+})

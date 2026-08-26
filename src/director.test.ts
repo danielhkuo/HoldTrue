@@ -190,6 +190,50 @@ describe('direct: the opener guard', () => {
   })
 })
 
+describe('direct: the subject line', () => {
+  const topic = 'How a bicycle brake stops the wheel'
+
+  test('with a topic, the block holds the subject sentence immediately before the vocabulary sentence', () => {
+    const block = direct([], 'the lever pulls the cable', topic)
+    expect(block).toContain(
+      `The subject is ${topic}. Ask about the machine, not about them. ${VOCABULARY}`,
+    )
+  })
+
+  test('with an empty topic the block is unchanged from the two-argument call, and names no subject', () => {
+    const block = direct([], 'the lever pulls the cable', '')
+    expect(block).toBe(direct([], 'the lever pulls the cable'))
+    expect(block).not.toContain('The subject is')
+  })
+
+  test('the subject sentence appears on the cause move', () => {
+    const block = direct([], 'the lever pulls the cable', topic)
+    expect(block).toContain(`The subject is ${topic}.`)
+    expect(block).toContain(WORDINGS.cause[0]!.replace('{W}', 'lever'))
+  })
+
+  test('the subject sentence appears on the confession move', () => {
+    const block = direct([], "I don't know", topic)
+    expect(block).toContain(`The subject is ${topic}.`)
+    expect(block).toContain('They said they are not sure of that part')
+  })
+
+  test('the subject sentence and the opener ban fire together, in order: subject, then vocabulary, then the ban line last', () => {
+    const history = [
+      ex('the lever moves', 'What moves the lever next?'),
+      ex('the cable pulls', 'What moves the cable next?'),
+    ]
+    const block = direct(history, 'the spring pushes', topic)
+    const subjectIndex = block.indexOf(`The subject is ${topic}.`)
+    const vocabIndex = block.indexOf(VOCABULARY)
+    const banIndex = block.indexOf('Do not start with:')
+    expect(subjectIndex).toBeGreaterThan(-1)
+    expect(vocabIndex).toBeGreaterThan(subjectIndex)
+    expect(banIndex).toBeGreaterThan(vocabIndex)
+    expect(block.slice(banIndex)).toBe('Do not start with: "what moves the".]')
+  })
+})
+
 describe('direct: the wordings rotate by history.length % 3', () => {
   test('the cause block at three consecutive turn indexes carries three different wordings', () => {
     const b0 = direct([], 'the lever pulls')
