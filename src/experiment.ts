@@ -8,13 +8,16 @@
  * the word "friction". The person never says the planted gap. The child answers with the flags
  * of the run. The script writes the transcript to `measurements/director/<run>.md`.
  *
+ * The child seat can run on Ollama, or on an OpenAI-compatible endpoint. Set CHILD_OPENAI_URL to
+ * switch the child to that endpoint. The person stays on Ollama either way.
+ *
  * This script is a rig. It emits a transcript and nothing else. It judges no line. It counts
  * nothing. The counts come from a reader. Rule 29 holds: two models in conversation are not a
  * measurement. `docs/proposals/director-experiment.md` owns the design.
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs'
-import { ollama } from './model.js'
+import { ollama, openai } from './model.js'
 import { speak, type Exchange, type Options } from './child.js'
 
 type Run = { readonly options: Partial<Options>; readonly temperature: number }
@@ -28,6 +31,9 @@ const RUNS: Record<string, Run> = {
   F: { options: { director: true }, temperature: 0 },
   G: { options: { hideOwnLines: true, director: true }, temperature: 0.8 },
   I: { options: { director: true }, temperature: 0 },
+  J: { options: { director: true }, temperature: 0 },
+  K: { options: { director: true }, temperature: 0 },
+  L: { options: { director: true, anchor: true }, temperature: 0 },
   // H carries the same flags as F. The opener guard in `director.ts` is the only difference.
   // `measurements/director/counts.md` records the commit that separates the two runs.
   H: { options: { director: true }, temperature: 0 },
@@ -48,7 +54,7 @@ const TOPIC = 'How a bicycle brake stops the wheel'
 const letter = (process.argv[2] ?? 'A').toUpperCase()
 const run = RUNS[letter]
 if (run === undefined) {
-  console.error(`Unknown run "${letter}". Use A, B, C, D, E, F, G, H or I.`)
+  console.error(`Unknown run "${letter}". Use a letter from A to L.`)
   process.exit(1)
 }
 const maxTurns = Number(process.argv[3] ?? 8)
@@ -61,10 +67,22 @@ if (modelName === undefined || modelName.trim() === '') {
 /**
  * The child can run on a different model. Set OLLAMA_CHILD_MODEL to name it. The person keeps
  * OLLAMA_MODEL. Run I uses this: a small child model against the same person model.
+ *
+ * The child can also run on an OpenAI-compatible backend. Set CHILD_OPENAI_URL to its base url.
+ * The key comes from CHILD_OPENAI_KEY, or from CURSOR_API_KEY when CHILD_OPENAI_KEY is not set.
+ * OLLAMA_CHILD_MODEL still names the model. The person stays on Ollama. Run K and run L use this.
  */
 const childModelName = process.env.OLLAMA_CHILD_MODEL?.trim() || modelName
 const person = ollama(modelName, 0.8)
-const child = ollama(childModelName, run.temperature)
+const childOpenaiUrl = process.env.CHILD_OPENAI_URL?.trim()
+const child = childOpenaiUrl
+  ? openai(
+      childOpenaiUrl,
+      process.env.CHILD_OPENAI_KEY?.trim() || process.env.CURSOR_API_KEY?.trim() || '',
+      childModelName,
+      run.temperature,
+    )
+  : ollama(childModelName, run.temperature)
 const who = await child.identify()
 
 const history: Exchange[] = []
@@ -99,7 +117,7 @@ const lines = [
   ...history.flatMap((e, i) => [
     `**${i + 1}. them:** ${e.you}`,
     '',
-    `**${i + 1}. child:** ${e.child.kind === 'said' ? e.child.line : `(silent: ${e.child.reason})`}`,
+    `**${i + 1}. child:** ${e.child.kind === 'said' ? e.child.line : `(silent: ${e.child.reason})`} _(${e.seconds.toFixed(1)}s)_`,
     '',
   ]),
 ]

@@ -14,7 +14,8 @@
  * and three wordings for the cause, ban and destination moves. `direct` deals one wording by
  * `history.length % 3`. The contradiction and the confession keep one wording each. Round 3 added
  * the opener guard. Every block passes through `wrap`, which bans the child's last repeated
- * opener before the closing bracket.
+ * opener before the closing bracket. Round 4 added the subject sentence. With a topic, every
+ * block restates the subject right before the vocabulary sentence.
  */
 
 import { STOP_WORDS, wordsIn } from './words.js'
@@ -80,6 +81,17 @@ const dealt = (list: readonly string[], history: readonly Exchange[]): string =>
 
 /** The wording with the target word in place of the placeholder. */
 const named = (wording: string, word: string): string => wording.replace('{W}', word)
+
+/**
+ * The subject sentence. Empty when the topic is empty. It sits right before the vocabulary
+ * sentence in every block. `docs/proposals/director-experiment.md`, section "Round 4", owns this
+ * rule. Run J drifted onto the rider across the turns. The restated subject near the end of the
+ * context is the remedy.
+ */
+const subjectLine = (topic: string): string => {
+  const trimmed = topic.trim()
+  return trimmed === '' ? '' : `The subject is ${trimmed}. Ask about the machine, not about them. `
+}
 
 /** Content words only. */
 const content = (line: string): readonly string[] => wordsIn(line).filter(w => !STOP_WORDS.has(w))
@@ -178,22 +190,29 @@ const contradiction = (lines: readonly string[]): string | null => {
   return null
 }
 
-/** The block for this turn. `promptFor` puts it after the script when the director flag is on. */
-export const direct = (history: readonly Exchange[], you: string): string => {
+/**
+ * The block for this turn. `promptFor` puts it after the script when the director flag is on.
+ *
+ * `topic` defaults to the empty string. With a topic, every block gains the subject sentence
+ * right before the vocabulary sentence. Without a topic, the block is the same string as before
+ * Round 4.
+ */
+export const direct = (history: readonly Exchange[], you: string, topic = ''): string => {
   const lines = themLines(history, you)
   const now = lines.length - 1
+  const subject = subjectLine(topic)
 
   const noun = contradiction(lines)
   if (noun !== null) {
     return wrap(
-      `They said two things about "${noun}" that do not agree. Put both together and ask which one holds. ${VOCABULARY}`,
+      `They said two things about "${noun}" that do not agree. Put both together and ask which one holds. ${subject}${VOCABULARY}`,
       history,
     )
   }
 
   if (CONFESSION.test(you)) {
     return wrap(
-      `They said they are not sure of that part. Have them say the last part they are sure of. ${VOCABULARY}`,
+      `They said they are not sure of that part. Have them say the last part they are sure of. ${subject}${VOCABULARY}`,
       history,
     )
   }
@@ -203,10 +222,10 @@ export const direct = (history: readonly Exchange[], you: string): string => {
     .sort((a, b) => score(b, now) - score(a, now) || a.openedTurn - b.openedTurn)
   const top = open[0]
   if (top === undefined) {
-    return wrap(`${dealt(WORDINGS.destination, history)} ${VOCABULARY}`, history)
+    return wrap(`${dealt(WORDINGS.destination, history)} ${subject}${VOCABULARY}`, history)
   }
   if (top.pressed === 2) {
-    return wrap(`${named(dealt(WORDINGS.ban, history), top.word)} ${VOCABULARY}`, history)
+    return wrap(`${named(dealt(WORDINGS.ban, history), top.word)} ${subject}${VOCABULARY}`, history)
   }
-  return wrap(`${named(dealt(WORDINGS.cause, history), top.word)} ${VOCABULARY}`, history)
+  return wrap(`${named(dealt(WORDINGS.cause, history), top.word)} ${subject}${VOCABULARY}`, history)
 }

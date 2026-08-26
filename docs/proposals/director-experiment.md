@@ -294,3 +294,67 @@ between two openers on a period of two. A reader must look for that rotation by 
 - Two child lines with different openers add no ban line.
 - A history with one child line adds no ban line.
 - The guard reads the last two child lines only. An older repeat adds no ban line.
+
+---
+
+# Round 4: the third backend, and the subject line
+
+**Status: designed on 2026-08-25. The owner asked for the backend test. The subject line follows
+the run J rider drift. Not built.**
+
+## Change 1: the OpenAI-compatible backend
+
+`src/model.ts` gains a third backend kind. Run J showed the child floor near 9B, and the owner's
+realisation stands: the live phase needs speed, so the user brings a fast backend or a key. An
+OpenAI-compatible endpoint covers a local proxy and most providers.
+
+```ts
+| { readonly kind: 'openai'; readonly baseUrl: string; readonly key: string; readonly model?: string }
+```
+
+The request goes to `${baseUrl}/chat/completions` with the model, one system message, one user
+message, and the temperature. The key is optional. A non-empty key adds a bearer header. An empty
+key sends no `authorization` header. A local proxy is the case that needs no key. The answer is
+`choices[0].message.content`. Rule 23: no throw. Rule 25: a 401 ("the endpoint rejected the key"),
+a 404 and a dead endpoint each keep a distinct reason. Rule 24: the attribution reports the
+`model` field of the response body when it exists.
+
+The harness reads three variables for the child seat: `CHILD_OPENAI_URL`, `CHILD_OPENAI_KEY` (or
+`CURSOR_API_KEY`), and `OLLAMA_CHILD_MODEL` keeps naming the model. When `CHILD_OPENAI_URL` is
+set, the child runs on the OpenAI backend and the person stays on Ollama.
+
+## Change 2: the subject line
+
+Run J drifted: six turns of eight pressed the rider. The system message names the subject, and
+attention to the system message decays across turns. The remedy that measured best in round one
+was the restated rule near the end of the context. Apply it to the subject.
+
+`Options` gains `anchor` (default false). With the flag, and a topic present, every director
+block gains one sentence before the vocabulary sentence: `The subject is <topic>. Ask about the
+machine, not about them.` `direct` takes the topic as a parameter. `promptFor` passes it through
+from `speak`.
+
+## The runs
+
+| Run | Child seat | Flags |
+|---|---|---|
+| K | `composer-2.5` over the OpenAI backend | director, anchor off |
+| L | `composer-2.5` over the OpenAI backend | director, anchor on |
+
+The same person model, the same counts, plus the rider-turn count from run J. Latency per child
+turn goes in the transcript header: the harness already records seconds per exchange.
+
+## The claims
+
+- The backend claim is speed with guards held: the child turn falls under five seconds, and the
+  behaviour guard counts stay at the 30B level. The falsifier: statements, non-questions or
+  restatements appear as they did at 4B.
+- The anchor claim: run L cuts the rider turns against run K. The falsifier: the child copies
+  "the machine" or "about them" into its lines, or the rider count does not fall.
+
+## The tests
+
+- The OpenAI request body, the bearer header, the url join, and each failure reason: faked fetch,
+  no network. Rule 32.
+- The anchor: with the flag and a topic, the block ends with the subject sentence then the
+  vocabulary sentence. Without the flag, or without a topic, the block is unchanged.

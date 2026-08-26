@@ -205,3 +205,75 @@ prompt, and the 4B model did not follow it. The two-model shape survives, but th
 a floor somewhere between 4B and 30B, and only more runs can place it.
 
 Every number here is an engineering count about a machine. Rule 29 holds.
+
+---
+
+# The small-child test, second seat: run J
+
+One run on 2026-08-25. The person stayed `muse-glimmer:30b-mlx`. The child ran on `qwen3.5:9b`.
+The flags matched runs H and I. One reader counted.
+
+| Run | Child | Openers | Frames | Identical lines | Covered | Rider turns | Statements | Not a question |
+|---|---|---|---|---|---|---|---|---|
+| H | 30B | 3 | 4 | 0 | 3 | 0 | 0 | 0 |
+| I | 4B | 6 | 4 | 0 | 2 | 0 | 6 | 8 |
+| J | 9B | 3 | 6 | 1 | 5 | 6 | 0 | 1 |
+
+## The verdict
+
+The 9B child is a child. Every guard that the 4B broke held: no restatement, no claim of
+understanding, no analogy. Seven lines of eight are questions. That places the behaviour floor at
+or below 9B for this family.
+
+Three defects separate it from the 30B.
+
+1. One frame carried seven lines of eight: "You said X, but what makes Y?". One line repeated an
+   earlier line word for word. The frame lock is stronger than on the 30B.
+2. Six turns of eight chased the rider: the hand, the muscles, the brain, the eyes. The ruling of
+   2026-08-24 says more than two rider turns is a defect. Run J is the first run to produce it.
+   The drift feeds itself: the child asks about the rider, the person answers with rider words,
+   and those words become the director's new debts. The director has no notion of the subject.
+   The session title exists and the director does not read it. That is a design gap with its own
+   future proposal.
+3. Line 7 deserves note. The child said "you didn't say what makes the brake actually grab the
+   wheel". It named the unsaid step and pulled the session back to the mechanism. It is also not
+   a question, and the reader counted it as a break.
+
+The reader counted "brain" as a subject word the person had not used. "Brain" is arguably an
+ordinary word. The count stands with that doubt attached.
+
+Every number is an engineering count about a machine. One run is not a rate. Rule 29 holds.
+
+---
+
+# Round 4: runs K and L, the fast child seat
+
+Two runs on 2026-08-25. The person stayed `muse-glimmer:30b-mlx` on Ollama. The child ran on
+`composer-2.5` over the OpenAI-compatible backend at a local proxy. A probe of one child-shaped
+call took 2.0 seconds, against about 42 seconds a turn on the local 30B. Run K had the anchor
+off. Run L had it on. One reader counted each run.
+
+| Run | Child | Openers | Frames | Covered | Rider turns | Breaks (all kinds) | Fragments |
+|---|---|---|---|---|---|---|---|
+| H | 30B local | 3 | 4 | 3 | 0 | 0 | 0 |
+| J | 9B local | 3 | 6 | 5 | 6 | 2 | 0 |
+| K | composer-2.5 | 1 | 3 | 4 | 1 | 0 | 0 |
+| L | composer-2.5, anchor | 1 | 4 | 5 | 0 | 0 | 0 |
+
+## The verdicts
+
+**The backend claim holds.** The child turn fell from about 42 seconds to about 2 seconds, and
+every behaviour guard held: no statement, no analogy, no understanding claim, no foreign word,
+every line a question. Run K and run L show the lowest repeated-opener count of any run, at 1.
+
+**The anchor claim is weakly supported and not proven.** Run L had 0 rider turns against 1 in run
+K. One turn of difference is noise. The anchor also leaked nothing. The honest test of the anchor
+is the seat that drifted: the 9B in run J took six rider turns. Nobody has run the 9B with the
+anchor. That run would prove or refute the anchor.
+
+**The gap stays unreached, and run L stood one step from it.** Line 5: "You keep saying friction
+slows it—what's actually changing on the wheel?" The person answered without "heat" again. The
+child cannot force the word. Only the review can name it, and the end-to-end check of 2026-08-25
+shows the review doing exactly that.
+
+Every number is an engineering count about a machine. One run is not a rate. Rule 29 holds.

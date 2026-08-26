@@ -1,8 +1,9 @@
 /**
- * The model layer. It holds two backends behind one interface.
+ * The model layer. It holds three backends behind one interface.
  *
  * The part opens a handle for a backend. The caller then asks the handle for one answer.
- * Ollama runs on the machine of the user. The apiKey backend sends the text to Anthropic.
+ * Ollama runs on the machine of the user. The apiKey backend sends the text to Anthropic. The
+ * openai backend sends the text to an OpenAI-compatible endpoint: a local proxy or a provider.
  * `identify` names the model that answered. `ask` returns a string or null, and `ask` never
  * throws. `lastReason` gives the reason for the last failed ask. Each distinct failure gets a
  * distinct reason.
@@ -27,8 +28,12 @@
  * ignores `format`. A bogus format value returned HTTP 200.
  *
  * One note on the model name. No backend has a default. Rule 50 forbids a default model. The
- * caller must name the model for both backends. Without a name `identify` reports that no model
+ * caller must name the model for every backend. Without a name `identify` reports that no model
  * is chosen, and `ask` returns null with that reason.
+ *
+ * One note on the openai key. The key is optional for this backend. A local proxy can take no
+ * key. An empty key sends the request with no `authorization` header. A non-empty key sends
+ * `Bearer <key>`. The apiKey backend keeps its key as required; only the openai backend bends.
  */
 
 /** The address of the local backend. The code reads the variable when the caller opens a handle. */
@@ -40,8 +45,9 @@ const ANTHROPIC_VERSION = '2023-06-01'
 /** The request stops after this many milliseconds. A stopped request is a stated failure. */
 export const TIMEOUT_MS = 120_000
 
-/** Anthropic requires a token budget. The end phase returns a list, so the budget is not small. */
-const ANTHROPIC_MAX_TOKENS = 4096
+/** Anthropic and the openai backend both require a token budget. The end phase returns a list,
+ * so the budget is not small. */
+const MAX_TOKENS = 4096
 
 /**
  * Every reason that this part can give, except the reasons that carry a status code.
@@ -86,6 +92,12 @@ export type Backend =
       readonly key: string
       readonly model?: string
     }
+  | {
+      readonly kind: 'openai'
+      readonly baseUrl: string
+      readonly key: string
+      readonly model?: string
+    }
 
 /** The result of one attempt. The failed member carries one reason. */
 export type AskResult =
@@ -96,6 +108,9 @@ export type AskResult =
 type Body = { readonly ok: true; readonly json: unknown } | { readonly ok: false; readonly reason: string }
 
 const host = (): string => (process.env.OLLAMA_HOST ?? OLLAMA_FALLBACK_HOST).replace(/\/+$/, '')
+
+/** Drop a trailing slash so a url join never doubles one up. */
+const stripSlash = (url: string): string => url.replace(/\/+$/, '')
 
 /** A timeout and a dead backend are two failures. This test separates them. */
 const timedOut = (error: unknown): boolean => {
@@ -115,6 +130,13 @@ const anthropicStatus = (status: number): string => {
   if (status === 429) return 'the provider refused the request for rate'
   if (status === 400) return 'the provider rejected the request'
   return `the provider returned status ${status}`
+}
+
+/** The OpenAI-compatible endpoint gives a status. This function turns the status into one reason. */
+const openaiStatus = (status: number): string => {
+  if (status === 401 || status === 403) return 'the endpoint rejected the key'
+  if (status === 404) return 'the model name does not exist'
+  return `the endpoint returned status ${status}`
 }
 
 /** One POST. It never throws. It gives a reason for a dead backend, a timeout and a bad status. */
@@ -165,6 +187,16 @@ const readAnthropic = (json: unknown): AskResult => {
   return { ok: true, text, modelId: typeof body.model === 'string' ? body.model : null }
 }
 
+/** Read the first choice from an OpenAI-compatible chat completions body. */
+const readOpenai = (json: unknown): AskResult => {
+  const body = json as { choices?: unknown; model?: unknown }
+  const choices = Array.isArray(body.choices) ? body.choices : []
+  const first = choices[0] as { message?: { content?: unknown } } | undefined
+  const text = typeof first?.message?.content === 'string' ? first.message.content : ''
+  if (text.trim() === '') return { ok: false, reason: REASON.EMPTY }
+  return { ok: true, text, modelId: typeof body.model === 'string' ? body.model : null }
+}
+
 /**
  * Open one handle for one backend.
  *
@@ -172,7 +204,12 @@ const readAnthropic = (json: unknown): AskResult => {
  * The handle makes no call until the caller asks. `identify` therefore makes no network call.
  */
 export const open = (backend: Backend, temperature = 0): ModelHandle => {
-  const runtime = backend.kind === 'ollama' ? `ollama @ ${host()}` : `anthropic @ ${ANTHROPIC_URL}`
+  const runtime =
+    backend.kind === 'ollama'
+      ? `ollama @ ${host()}`
+      : backend.kind === 'openai'
+        ? `openai @ ${stripSlash(backend.baseUrl)}`
+        : `anthropic @ ${ANTHROPIC_URL}`
 
   /** No backend has a default. Rule 50. The caller names the model, or no model is chosen. */
   const configured: string | null = backend.model ?? null
@@ -202,6 +239,26 @@ export const open = (backend: Backend, temperature = 0): ModelHandle => {
       return body.ok ? readOllama(body.json) : { ok: false, reason: body.reason }
     }
 
+    if (backend.kind === 'openai') {
+      const headers: Record<string, string> = { 'content-type': 'application/json' }
+      if (backend.key.trim() !== '') headers.authorization = `Bearer ${backend.key}`
+      const body = await post(
+        `${stripSlash(backend.baseUrl)}/chat/completions`,
+        headers,
+        {
+          model: configured,
+          temperature,
+          max_tokens: MAX_TOKENS,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: user },
+          ],
+        },
+        openaiStatus,
+      )
+      return body.ok ? readOpenai(body.json) : { ok: false, reason: body.reason }
+    }
+
     if (backend.key.trim() === '') return { ok: false, reason: REASON.NO_KEY }
     const body = await post(
       ANTHROPIC_URL,
@@ -212,7 +269,7 @@ export const open = (backend: Backend, temperature = 0): ModelHandle => {
       },
       {
         model: configured,
-        max_tokens: ANTHROPIC_MAX_TOKENS,
+        max_tokens: MAX_TOKENS,
         temperature,
         system,
         messages: [{ role: 'user', content: user }],
@@ -262,3 +319,15 @@ export const open = (backend: Backend, temperature = 0): ModelHandle => {
  */
 export const ollama = (model?: string, temperature = 0): ModelHandle =>
   open(model === undefined ? { kind: 'ollama' } : { kind: 'ollama', model }, temperature)
+
+/**
+ * The OpenAI-compatible backend, by base url and key.
+ *
+ * The caller must give the model name. Without a name `identify` reports that no model is
+ * chosen, and `ask` returns null with that reason.
+ */
+export const openai = (baseUrl: string, key: string, model?: string, temperature = 0): ModelHandle =>
+  open(
+    model === undefined ? { kind: 'openai', baseUrl, key } : { kind: 'openai', baseUrl, key, model },
+    temperature,
+  )

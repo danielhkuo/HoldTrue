@@ -19,6 +19,9 @@ from this folder may enter a document outside this folder.
 | G | director round 2, hideOwnLines, sampling 0.8 |
 | H | director round 2 + opener guard |
 | I | as H, and the child runs on a small model (`OLLAMA_CHILD_MODEL`) |
+| J | as I, with the next child model under test |
+| K | the child on an OpenAI endpoint (`CHILD_OPENAI_URL`), director on |
+| L | as K, and the subject anchor on |
 
 Run one with `npm run experiment -- A`. The script reads `OLLAMA_MODEL` for the model name. Both
 sides use the same model.

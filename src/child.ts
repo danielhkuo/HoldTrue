@@ -292,9 +292,11 @@ export type Options = {
   readonly hideOwnLines: boolean
   /** The words the person said pick the move. The turn number does not. */
   readonly director: boolean
+  /** The director block restates the subject near the end of the prompt. */
+  readonly anchor: boolean
 }
 
-export const DEFAULTS: Options = { hideOwnLines: false, director: false }
+export const DEFAULTS: Options = { hideOwnLines: false, director: false, anchor: false }
 
 /**
  * The user message. It holds the conversation as a script. It ends on an empty `you:` line.
@@ -314,13 +316,22 @@ export const DEFAULTS: Options = { hideOwnLines: false, director: false }
  * own probability with every repeat. The child's own lines are the strongest example in the
  * prompt. See measured result 5. The child still reads its own last question, so a fragment
  * answer keeps its meaning.
+ *
+ * With `anchor` and a topic, the director block restates the subject. `topic` defaults to the
+ * empty string, so a caller that does not pass it gets the string it got before Round 4.
+ *
+ * The parameter order here is `(history, you, options, topic)`. `speak` takes
+ * `(history, you, model, topic, options)`, a different order. The `options` parameter came first
+ * and existing call sites pass it third. `topic` was added after, as the fourth parameter, so
+ * those call sites keep their meaning.
  */
 export const promptFor = (
   history: readonly Exchange[],
   you: string,
   options: Partial<Options> = {},
+  topic = '',
 ): string => {
-  const { hideOwnLines, director } = { ...DEFAULTS, ...options }
+  const { hideOwnLines, director, anchor } = { ...DEFAULTS, ...options }
   const lastSaid = [...history].reverse().findIndex(e => e.child.kind === 'said')
   const lastSaidIndex = lastSaid === -1 ? -1 : history.length - 1 - lastSaid
   const script = history
@@ -332,7 +343,7 @@ export const promptFor = (
     ])
     .join('\n')
   const head = script === '' ? '' : `${script}\n`
-  const block = director ? direct(history, you) : lateBlock(history.length)
+  const block = director ? direct(history, you, anchor ? topic : '') : lateBlock(history.length)
   return `${head}them: ${you}\n\n${block}\n\nyou:`
 }
 
@@ -363,7 +374,10 @@ export const speak = async (
   topic = '',
   options: Partial<Options> = {},
 ): Promise<Said> => {
-  const answer = await model.ask(systemFor(history.length, topic), promptFor(history, you, options))
+  const answer = await model.ask(
+    systemFor(history.length, topic),
+    promptFor(history, you, options, topic),
+  )
   // The model layer holds the reason for the last failed ask. The child passes that reason
   // through, so a dead backend, a rejected key, a timeout and a wrong model name each keep a
   // distinct message on the screen. Rule 25.
