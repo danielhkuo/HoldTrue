@@ -9,8 +9,8 @@
  *
  * Four tests carry the weight. The first says that a failed Check returns unavailable, and never
  * an empty reviewed. The second says that a Check with no chain returns unavailable. The third
- * says that a Close with no statement on any row returns unavailable. The fourth says that the
- * toggle sets the verified flag.
+ * says that a Close with no statement on any row returns unavailable. The fourth says that a
+ * failure reason always names the provided model. Rule 53.
  */
 
 import { describe, expect, test } from 'vitest'
@@ -43,13 +43,11 @@ const fakeModel = (
 
 /** Two user turns and one child turn. The quotes below come from the two user turns. */
 const transcript = (): Session => {
-  const one = startSession('How a fridge makes things cold', false)
+  const one = startSession('How a fridge makes things cold')
   const two = addTurn(one, 'user', 'um, the compressor squishes the gas.')
   const three = addTurn(two, 'child', 'why does that make it hot?')
   return addTurn(three, 'user', 'the coils make the cold.')
 }
-
-const on = (session: Session): Session => ({ ...session, omniscient: true })
 
 /** One false claim, one intrusion and one link that the user did not say. Diff gives three rows. */
 const THREE_ROWS = JSON.stringify({
@@ -128,16 +126,15 @@ describe('addTurn', () => {
   })
 
   test('addTurn keeps the text untouched and leaves the old session unchanged', () => {
-    const before = startSession('Explaining', false)
+    const before = startSession('Explaining')
     const after = addTurn(before, 'user', '  um, so the, uh, gas.  ')
     expect(after.turns[0]?.text).toBe('  um, so the, uh, gas.  ')
     expect(before.turns).toHaveLength(0)
   })
 
-  test('startSession holds the topic, the toggle and no review', () => {
-    expect(startSession('Explaining', true)).toEqual({
+  test('startSession holds the topic and no review', () => {
+    expect(startSession('Explaining')).toEqual({
       turns: [],
-      omniscient: true,
       topic: 'Explaining',
       review: null,
     })
@@ -167,7 +164,7 @@ describe('openEnd', () => {
     const model = fakeModel([NO_ROWS])
     const step = await openEnd(transcript(), model.handle)
 
-    expect(step).toEqual({ review: { kind: 'reviewed', findings: [], verified: false } })
+    expect(step).toEqual({ review: { kind: 'reviewed', findings: [] } })
   })
 
   test('the probe takes the first row, and the pending probe holds that row id', async () => {
@@ -188,7 +185,7 @@ describe('openEnd', () => {
     const model = fakeModel([THREE_ROWS, null, ...STATEMENTS])
     const step = await openEnd(transcript(), model.handle)
 
-    expect(step).toMatchObject({ review: { kind: 'reviewed', verified: false } })
+    expect(step).toMatchObject({ review: { kind: 'reviewed' } })
     if (!('review' in step) || step.review.kind !== 'reviewed') throw new Error('reviewed')
     expect(step.review.findings.map(f => f.row.id)).toEqual([
       'contradiction:C1',
@@ -209,7 +206,7 @@ describe('openEnd', () => {
 
   test('an empty transcript returns unavailable and makes no model call', async () => {
     const model = fakeModel([THREE_ROWS])
-    const step = await openEnd(startSession('Explaining', false), model.handle)
+    const step = await openEnd(startSession('Explaining'), model.handle)
 
     expect('review' in step && step.review.kind).toBe('unavailable')
     expect(model.asked).toHaveLength(0)
@@ -257,7 +254,7 @@ describe('closeEnd', () => {
 
     expect(review).not.toMatchObject({ kind: 'reviewed' })
     expect(reason(review)).toContain('the request timed out')
-    expect(reason(review)).toContain('The startup model')
+    expect(reason(review)).toContain('The provided model')
   })
 
   test('one row with a statement still returns reviewed', async () => {
@@ -269,35 +266,23 @@ describe('closeEnd', () => {
   })
 })
 
-// ── the omniscient toggle ────────────────────────────────────────────────────────────────────
+// ── the provided model, rule 53 ──────────────────────────────────────────────────────────────
 
-describe('the omniscient toggle', () => {
-  test('the toggle on sets the verified flag true on the review', async () => {
-    const model = fakeModel([THREE_ROWS, null, ...STATEMENTS])
-    const step = await openEnd(on(transcript()), model.handle)
-
-    expect(step).toMatchObject({ review: { kind: 'reviewed', verified: true } })
-  })
-
-  test('the toggle off sets the verified flag false on the review', async () => {
+describe('the end phase names the provided model', () => {
+  test('a reviewed review carries no verified flag and no label', async () => {
     const model = fakeModel([THREE_ROWS, null, ...STATEMENTS])
     const step = await openEnd(transcript(), model.handle)
 
-    expect(step).toMatchObject({ review: { kind: 'reviewed', verified: false } })
+    expect(step).toMatchObject({ review: { kind: 'reviewed' } })
+    if ('review' in step) expect(step.review).not.toHaveProperty('verified')
   })
 
-  test('the toggle on names the provided model in a failure reason', async () => {
+  test('a failure reason names the provided model, and only the provided model', async () => {
     const model = fakeModel([null], 'the provider rejected the key')
-    const step = await openEnd(on(transcript()), model.handle)
+    const step = await openEnd(transcript(), model.handle)
 
     expect('review' in step && reason(step.review)).toContain('The provided model')
     expect('review' in step && reason(step.review)).toContain('the provider rejected the key')
-  })
-
-  test('the toggle off names the startup model in a failure reason', async () => {
-    const model = fakeModel([null], 'the backend does not answer')
-    const step = await openEnd(transcript(), model.handle)
-
-    expect('review' in step && reason(step.review)).toContain('The startup model')
+    expect('review' in step && reason(step.review)).not.toContain('startup')
   })
 })
