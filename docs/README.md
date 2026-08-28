@@ -12,7 +12,7 @@ No eval measures the end phase. [`architecture.md`](architecture.md) describes b
 | [`../AGENTS.md`](../AGENTS.md) | The numbered rules, the evidence rule, the testing position and the writing standard. |
 | [`product.md`](product.md) | What the product is, the two laws, the four mechanisms, the eligibility rule, the retired promise and the enforcement table. |
 | [`cases.md`](cases.md) | The case register. Every behaviour the product must produce, and every behaviour it must stop. One line for each. |
-| [`architecture.md`](architecture.md) | The two phases, the four end-phase parts, the model layer and the omniscient toggle. |
+| [`architecture.md`](architecture.md) | The two phases, the four end-phase parts, the model layer and the provided model. |
 | [`proposals/`](proposals/) | A design that nobody has ruled on and nobody has built. The owner approved and built [`director-experiment.md`](proposals/director-experiment.md); its runs are in `measurements/director/`. |
 | [`decisions.md`](decisions.md) | Every reason, every rejected alternative, the build order and the open decisions. |
 | [`research/`](research/) | Three kinds of evidence. See below. |

@@ -12,15 +12,17 @@
  * time. Before that call POST /api/turn returns a stated error. The part never picks a model.
  *
  * The part takes the consent of the user before the first send. Rule 48 requires this.
- * POST /api/start refuses an omniscient session without explicit consent in the request.
- * POST /api/start also refuses an omniscient session when the app holds no provided model.
- * The part never puts the startup model in place of the provided model. Rule 45.
+ * Every session sends the transcript to the provided model at the end, so POST /api/start
+ * refuses every session without explicit consent in the request.
+ * POST /api/start refuses to start a session when the app holds no provided model. Decision 20.
+ * The end phase runs on the provided model only. Rule 53. The part never puts the startup model
+ * in place of the provided model. Rule 45.
  *
  * The end phase runs one time, and only after POST /api/end. The live phase then stops.
  * POST /api/turn returns a stated error after the end phase starts.
  *
- * The cases: B5, B7, B11, B12 and B13. The rules: 1, 11, 13, 20, 21, 22, 23, 41, 42, 45, 46,
- * 47, 48 and 50.
+ * The cases: B5, B7, B11, B12 and B13. The rules: 1, 11, 13, 22, 23, 41, 42, 45, 46,
+ * 47, 48, 50 and 53.
  *
  * The part must not do these things:
  * - It must not bind an address other than 127.0.0.1.
@@ -90,9 +92,9 @@ const DISCLOSURE = {
   consent: 'You must give your consent before the app sends your words.',
   destination: [
     'The app sends your words to the model that you choose at startup.',
-    'A local Ollama model keeps your words on this machine.',
-    'An API key sends your words to that provider.',
-    'The omniscient toggle sends the transcript to a service that HoldTrue operates.',
+    'A local Ollama model keeps your words on this machine during the conversation.',
+    'An API key sends your words to that provider during the conversation.',
+    'At the end, the review sends the whole transcript to the provider of the provided model.',
     'The app does not promise that your words stay on this machine.',
   ],
   storage: [
@@ -100,11 +102,6 @@ const DISCLOSURE = {
     'The app writes nothing to disk.',
     'The findings appear one time.',
     'The app loses the findings when the process stops.',
-  ],
-  labels: [
-    'The omniscient toggle on labels the findings verified.',
-    'The omniscient toggle off labels the findings unverified.',
-    'An unverified finding comes from the model that you chose at startup.',
   ],
   failure: [
     'The review can fail to run.',
@@ -133,23 +130,58 @@ let startup: ModelHandle | null = null
 let startupSends = false
 /**
  * The child's handle. It is `startup` unless the sampling flag is on. The end phase never uses
- * this handle. The end phase always uses `startup`, so the sampling flag never reaches it.
+ * this handle. The end phase always uses `provided`. Rule 53. The sampling flag never reaches it.
  */
 let childModel: ModelHandle | null = null
 
 /**
- * The provided model for the omniscient toggle. It is separate from the startup choice.
+ * The provided model. It is separate from the startup choice, and rule 53 gives it the whole end
+ * phase.
  *
- * The owner must set both variables. Rule 50 forbids a default model, and the verified end phase
- * must not run on a model that nobody named. One variable alone gives no provided model, and
- * POST /api/start then refuses the omniscient toggle.
+ * The owner sets it one of two ways. The owner sets HOLDTRUE_PROVIDED_KEY and
+ * HOLDTRUE_PROVIDED_MODEL, and the app opens Anthropic with that key. The owner sets
+ * HOLDTRUE_PROVIDED_URL and HOLDTRUE_PROVIDED_MODEL instead, and the app opens that
+ * OpenAI-compatible endpoint. A local proxy needs no key, so HOLDTRUE_PROVIDED_KEY stays optional
+ * when the URL is set. The model name is required either way.
+ *
+ * Rule 50 forbids a default model, and the end phase must not run on a model that nobody named.
+ * A missing required variable gives no provided model, and POST /api/start then refuses to start
+ * a session. Decision 20.
  */
 const providedKey = process.env.HOLDTRUE_PROVIDED_KEY ?? ''
 const providedModel = process.env.HOLDTRUE_PROVIDED_MODEL ?? ''
+const providedUrl = process.env.HOLDTRUE_PROVIDED_URL ?? ''
 const provided: ModelHandle | null =
-  providedKey.trim() === '' || providedModel.trim() === ''
+  providedUrl.trim() !== ''
+    ? providedModel.trim() === ''
+      ? null
+      : open({ kind: 'openai', baseUrl: providedUrl.trim(), key: providedKey, model: providedModel })
+    : providedKey.trim() === '' || providedModel.trim() === ''
+      ? null
+      : open({ kind: 'apiKey', provider: 'anthropic', key: providedKey, model: providedModel })
+
+/**
+ * The host that the provided model answers from, and never the key. Decision 21 and rule 48 ask
+ * the app to name the destination in the consent sentence. `null` means the app holds no provided
+ * model, so it has no destination to name.
+ */
+const providedDestination: string | null =
+  provided === null
     ? null
-    : open({ kind: 'apiKey', provider: 'anthropic', key: providedKey, model: providedModel })
+    : providedUrl.trim() !== ''
+      ? (() => {
+          try {
+            return new URL(providedUrl.trim()).host
+          } catch {
+            return providedUrl.trim()
+          }
+        })()
+      : 'api.anthropic.com'
+
+/** The fix for a missing provided model. Decision 20 asks the refusal to name it. Two ways work. */
+const NO_PROVIDED_FIX =
+  'Set HOLDTRUE_PROVIDED_KEY and HOLDTRUE_PROVIDED_MODEL. ' +
+  'Or set HOLDTRUE_PROVIDED_URL and HOLDTRUE_PROVIDED_MODEL, for an OpenAI-compatible endpoint.'
 
 let session: Session | null = null
 let beats: Beat[] = []
@@ -303,45 +335,34 @@ const handleStart = async (req: IncomingMessage, res: ServerResponse): Promise<v
   const topic = str(body, 'topic')
   if (topic === null) return fault(res, 400, 'bad_request', 'The request holds no topic.')
 
-  const omniscient = body['omniscient']
-  if (typeof omniscient !== 'boolean') {
-    return fault(
-      res,
-      400,
-      'bad_request',
-      'The request must set the omniscient toggle to true or to false.',
-    )
-  }
-
-  // Rule 45. The app states this refusal. The app never puts the startup model in place.
-  if (omniscient && provided === null) {
+  // Decision 20. A session that cannot end with a review must not begin. Law 1.
+  if (provided === null) {
     return fault(
       res,
       409,
       'no_provided_model',
-      'The app holds no provided model. The app does not put the startup model in its place. ' +
-        'Turn the omniscient toggle off, or set a provided model.',
+      `The app holds no provided model. The review cannot run, so the session cannot start. ${NO_PROVIDED_FIX}`,
     )
   }
 
-  // Rule 48. The app takes the consent before the first send. A local model sends nothing.
-  const sends = omniscient || startupSends
-  if (sends && body['consent'] !== true) {
+  // Rule 48. Every session sends the transcript to the provided model at the end. The app takes
+  // the consent before the first send, so the app takes it before every session starts.
+  if (body['consent'] !== true) {
     return fault(
       res,
       403,
       'no_consent',
-      'This session sends your words off this machine. Send consent true to start it.',
+      'This session sends your words to the provider at the end. Send consent true to start it.',
     )
   }
 
-  session = startSession(topic, omniscient)
+  session = startSession(topic)
   beats = []
   ended = false
   pending = null
   review = null
   source = null
-  json(res, 200, { topic, omniscient, label: omniscient ? 'verified' : 'unverified' })
+  json(res, 200, { topic })
 }
 
 const handleTurn = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
@@ -403,14 +424,12 @@ const handleEnd = async (req: IncomingMessage, res: ServerResponse): Promise<voi
   // The live phase stops here. The end phase must never run beside it.
   ended = true
 
-  const model = live.omniscient ? provided : startup
+  // Rule 53. The end phase runs on the provided model only, never on the startup model.
+  const model = provided
   if (model === null) {
-    review = unavailable(
-      live.omniscient
-        ? 'The omniscient toggle is on, and the app holds no provided model. ' +
-          'The app did not put the startup model in its place.'
-        : 'No model is chosen. The app ships no default model.',
-    )
+    // POST /api/start already refuses a session when the app holds no provided model. Decision
+    // 20. This check stays, because a session must never end with a silent gap. Rule 46.
+    review = unavailable(`The app holds no provided model. ${NO_PROVIDED_FIX}`)
     return json(res, 200, { kind: 'review', review, source: null })
   }
 
@@ -438,6 +457,8 @@ const handleBoot = async (res: ServerResponse): Promise<void> =>
     setup: startup !== null,
     sends: startupSends,
     provided: provided !== null,
+    // Decision 21 and rule 48. The consent sentence names this host. It never carries the key.
+    destination: providedDestination,
     topics: TOPICS,
     disclosure: DISCLOSURE,
   })
@@ -447,7 +468,6 @@ const handleState = (res: ServerResponse): void => {
   json(res, 200, {
     setup: startup !== null,
     topic: live?.topic ?? '',
-    omniscient: live?.omniscient ?? false,
     history: live === null ? [] : exchanges(live),
     turns: live?.turns ?? [],
     ended,

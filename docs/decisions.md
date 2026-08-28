@@ -273,3 +273,33 @@ reading their own gaps.
 session start at all, or start with a warning that no review will run? Rule 46 covers the stated
 failure either way. Second: the omniscient toggle loses its meaning and the code must lose it.
 `docs/proposals/one-review.md` holds the removal plan and both questions.
+
+## 20. No provided model, no session
+
+**Decided 2026-08-27.** The owner ruled. The app refuses to start a session when it holds no
+provided model. Law 1 gives the reason: a session must not end with a question open, and only the
+review closes questions. A session that cannot end with a review must not begin. The refusal
+screen names the fix: set the provided model.
+
+## 21. Consent at the start screen, and a soft cap at twelve turns
+
+**Decided 2026-08-27.** The owner ruled twice. Consent moves to the start screen: one checkbox,
+one sentence that names the provider, because every session now sends text at the end. Rule 48
+holds. The session gains a soft cap: at turn twelve the app shows one line that points at the End
+button. The button stays the only end signal. Rule 44 holds.
+
+## 22. A second model refutes the review before the person sees it
+
+**Decided 2026-08-27, deferred past the MVP.** The owner asked whether the review can use
+different models. The ruling: yes, as a refutation step and not as an ensemble. One provided
+model runs Check. A second, different model receives each finding with one task: refute it. A
+finding that survives reaches the screen. A finding that dies is dropped, silently, because
+decision 19 removed the labels. A wrongly killed true finding costs a quieter review. A false
+finding that survives costs a wrong claim about the person's mind. The design accepts the first
+cost to avoid the second.
+
+**The rejected alternative.** An ensemble that merges the link sets of two models. The merge
+needs text comparison inside Diff, and rule 43 forbids it.
+
+**Not in the MVP.** The step needs a second provided model and new calls. `docs/proposals/`
+takes the design when the MVP ships.

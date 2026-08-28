@@ -89,6 +89,10 @@ A child that goes quiet is a feature for a later build. No code implements quiet
 quiet ends a session today. The session end starts the end phase. A session must not end with a
 question open. The last child question stays open until Close answers it.
 
+Decision 21 adds a soft cap at turn twelve. At the twelfth user turn, `src/page.html` shows one
+line: "This is a good place to end and see the review." The line is a nudge, not a signal. The
+button stays the only end signal. Rule 44.
+
 ## The end phase
 
 Four parts run in order. Part 2 is plain code. Parts 1, 3 and 4 are model calls. `src/` holds all
@@ -199,31 +203,41 @@ the user does not know the link. The app asked no question about those rows, so 
 evidence about them. Close must not show a score, a rating, a grade or a progress bar. Close must
 not say that an explanation was unclear.
 
-## The omniscient toggle
+## The provided model, and the removed toggle
 
-The user sets the toggle for each session.
+Decision 19 removed the omniscient toggle. The app showed two kinds of review, verified and
+unverified, and the owner ruled that a wrong finding from a model that may not know the mechanism
+is a risk the app must not take. One review remains. No code and no document may print the word
+`verified` or the word `unverified`.
 
-**Toggle ON.** HoldTrue provides a frontier model. That model runs the whole end phase: Check, Probe
-and Close. The user pays for the feature. The user configures nothing and supplies no key. The session sends
-the transcript to a remote service that HoldTrue operates. The app must label the findings of the
-session `verified`.
+The end phase always runs on the provided model. Rule 53. Check, Probe and Close all run on the
+provided model, for every session. The startup model never runs the end phase.
 
-**Toggle OFF.** The startup model runs the whole end phase: Check, Probe and Close. The app must
-label the findings of the session `unverified`. The app must give the reason with the label. The
-model of the user checked the explanation of the user.
+Decision 20 sets the guard. The app refuses to start a session when it holds no provided model.
+Law 1 gives the reason: a session must not end with a question open, and only the review closes
+that question. A session that cannot end with a review must not begin. The refusal names the fix:
+set `HOLDTRUE_PROVIDED_KEY` and `HOLDTRUE_PROVIDED_MODEL`, or set `HOLDTRUE_PROVIDED_URL` and
+`HOLDTRUE_PROVIDED_MODEL`.
 
-There is no silent fall back. If the provided model fails, the app must not use the startup model in
-its place without telling the user. The app must state the failure on the screen, and the app must
-label the session `unverified`.
+There is no silent fall back. If the provided model fails, the app must not use the startup model
+in its place without telling the user. The app states the failure on the screen. Rule 45 and rule
+46 hold.
 
 ## The model layer
 
 There is no default model. At startup the user makes one choice. The user sets up Ollama, and the
-model runs on the machine of the user. The user enters an API key for a supported provider instead.
-That one model runs the child, and it runs the end phase when the toggle is off.
+model runs on the machine of the user. The user enters an API key for a supported provider
+instead. That one model runs the child, and only the child. Rule 53 keeps it out of the end phase.
 
-The provided frontier model is separate. It serves the end phase when the toggle is on, and it is
-not part of the startup choice.
+The provided model is separate from the startup choice. It serves the whole end phase, for every
+session that starts. Rule 53.
+
+The owner sets the provided model one of two ways. The owner sets `HOLDTRUE_PROVIDED_KEY` and
+`HOLDTRUE_PROVIDED_MODEL`, and the app opens Anthropic with that key. The owner sets
+`HOLDTRUE_PROVIDED_URL` and `HOLDTRUE_PROVIDED_MODEL` instead, and the app opens that
+OpenAI-compatible endpoint. A local proxy needs no key, so `HOLDTRUE_PROVIDED_KEY` stays optional
+when the URL is set. The model name is required either way. A missing required variable gives no
+provided model, and `POST /api/start` then refuses to start a session. Decision 20.
 
 Every backend implements one interface. `ModelHandle` has two methods. `identify` returns the
 attribution, and `ask` sends one system message and one user message. The child, Check, Probe and
@@ -232,10 +246,14 @@ thing that answers, because an attribution must name what actually ran.
 
 ## Consent and disclosure
 
-The app must disclose where the text of the user goes, and it must name the destination it actually
-uses. An API key sends the transcript to that provider. A local Ollama backend sends nothing off the
-machine. The omniscient toggle sends the transcript to a service that HoldTrue operates. The app
-must take the consent of the user before the first send.
+The app must disclose where the text of the user goes, and it must name the destination it
+actually uses. An API key sends the transcript to that provider during the conversation. A local
+Ollama backend sends nothing off the machine during the conversation. Every session sends the
+whole transcript to the provider of the provided model at the end, because the end phase always
+runs there. Rule 53.
+
+The app must take the consent of the user before the first send. Decision 21 moves that consent to
+the start screen, one checkbox, because every session now sends text at the end.
 
 The owner has not decided the retention terms, the training terms and the deletion terms. `docs/decisions.md`
 records them as an open decision. The owner must answer it before release. Do not invent a policy.

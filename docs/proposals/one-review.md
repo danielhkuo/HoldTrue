@@ -15,6 +15,12 @@ Decision 19 makes the omniscient toggle meaningless. The code must lose it.
   appear.
 - The e2e check loses the label assertions and gains one: no review output ever names a label.
 
+## ANSWERED 2026-08-27
+
+The owner ruled on both questions and the cap. Decision 20: no provided model, no session, design
+A below. Decision 21: consent at the start screen, and the soft cap at twelve turns. The sections
+below stay as the record of the options.
+
 ## Question 1 for the owner: no key, no session?
 
 The app holds no provided model. Two designs.

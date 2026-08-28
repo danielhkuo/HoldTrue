@@ -121,14 +121,14 @@ export type Finding = {
 
 /**
  * What the app shows after the session.
- * The reviewed member carries the findings. The verified flag comes from the omniscient toggle.
+ * The reviewed member carries the findings. The end phase runs on the provided model only. Rule
+ * 53. One kind of review needs no label, so the type carries no verified flag.
  * The unavailable member means that no review ran, and the questions stay open.
  */
 export type Review =
   | {
       readonly kind: "reviewed";
       readonly findings: readonly Finding[];
-      readonly verified: boolean;
     }
   | {
       readonly kind: "unavailable";

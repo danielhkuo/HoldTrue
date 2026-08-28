@@ -2,16 +2,22 @@
   The page. It holds the four screens of the app: setup, pick, talk and review.
 
   Setup takes the one model choice. The app ships no default model. Rule 50.
-  Pick shows the curated topics, the omniscient toggle and the consent checkbox. Rules 19, 20, 48.
-  Talk shows the conversation and the End session button. Case E13a and rule 44.
-  Review prints the findings as text. It names the model and the verified label. Rules 16 and 21.
+  Pick shows the curated topics and the consent checkbox. The checkbox names the provider of the
+  provided model, because every session sends the transcript to it at the end. Rule 48.
+  Talk shows the conversation, the soft cap note at turn twelve, and the End session button.
+  Case E13a, rule 44 and decision 21.
+  Review prints the findings as text. It names the model that answered. Rule 16.
   The page reads GET /api/state on load, so a reload recovers the transcript. Case B13.
+
+  ONE REVIEW, NO LABEL. Decision 19 removed the omniscient toggle and the verified and unverified
+  labels. The end phase always runs on the provided model. Rule 53. This page must never print
+  the word "verified" or the word "unverified".
 
   THE STATED FLAG. A finding with the stated flag false carries no words of a model. Close wrote
   that text itself when the row got no statement. The page prints such a row as a blank row. It
   states that the model wrote no statement, and it gives the reason that the row carries. The
-  label above the list must hold for every row below it, so the label changes when the list holds
-  a blank row. See rules 21, 24 and 46 and `src/close.ts`.
+  text above the list must hold for every row below it, so that text changes when the list holds
+  a blank row. See rules 24 and 46 and `src/close.ts`.
 
   The page must not do these things:
   - It must not log the API key. It must not put the key in a web address. It must not store it.
@@ -20,12 +26,13 @@
   - It must not show an empty findings list when no review ran. It must state the failure.
   - It must not print a row with the stated flag false as a finding that a model wrote.
   - It must not promise that the words of the user stay on this machine. Rule 22.
+  - It must not print the word "verified" or the word "unverified". Decision 19.
 
   The routes, as `src/server.ts` serves them:
-    GET  /api/boot   -> { who, setup, sends, provided, topics, disclosure }
-    GET  /api/state  -> { setup, topic, omniscient, history, turns, ended, question, review, source }
+    GET  /api/boot   -> { who, setup, sends, provided, destination, topics, disclosure }
+    GET  /api/state  -> { setup, topic, history, turns, ended, question, review, source }
     POST /api/setup  -> { kind, model } | { kind, provider, key, model? }  -> { who, sends }
-    POST /api/start  -> { topic, omniscient, consent }                     -> { topic, label }
+    POST /api/start  -> { topic, consent }                                -> { topic }
     POST /api/turn   -> { said }                    -> { kind: "turn", you, child, seconds }
     POST /api/end    -> {} | { answer }             -> { kind: "probe" | "review", … }
   A fault carries the field `error`, and a good reply does not. The page reads that field.
@@ -91,11 +98,9 @@
       .opt.picked .panel { display: block; }
       .panel label { display: block; font-size: 12.5px; color: var(--muted); margin: 10px 0 4px; }
 
-      /* the toggle block on pick */
+      /* the consent block on pick */
       .block { border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 22px; }
-      .switch { display: flex; gap: 10px; align-items: baseline; font-weight: 500; cursor: pointer; }
-      .switch input:disabled { cursor: default; }
-      .disclose { font-size: 12.5px; color: var(--muted); margin: 8px 0 0 24px; line-height: 1.6; }
+      .disclose { font-size: 12.5px; color: var(--muted); margin: 0; line-height: 1.6; }
       .agree { display: flex; gap: 10px; align-items: baseline; margin: 15px 0 0; font-size: 13px; cursor: pointer; }
       .where-list { font-size: 12px; color: var(--muted); margin: 8px 0 0 24px; padding: 0; list-style: none; line-height: 1.6; }
 
@@ -117,6 +122,8 @@
       form textarea { flex: 1; resize: none; min-height: 40px; max-height: 180px; }
       .dots::after { content: '·'; animation: d 1.2s steps(3, end) infinite; }
       @keyframes d { 0% { content: '·'; } 33% { content: '· ·'; } 66% { content: '· · ·'; } }
+      /* The soft cap note. Decision 21. The End button stays the only end signal. Rule 44. */
+      .cap { padding: 8px 24px; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--border); }
 
       /* A fault is a fault. It never sits inside the child bubble. */
       .alert { max-width: 62ch; border: 1px solid var(--ring); border-radius: 8px; padding: 11px 13px; background: var(--subtle); }
@@ -126,7 +133,6 @@
 
       /* review */
       .label { font-size: 12.5px; color: var(--muted); line-height: 1.7; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
-      .label b { color: var(--fg); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; font-size: 11px; }
       .finding { margin-bottom: 24px; max-width: 62ch; }
       /* A row that no model wrote. It never looks like the text of a model. */
       .finding.blank { border-left: 2px solid var(--border); padding-left: 14px; }
@@ -144,8 +150,8 @@
       <div class="wrap">
         <p class="lede">Choose the model that answers.</p>
         <p class="sub">
-          The app has no default. You make one choice now. That model plays the child, and it
-          reviews the session when the omniscient toggle stays off.
+          The app has no default. You make one choice now. That model plays the child. The
+          provided model runs the review at the end.
         </p>
 
         <div class="opt picked" id="opt-ollama">
@@ -179,7 +185,7 @@
       </div>
     </section>
 
-    <!-- 2. PICK. The topics, the omniscient toggle and the consent. Rules 19, 20, 48. -->
+    <!-- 2. PICK. The topics and the consent. Decision 19 removed the toggle. Rule 48. -->
     <section id="pick" class="screen">
       <div class="wrap">
         <p class="lede">Explain it to the child.</p>
@@ -190,12 +196,13 @@
         </p>
 
         <div class="block">
-          <label class="switch" for="omni">
-            <input type="checkbox" id="omni" />
-            <span>Let the model that HoldTrue provides review this session</span>
-          </label>
-          <p class="disclose" id="omni-disclose"></p>
+          <p class="disclose" id="send-destination"></p>
           <ul class="where-list" id="destinations"></ul>
+          <p class="disclose" id="no-provided" hidden>
+            The app holds no provided model. Set HOLDTRUE_PROVIDED_KEY and HOLDTRUE_PROVIDED_MODEL.
+            Or set HOLDTRUE_PROVIDED_URL and HOLDTRUE_PROVIDED_MODEL, for an OpenAI-compatible
+            endpoint. Then reload this page.
+          </p>
           <label class="agree" for="consent">
             <input type="checkbox" id="consent" />
             <span id="consent-text"></span>
@@ -224,6 +231,7 @@
           </span>
         </header>
         <div id="log"></div>
+        <p class="cap" id="cap-note" hidden>This is a good place to end and see the review.</p>
         <form id="f">
           <textarea id="t" rows="1" placeholder="say the next step…"></textarea>
           <button class="go" id="b">Say it</button>
@@ -231,7 +239,7 @@
       </main>
     </section>
 
-    <!-- 4. REVIEW. The one question first, then the findings as text. Rules 14, 16, 21, 46. -->
+    <!-- 4. REVIEW. The one question first, then the findings as text. Rules 14, 16, 46. -->
     <section id="review" class="screen">
       <div class="wrap">
         <div id="running" hidden>
@@ -304,7 +312,7 @@
 
       // ---------------------------------------------------------------- state
 
-      const app = { who: null, sends: false, provided: false, omniscient: false, disclosure: null }
+      const app = { who: null, sends: false, provided: false, destination: null, disclosure: null }
 
       /** The attribution names the thing that answered. A setting can print a lie. Rule 24. */
       const name = who => (typeof who?.model_id === 'string' ? who.model_id : 'an unnamed model')
@@ -370,46 +378,45 @@
       // -------------------------------------------------------------- 2. pick
 
       /**
-       * The consent line names the destination that this session uses. Rule 48.
-       * The page never says that the words stay on this machine when a provider answers. Rule 22.
+       * The name of the destination for the consent sentence. Decision 21 and rule 48 ask the
+       * app to name the destination, not a generic phrase. `boot.destination` names the host
+       * that the provided model answers from. This falls back to a plain phrase before boot
+       * answers, or when the app holds no provided model.
        */
-      const consentLine = () => {
-        const near = app.sends
-          ? `Send my words to the provider that runs ${name(app.who)}`
-          : `Send my words to ${name(app.who)} on this machine`
-        return app.omniscient
-          ? `${near}, and send this whole session to the service that HoldTrue operates.`
-          : `${near}.`
-      }
+      const destinationName = () => app.destination ?? 'the provider of the provided model'
+
+      /**
+       * The consent line names the destination. Rule 48. Every session sends the whole
+       * transcript there at the end, because decision 19 removed the toggle. The page never
+       * says that the words stay on this machine when a provider answers. Rule 22.
+       */
+      const consentLine = () =>
+        `Send the whole transcript to ${destinationName()}, at the end of the session.`
 
       const disclose = () => {
-        app.omniscient = $('omni').checked && app.provided
-        if (!app.provided) $('omni').checked = false
-
-        $('omni-disclose').textContent = !app.provided
-          ? 'The app holds no provided model, so this toggle stays off. The app does not put your own model in its place. The app marks the findings unverified.'
-          : app.omniscient
-            ? 'A model that HoldTrue provides reads this session. The session goes to a remote service that HoldTrue operates. The app marks the findings verified.'
-            : `${name(app.who)} reads this session. The app marks the findings unverified, because your own model checks your own explanation.`
-
+        $('send-destination').textContent =
+          `At the end, the review sends the whole transcript to ${destinationName()}.`
         $('consent-text').textContent = consentLine()
+        $('no-provided').hidden = app.provided
         gate()
       }
 
-      /** No topic starts until the user gives consent. The consent comes before the first send. */
+      /**
+       * No topic starts until the user gives consent. The consent comes before the first send.
+       * A session must not start when the app holds no provided model. Decision 20.
+       */
       const gate = () => {
-        const ready = $('consent').checked && app.who !== null
+        const ready = app.provided && $('consent').checked && app.who !== null
         for (const card of document.querySelectorAll('#cards .card')) card.disabled = !ready
         $('own').disabled = !ready
       }
 
-      $('omni').addEventListener('change', disclose)
       $('consent').addEventListener('change', gate)
 
       const begin = async title => {
         $('pick-error').replaceChildren()
         try {
-          await call('/api/start', { topic: title, omniscient: app.omniscient, consent: true })
+          await call('/api/start', { topic: title, consent: true })
         } catch (err) {
           alertInto($('pick-error'), `The app did not start the session. ${reason(err)}`)
           return
@@ -418,11 +425,23 @@
         $('log').replaceChildren()
         $('probe-answer').value = ''
         $('end').disabled = false
+        userTurns = 0
+        $('cap-note').hidden = true
         show('talk')
         $('t').focus()
       }
 
       // -------------------------------------------------------------- 3. talk
+
+      /**
+       * The soft cap. Decision 21. At turn twelve the page shows one line. The End button stays
+       * the only end signal. Rule 44. This part never ends the session on its own.
+       */
+      const CAP_TURNS = 12
+      let userTurns = 0
+      const checkCap = () => {
+        if (userTurns >= CAP_TURNS) $('cap-note').hidden = false
+      }
 
       const add = (cls, who, text) => {
         const node = el('div', `row ${cls}`)
@@ -465,6 +484,8 @@
         try {
           const turn = await call('/api/turn', { said })
           paintChild(pending.querySelector('.body'), turn.child)
+          userTurns++
+          checkCap()
         } catch (err) {
           pending.remove()
           failInLog(`The app did not get that turn. ${reason(err)} Say it again.`)
@@ -543,7 +564,7 @@
 
       /** No review ran. The app states that, and it states that the questions stay open. Rule 46. */
       const stateless = (...lines) => {
-        // No model answered, so the page names no model and prints no verified label. Rule 24.
+        // No model answered, so the page names no model. Rule 24.
         $('review-label').replaceChildren()
         $('review-label').hidden = true
         const list = $('finding-list')
@@ -603,10 +624,11 @@
       /**
        * The findings, as text.
        * This screen prints no score, no rating, no grade, no bar, no count and no percentage.
-       * The label gives the verified word, the reason for that word, and the model that answered.
+       * This screen prints no verified label and no unverified label. Decision 19 removed both.
+       * The text names the provided model, and it names the model that answered.
        *
-       * The label must hold for every row below it. A blank row carries no words of a model, so
-       * the label must not say that the model wrote the whole list. The label names the exception
+       * The text must hold for every row below it. A blank row carries no words of a model, so
+       * the text must not say that the model wrote the whole list. The text names the exception
        * instead, and each blank row states the same thing again in its own place.
        */
       const paintReview = (review, source) => {
@@ -620,15 +642,10 @@
         const label = $('review-label')
         label.hidden = false
         label.replaceChildren()
-        label.append(el('b', null, review.verified ? 'verified' : 'unverified'))
         label.append(document.createTextNode(
-          review.verified
-            ? gaps
-              ? ' — a model that HoldTrue provides read this session. It wrote the findings below, except where a row states that it wrote no statement.'
-              : ' — a model that HoldTrue provides read this session and wrote the findings below.'
-            : gaps
-              ? ' — the model you chose read your own explanation. It wrote the findings below, except where a row states that it wrote no statement.'
-              : ' — the model you chose read your own explanation and wrote the findings below.',
+          gaps
+            ? 'The provided model read this session. It wrote the findings below, except where a row states that it wrote no statement.'
+            : 'The provided model read this session and wrote the findings below.',
         ))
         label.append(el('br'))
         label.append(document.createTextNode(
@@ -669,8 +686,8 @@
         alertInto($('setup-error'), 'The app cannot reach the server.', 'Start the server, then load this page again.')
       } else {
         app.provided = boot.provided === true
+        app.destination = typeof boot.destination === 'string' ? boot.destination : null
         app.disclosure = boot.disclosure ?? null
-        $('omni').disabled = !app.provided
 
         for (const topic of boot.topics ?? []) {
           const card = el('button', 'card', topic.title)
@@ -688,7 +705,6 @@
         }
 
         adopt(boot.who, boot.sends)
-        if (state.omniscient) $('omni').checked = app.provided
         disclose()
 
         if (!state.setup) {
@@ -707,6 +723,8 @@
           $('topic').textContent = state.topic
           $('log').replaceChildren()
           for (const e of state.history ?? []) render(e)
+          userTurns = (state.history ?? []).length
+          checkCap()
           show('talk')
         } else {
           show('pick')

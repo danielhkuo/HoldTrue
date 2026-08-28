@@ -14,6 +14,15 @@
  * cases E5, E8 and E12, the case C4 and the rules 16 and 46. A unit test cannot see these
  * failures, because a unit test holds a fake model.
  *
+ * Decision 19 removed the omniscient toggle and the two labels. This part sets consent on every
+ * run, because every session now sends the transcript to the provided model at the end. It sends
+ * no omniscient field, because POST /api/start no longer reads one. It checks that no review
+ * output holds the word "verified" or the word "unverified".
+ *
+ * This check needs a provided model, or POST /api/start refuses every session. Decision 20.
+ * Setting HOLDTRUE_PROVIDED_URL and HOLDTRUE_PROVIDED_MODEL against a local endpoint satisfies
+ * that, with no key and no network call to a paid provider.
+ *
  * THE CHECKS ARE HEURISTICS OVER TEXT. Each check reads the words and looks for a marker. A
  * marker is not a proof. A heuristic here costs a false warning, and it never costs a false
  * finding. This part therefore prints the line that raised each warning. A person then reads the
@@ -344,12 +353,15 @@ const run = async (base: string, model: ModelHandle): Promise<Run> => {
   if (setupFault !== null) return { ...empty, stopped: `POST /api/setup refused the model. ${setupFault}` }
   console.log(dim(`  setup   ${JSON.stringify(setup.body['who'])}`))
 
-  // The toggle stays off. A local model sends nothing off this machine, so no consent is due.
-  const start = await call(base, 'POST', '/api/start', { topic: TOPIC, omniscient: false })
+  // Every session sends the transcript to the provided model at the end. Decision 19. This part
+  // gives consent, and it sends no omniscient field. POST /api/start no longer reads one.
+  const start = await call(base, 'POST', '/api/start', { topic: TOPIC, consent: true })
   if (!start.ok) return { ...empty, stopped: start.reason }
   const startFault = faultOf(start.body)
-  if (startFault !== null) return { ...empty, stopped: `POST /api/start refused the topic. ${startFault}` }
-  console.log(dim(`  session ${TOPIC} · ${String(start.body['label'])}\n`))
+  // The refusal may name the topic, the consent or the provided model. Decision 20. This part
+  // prints the fault text and asserts no cause of its own.
+  if (startFault !== null) return { ...empty, stopped: `POST /api/start refused. ${startFault}` }
+  console.log(dim(`  session ${TOPIC}\n`))
 
   const live = await runTurns(base, model)
   if (live.stopped !== null) return { ...empty, beats: live.beats, stopped: live.stopped }
@@ -659,6 +671,29 @@ const checkFigures = (review: unknown): Check => {
   }
 }
 
+/** Decision 19 removed the toggle and the two labels. Neither label word may reach the screen. */
+const LABEL: readonly RegExp[] = [/\bverified\b/, /\bunverified\b/]
+
+const checkNoLabel = (review: unknown): Check => {
+  const findings = findingsOf(review) ?? []
+  const shape = (typeof review === 'object' && review !== null ? review : {}) as {
+    reason?: unknown
+  }
+  const reasonText = typeof shape.reason === 'string' ? shape.reason : ''
+  const notes: string[] = []
+  for (const text of [...findings, reasonText]) {
+    const mark = hits(text.toLowerCase(), LABEL)
+    if (mark !== null) notes.push(`"${mark}" in: ${text}`)
+  }
+  return {
+    tag: 'decision 19',
+    claim: 'No review output holds the word "verified" or the word "unverified".',
+    pass: notes.length === 0,
+    counts: [`findings: ${findings.length}`, `lines with a marker: ${notes.length}`],
+    notes,
+  }
+}
+
 const checkMissingStep = (review: unknown): Check => {
   const findings = findingsOf(review) ?? []
   const named = findings.filter(text => MARKS.some(mark => text.toLowerCase().includes(mark)))
@@ -702,12 +737,12 @@ const printReview = (out: Run): void => {
     console.log('  The end phase returned no Review.')
     return
   }
-  const shape = review as { kind?: unknown; reason?: unknown; verified?: unknown }
+  const shape = review as { kind?: unknown; reason?: unknown }
   if (shape.kind === 'unavailable') {
     console.log('  No review ran. The questions stay open.')
     console.log(wrap(typeof shape.reason === 'string' ? shape.reason : 'no reason', '  '))
   } else {
-    console.log(`  ${dim(shape.verified === true ? 'verified' : 'unverified')}\n`)
+    console.log(`  ${dim('reviewed')}\n`)
     const findings = findingsOf(review) ?? []
     const rows = (review as { findings?: unknown }).findings
     const kinds = Array.isArray(rows)
@@ -783,6 +818,7 @@ const main = async (): Promise<number> => {
     checkAnalogy(lines, userText),
     checkReview(out.review),
     checkFigures(out.review),
+    checkNoLabel(out.review),
     checkMissingStep(out.review),
   ])
 
