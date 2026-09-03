@@ -5,7 +5,10 @@
   Pick shows the curated topics and the consent checkbox. The checkbox names the provider of the
   provided model, because every session sends the transcript to it at the end. Rule 48.
   Talk shows the conversation, the soft cap note at turn twelve, and the End session button.
-  Case E13a, rule 44 and decision 21.
+  Case E13a, rule 44 and decision 21. Talk also holds the Talk button when the app holds an ear.
+  The page records the microphone, sends the PCM to POST /api/hear, and sends the words it gets
+  back to POST /api/turn the way it sends typed words. Rule 10. When the app holds a voice, the
+  page plays each line of the child from POST /api/say. Cases V1 and V2.
   Review prints the findings as text. It names the model that answered. Rule 16.
   The page reads GET /api/state on load, so a reload recovers the transcript. Case B13.
 
@@ -27,6 +30,8 @@
   - It must not print a row with the stated flag false as a finding that a model wrote.
   - It must not promise that the words of the user stay on this machine. Rule 22.
   - It must not print the word "verified" or the word "unverified". Decision 19.
+  - It must not edit the words that the ear returns. It must not show a confidence. Rules 10, 18.
+  - It must not send audio anywhere but POST /api/hear on this server.
 
   The routes, as `src/server.ts` serves them:
     GET  /api/boot   -> { who, setup, sends, provided, destination, topics, disclosure }
@@ -35,6 +40,8 @@
     POST /api/start  -> { topic, consent }                                -> { topic }
     POST /api/turn   -> { said }                    -> { kind: "turn", you, child, seconds }
     POST /api/end    -> {} | { answer }             -> { kind: "probe" | "review", … }
+    POST /api/hear   -> PCM 16-bit, x-sample-rate   -> { kind: "heard", said, seconds, who }
+    POST /api/say    -> { text }                    -> audio/wav
   A fault carries the field `error`, and a good reply does not. The page reads that field.
 -->
 <!doctype html>
@@ -120,6 +127,10 @@
       .silent { color: var(--muted); font-style: italic; }
       form { border-top: 1px solid var(--border); padding: 12px 24px; display: flex; gap: 8px; align-items: flex-end; }
       form textarea { flex: 1; resize: none; min-height: 40px; max-height: 180px; }
+      /* The Talk button while it records. Red means the microphone is open. */
+      button.live { background: #b91c1c; border-color: #b91c1c; }
+      button.live:hover:not(:disabled) { background: #991b1b; }
+      .voice { display: flex; gap: 6px; align-items: center; cursor: pointer; white-space: nowrap; }
       .dots::after { content: '·'; animation: d 1.2s steps(3, end) infinite; }
       @keyframes d { 0% { content: '·'; } 33% { content: '· ·'; } 66% { content: '· · ·'; } }
       /* The soft cap note. Decision 21. The End button stays the only end signal. Rule 44. */
@@ -227,6 +238,10 @@
           <h1 id="topic">Explaining</h1>
           <span style="display:flex;gap:10px;align-items:center">
             <span class="meta" id="who"></span>
+            <span class="meta" id="speech-who"></span>
+            <label class="meta voice" id="voice-wrap" hidden>
+              <input type="checkbox" id="voice-on" checked /> read the child aloud
+            </label>
             <button class="quiet" id="end">End session</button>
           </span>
         </header>
@@ -234,6 +249,7 @@
         <p class="cap" id="cap-note" hidden>This is a good place to end and see the review.</p>
         <form id="f">
           <textarea id="t" rows="1" placeholder="say the next step…"></textarea>
+          <button type="button" class="go" id="mic" hidden>Talk</button>
           <button class="go" id="b">Say it</button>
         </form>
       </main>
@@ -257,6 +273,7 @@
           <textarea id="probe-answer" rows="3" placeholder="your answer…"></textarea>
           <div class="actions">
             <button class="go" id="probe-send">Answer</button>
+            <button type="button" class="quiet" id="probe-talk" hidden>Talk</button>
             <button class="quiet" id="probe-skip">I cannot answer this</button>
           </div>
           <div id="probe-error"></div>
@@ -312,7 +329,7 @@
 
       // ---------------------------------------------------------------- state
 
-      const app = { who: null, sends: false, provided: false, destination: null, disclosure: null }
+      const app = { who: null, sends: false, provided: false, destination: null, disclosure: null, speech: null }
 
       /** The attribution names the thing that answered. A setting can print a lie. Rule 24. */
       const name = who => (typeof who?.model_id === 'string' ? who.model_id : 'an unnamed model')
@@ -486,6 +503,7 @@
           paintChild(pending.querySelector('.body'), turn.child)
           userTurns++
           checkCap()
+          if (turn.child?.kind === 'said') speakAloud(turn.child.line)
         } catch (err) {
           pending.remove()
           failInLog(`The app did not get that turn. ${reason(err)} Say it again.`)
@@ -503,6 +521,161 @@
       $('t').addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('f').requestSubmit() }
       })
+
+      // ------------------------------------------------------------- speech
+
+      /**
+       * The microphone. The page records floats from an AudioWorklet, and it sends them to the
+       * server as 16-bit PCM with the sample rate in a header. The ear runs on this machine, inside
+       * the server process. The audio goes to that one address and nowhere else. Case V3.
+       */
+      const WORKLET = URL.createObjectURL(new Blob([`
+        class Tap extends AudioWorkletProcessor {
+          process(inputs) {
+            const channel = inputs[0]?.[0]
+            if (channel) this.port.postMessage(channel.slice(0))
+            return true
+          }
+        }
+        registerProcessor('tap', Tap)
+      `], { type: 'application/javascript' }))
+
+      const recorder = (() => {
+        let ctx = null, stream = null, source = null, node = null, chunks = []
+        const start = async () => {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+          })
+          // 16 kHz is the rate of the model. A browser that refuses the rate keeps its own, and
+          // the server resamples. The header carries the rate that this page used.
+          try {
+            try { ctx = new AudioContext({ sampleRate: 16000 }) } catch { ctx = new AudioContext() }
+            await ctx.audioWorklet.addModule(WORKLET)
+            source = ctx.createMediaStreamSource(stream)
+            node = new AudioWorkletNode(ctx, 'tap')
+            chunks = []
+            node.port.onmessage = e => chunks.push(e.data)
+            source.connect(node)
+          } catch (err) {
+            // The microphone is open and nothing records it. Close it before the fault goes up.
+            for (const track of stream.getTracks()) track.stop()
+            if (ctx) await ctx.close().catch(() => undefined)
+            throw err
+          }
+        }
+        const stop = async () => {
+          const rate = ctx.sampleRate
+          source.disconnect()
+          node.disconnect()
+          for (const track of stream.getTracks()) track.stop()
+          await ctx.close()
+          const total = chunks.reduce((n, c) => n + c.length, 0)
+          const pcm = new Int16Array(total)
+          let at = 0
+          for (const chunk of chunks) {
+            for (let i = 0; i < chunk.length; i++) {
+              const v = Math.max(-1, Math.min(1, chunk[i]))
+              pcm[at++] = v < 0 ? v * 32768 : v * 32767
+            }
+          }
+          return { pcm, rate }
+        }
+        return { start, stop }
+      })()
+
+      /** One recording to words. The words come back as the engine wrote them. Rule 10. */
+      const hear = async ({ pcm, rate }) => {
+        const res = await fetch('/api/hear', {
+          method: 'POST',
+          headers: { 'content-type': 'application/octet-stream', 'x-sample-rate': String(rate) },
+          body: pcm.buffer,
+        })
+        const data = await res.json().catch(() => null)
+        if (data === null) throw new Error('The server returned a body this page cannot read.')
+        if (data.error) throw new Error(data.error.message ?? 'The server stated a fault with no message.')
+        return data.said
+      }
+
+      /**
+       * One Talk button. The first press opens the microphone. The second press closes it, sends
+       * the recording, and hands the words to `deliver`. A fault goes to `onFail` as a fault. The
+       * page never edits the words between the ear and `deliver`.
+       */
+      let recording = false
+      /** True while a line of the child plays. Both Talk buttons stay off for that time. */
+      let playing = false
+      const MIC_BUTTONS = ['mic', 'probe-talk']
+      const setMics = disabled => { for (const id of MIC_BUTTONS) $(id).disabled = disabled }
+      const talkInto = async (button, deliver, onFail) => {
+        if (!recording) {
+          try {
+            await recorder.start()
+            recording = true
+            button.textContent = 'Stop'
+            button.classList.add('live')
+          } catch (err) {
+            onFail(`The app cannot use the microphone. ${reason(err)}`)
+          }
+          return
+        }
+        recording = false
+        button.classList.remove('live')
+        button.disabled = true
+        button.textContent = 'hearing…'
+        try {
+          const said = await hear(await recorder.stop())
+          await deliver(said)
+        } catch (err) {
+          onFail(`The app did not hear that. ${reason(err)} Say it again, or type it.`)
+        } finally {
+          // The child may have started to speak during `deliver`. The button then stays off.
+          button.disabled = playing
+          button.textContent = 'Talk'
+        }
+      }
+      $('mic').addEventListener('click', () => talkInto($('mic'), send, failInLog))
+      $('probe-talk').addEventListener('click', () =>
+        talkInto($('probe-talk'), async said => { $('probe-answer').value = said }, text => alertInto($('probe-error'), text)),
+      )
+
+      /**
+       * The child speaks its line. The voice runs on this machine, inside the server process. Both
+       * Talk buttons stay off while the line plays, so the ear does not hear the child. A voice
+       * that fails is a fault on the screen that shows, and the line stays on the screen.
+       */
+      const voiceFault = text =>
+        $('review').classList.contains('on') ? alertInto($('probe-error'), text) : failInLog(text)
+      const speakAloud = async text => {
+        if (!app.speech?.voice || !$('voice-on').checked) return
+        playing = true
+        setMics(true)
+        try {
+          const res = await fetch('/api/say', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ text }),
+          })
+          if (!res.ok) {
+            const data = await res.json().catch(() => null)
+            voiceFault(`The voice did not read that line. ${data?.error?.message ?? `The server returned status ${res.status}.`}`)
+            return
+          }
+          const url = URL.createObjectURL(await res.blob())
+          const audio = new Audio(url)
+          await new Promise(done => {
+            audio.onended = done
+            audio.onerror = () => { voiceFault('The voice did not read that line. The browser could not play the audio.'); done() }
+            audio.play().catch(err => { voiceFault(`The voice did not read that line. ${reason(err)}`); done() })
+          })
+          URL.revokeObjectURL(url)
+        } catch (err) {
+          voiceFault(`The voice did not read that line. ${reason(err)}`)
+        } finally {
+          playing = false
+          // A button that records right now keeps its state. The others come back on.
+          if (!recording) setMics(false)
+        }
+      }
 
       // The user ends the session. The child never ends it. Case E13a and rule 44.
       $('end').addEventListener('click', () => {
@@ -538,6 +711,7 @@
         stage('probe')
         show('review')
         $('probe-answer').focus()
+        speakAloud(question)
       }
 
       const answer = async value => {
@@ -688,6 +862,18 @@
         app.provided = boot.provided === true
         app.destination = typeof boot.destination === 'string' ? boot.destination : null
         app.disclosure = boot.disclosure ?? null
+        // Cases V1 and V2. No ear means no Talk button. No voice means no playback and no box.
+        app.speech = boot.speech ?? null
+        const hasEar = Boolean(app.speech?.ear)
+        const hasVoice = Boolean(app.speech?.voice)
+        $('mic').hidden = !hasEar
+        $('probe-talk').hidden = !hasEar
+        $('voice-wrap').hidden = !hasVoice
+        // Rule 24. The names are the directories that answer, and never a setting.
+        $('speech-who').textContent = [
+          hasEar ? `ear: ${name(app.speech.ear)}` : '',
+          hasVoice ? `voice: ${name(app.speech.voice)}` : '',
+        ].filter(Boolean).join(' · ')
 
         for (const topic of boot.topics ?? []) {
           const card = el('button', 'card', topic.title)
@@ -699,6 +885,10 @@
         // The server owns the disclosure text, so one file states where the words go. Rules 22, 47.
         for (const line of app.disclosure?.destination ?? []) {
           $('destinations').append(el('li', null, line))
+        }
+        // The voice lines hold only when the app holds an ear or a voice. Rule 49.
+        if (hasEar || hasVoice) {
+          for (const line of app.disclosure?.voice ?? []) $('destinations').append(el('li', null, line))
         }
         for (const line of [...(app.disclosure?.storage ?? []), app.disclosure?.terms].filter(Boolean)) {
           $('storage').append(el('p', null, line))

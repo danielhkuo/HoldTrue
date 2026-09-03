@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "app"],
       "port": 4517
+    },
+    {
+      "name": "voice",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "set -a; . ./.env.local; set +a; npm run app"],
+      "port": 4517
     }
   ]
 }

@@ -27,5 +27,8 @@
     "fast-check": "^4.3.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "sherpa-onnx-node": "^1.13.7"
   }
 }

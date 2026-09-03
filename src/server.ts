@@ -1,9 +1,10 @@
 /**
  * The server. This part holds the routes and the one session in memory.
  *
- * The part owns seven routes. It serves the page. It reports the boot state and the disclosure.
+ * The part owns nine routes. It serves the page. It reports the boot state and the disclosure.
  * It takes the startup model choice. It starts a session. It runs one live turn. It runs the end
- * phase. It reports the state after a reload.
+ * phase. It reports the state after a reload. It turns one recording into words. It turns one
+ * line of the child into audio.
  *
  * The part binds to 127.0.0.1 only. Case B12 requires this. The transcript never reaches the
  * network. The part holds one session in memory, and it writes nothing to disk. Rule 47.
@@ -21,8 +22,14 @@
  * The end phase runs one time, and only after POST /api/end. The live phase then stops.
  * POST /api/turn returns a stated error after the end phase starts.
  *
- * The cases: B5, B7, B11, B12 and B13. The rules: 1, 11, 13, 22, 23, 41, 42, 45, 46,
- * 47, 48, 50 and 53.
+ * The speech routes keep the audio on this machine. `POST /api/hear` takes PCM, and the ear in
+ * `src/speech.ts` turns it into words inside this process. The words go back to the page, and
+ * the page sends them to `POST /api/turn` the way it sends typed words. Rule 10 holds: this part
+ * never edits them. `POST /api/say` takes one line and returns a WAV. Neither route makes a model
+ * call, so rule 1 holds for the turn. Neither route writes to disk. Rule 47.
+ *
+ * The cases: B5, B7, B11, B12, B13, V1, V2 and V3. The rules: 1, 10, 11, 13, 22, 23, 41, 42, 45,
+ * 46, 47, 48, 50 and 53.
  *
  * The part must not do these things:
  * - It must not bind an address other than 127.0.0.1.
@@ -31,7 +38,8 @@
  * - It must not render a fault as a line of the child. Every fault returns a shaped error object.
  * - It must not read, judge or edit the words of the user. Rule 10.
  * - It must not show a score, a rating or a grade. Rule 16.
- * - It must not write to disk.
+ * - It must not write to disk. Audio stays in memory for one request.
+ * - It must not send audio off this machine. The ear and the voice run inside this process.
  *
  * ONE NOTE ON src/session.ts. That file owns the marked transcript and the end phase. This part
  * calls `startSession`, `addTurn`, `openEnd` and `closeEnd`. It holds no step of the end phase
@@ -54,6 +62,7 @@ import {
   type Pending,
   type Session,
 } from './session.js'
+import { REASON as SPEECH, openSpeech, pcmFromBytes, wavFromWave } from './speech.js'
 import { TOPICS } from './topics.js'
 import type { Review } from './types.js'
 
@@ -78,6 +87,8 @@ const TEMPERATURE = flag('CHILD_SAMPLING') ? 0.8 : 0
 
 /** A request body larger than this is a fault. The cap stops one request from filling memory. */
 const MAX_BODY_BYTES = 1_000_000
+/** A recording larger than this is a fault. At 16 kHz and 16 bits this is about twenty minutes. */
+const MAX_AUDIO_BYTES = 40_000_000
 
 /* ── the disclosure ──────────────────────────────────────────────────────────────────────────── */
 
@@ -107,6 +118,13 @@ const DISCLOSURE = {
     'The review can fail to run.',
     'The app then states that no review ran.',
     'The questions then stay open.',
+  ],
+  // Cases V1, V2 and V3. The audio never leaves this process. The words go where typed words go.
+  voice: [
+    'The app turns your voice into words on this machine, with the speech model that the owner names.',
+    'The app sends the words to the model that you chose. The app does not send the audio.',
+    'The app reads the lines of the child aloud on this machine.',
+    'The app holds the audio in memory for one turn. The app writes no audio to disk.',
   ],
   terms:
     'The owner has not decided the retention terms, the training terms and the deletion terms.',
@@ -178,6 +196,13 @@ const providedDestination: string | null =
         })()
       : 'api.anthropic.com'
 
+/**
+ * The ear and the voice. Both run inside this process on the machine of the user. The owner names
+ * the model directories with HOLDTRUE_STT_DIR and HOLDTRUE_TTS_DIR. There is no default. Rule 50.
+ * An absent member carries its reason, and the boot route reports the reason to the page.
+ */
+const speech = await openSpeech(process.env)
+
 /** The fix for a missing provided model. Decision 20 asks the refusal to name it. Two ways work. */
 const NO_PROVIDED_FIX =
   'Set HOLDTRUE_PROVIDED_KEY and HOLDTRUE_PROVIDED_MODEL. ' +
@@ -206,17 +231,23 @@ const json = (res: ServerResponse, code: number, body: unknown): void => {
 const fault = (res: ServerResponse, code: number, kind: string, message: string): void =>
   json(res, code, { error: { kind, message } })
 
-/** The body of one request, as text. A body over the cap is a fault. */
-const readBody = async (req: IncomingMessage): Promise<string | null> => {
+/** The body of one request, as bytes. A body over the cap is a fault. */
+const readBytes = async (req: IncomingMessage, cap: number): Promise<Buffer | null> => {
   const chunks: Buffer[] = []
   let size = 0
   for await (const chunk of req) {
     const part = chunk as Buffer
     size += part.length
-    if (size > MAX_BODY_BYTES) return null
+    if (size > cap) return null
     chunks.push(part)
   }
-  return Buffer.concat(chunks).toString('utf8')
+  return Buffer.concat(chunks)
+}
+
+/** The body of one request, as text. A body over the cap is a fault. */
+const readBody = async (req: IncomingMessage): Promise<string | null> => {
+  const bytes = await readBytes(req, MAX_BODY_BYTES)
+  return bytes === null ? null : bytes.toString('utf8')
 }
 
 /** The body of one request, as an object. Bad JSON is a fault and never an exception. */
@@ -450,6 +481,67 @@ const handleEnd = async (req: IncomingMessage, res: ServerResponse): Promise<voi
   json(res, 200, { kind: 'review', review, source })
 }
 
+/**
+ * One recording to words. Case V1.
+ *
+ * The body is 16-bit PCM, one channel, little-endian. The `x-sample-rate` header carries the
+ * rate. The ear resamples when the rate differs from the rate of the model. The reply carries
+ * the words as the engine wrote them. Rule 10. It carries no confidence and no pause. The
+ * seconds field is the cost of the call, as in POST /api/turn. Rule 18.
+ * The page then sends the words to POST /api/turn, or into the probe answer, as the user
+ * chooses. This route makes no model call and it touches no session state.
+ */
+const handleHear = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
+  if (session === null) return fault(res, 409, 'no_session', 'No session is open. Start one first.')
+  const ear = speech.ear
+  if (ear === null) {
+    return fault(res, 409, 'no_ear', `The app holds no speech-to-text model: ${speech.reasons.ear}.`)
+  }
+  const rate = Number(req.headers['x-sample-rate'] ?? '')
+  if (!Number.isInteger(rate) || rate <= 0) {
+    return fault(res, 400, 'bad_request', 'The request names no sample rate. Send x-sample-rate.')
+  }
+  const bytes = await readBytes(req, MAX_AUDIO_BYTES)
+  if (bytes === null) return fault(res, 413, 'too_long', 'The recording is longer than the app takes.')
+  const samples = pcmFromBytes(new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength))
+  if (samples === null) return fault(res, 400, 'bad_request', 'The request holds no audio.')
+
+  const started = Date.now()
+  const heard = await ear.hear({ samples, sampleRate: rate })
+  const seconds = (Date.now() - started) / 1000
+  if (!heard.ok) {
+    // Rule 25. The ear that heard nothing and the ear that failed are two different results.
+    const nothing = heard.reason === SPEECH.NOTHING_HEARD
+    return fault(res, nothing ? 422 : 502, nothing ? 'nothing_heard' : 'ear_failed', heard.reason)
+  }
+  json(res, 200, { kind: 'heard', said: heard.text, seconds, who: ear.identify() })
+}
+
+/**
+ * One line to audio. Case V2. The reply is a WAV in the body, and nothing reaches a disk. The
+ * `x-model` header names the model directory that answered. Rule 24.
+ */
+const handleSay = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
+  const voice = speech.voice
+  if (voice === null) {
+    return fault(res, 409, 'no_voice', `The app holds no text-to-speech model: ${speech.reasons.voice}.`)
+  }
+  const body = await readJson(req)
+  if (body === null) return fault(res, 400, 'bad_request', 'The request body is not an object.')
+  const text = str(body, 'text')
+  if (text === null) return fault(res, 400, 'bad_request', 'The request holds no text.')
+
+  const said = await voice.say(text)
+  if (!said.ok) return fault(res, 502, 'voice_failed', said.reason)
+  const wav = wavFromWave(said.wave)
+  res.writeHead(200, {
+    'content-type': 'audio/wav',
+    'content-length': wav.length,
+    'x-model': voice.identify().model_id,
+  })
+  res.end(wav)
+}
+
 const handleBoot = async (res: ServerResponse): Promise<void> =>
   json(res, 200, {
     // Rule 50. The app names no model before the user chooses one.
@@ -461,6 +553,12 @@ const handleBoot = async (res: ServerResponse): Promise<void> =>
     destination: providedDestination,
     topics: TOPICS,
     disclosure: DISCLOSURE,
+    // Cases V1 and V2. The page shows the Talk button and plays the child only when these exist.
+    speech: {
+      ear: speech.ear?.identify() ?? null,
+      voice: speech.voice?.identify() ?? null,
+      reasons: speech.reasons,
+    },
   })
 
 const handleState = (res: ServerResponse): void => {
@@ -495,6 +593,8 @@ createServer(async (req, res) => {
     if (method === 'POST' && url === '/api/start') return await handleStart(req, res)
     if (method === 'POST' && url === '/api/turn') return await handleTurn(req, res)
     if (method === 'POST' && url === '/api/end') return await handleEnd(req, res)
+    if (method === 'POST' && url === '/api/hear') return await handleHear(req, res)
+    if (method === 'POST' && url === '/api/say') return await handleSay(req, res)
 
     fault(res, 404, 'not_found', 'This address holds no route.')
   } catch (error) {
@@ -506,5 +606,15 @@ createServer(async (req, res) => {
   console.log(`\n  http://${ADDRESS}:${PORT}\n`)
   console.log('  This server answers 127.0.0.1 only. The transcript does not reach the network.')
   console.log('  There is no default model. Choose one model at startup.')
-  console.log('  One session in memory. Nothing on disk. The findings appear one time.\n')
+  console.log('  One session in memory. Nothing on disk. The findings appear one time.')
+  console.log(
+    speech.ear === null
+      ? `  No ear: ${speech.reasons.ear}. Set HOLDTRUE_STT_DIR to a sherpa-onnx model directory.`
+      : `  The ear is ${speech.ear.identify().model_id}. Audio stays in this process.`,
+  )
+  console.log(
+    speech.voice === null
+      ? `  No voice: ${speech.reasons.voice}. Set HOLDTRUE_TTS_DIR to a sherpa-onnx model directory.\n`
+      : `  The voice is ${speech.voice.identify().model_id}.\n`,
+  )
 })
