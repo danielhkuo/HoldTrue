@@ -1,7 +1,7 @@
 # Proposal: the path to the MVP
 
-**Status: drafted 2026-08-25. The owner has not ruled on it. `docs/decisions.md` owns the build
-order. This file proposes entries. It does not set them.**
+**Status: closed 2026-08-27 by decision 23. The owner declared the MVP with the nine-run counts
+in hand and waived the remaining gates. This file stays as the record of the path.**
 
 ## Where the product stands
 

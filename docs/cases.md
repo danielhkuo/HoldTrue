@@ -110,11 +110,24 @@ do at that moment.
 
 ---
 
+## The voice
+
+| # | The behaviour | Verdict | Owner |
+|---|---|---|---|
+| **V1** | You speak, the app turns the audio into words on this machine, and the words reach the model untouched. | Feature | Code |
+| **V2** | The app reads the line of the child aloud on this machine. | Feature | Code |
+| **V3** | The app sends audio off the machine, or writes audio to disk. | Guard | Code |
+
+The speech model decides which sounds become words. V1 binds the code between the engine and the
+model. It does not bind the engine. `architecture.md` states the limit.
+
+---
+
 ## The count
 
-- Five features that the product produces today.
+- Seven features that the product produces today.
 - Five features that the product does not produce yet.
-- Twenty-six guards.
+- Twenty-seven guards.
 
 Every feature that the product does not produce yet needs the end phase, except E13b. E13b needs a
 change to the child.

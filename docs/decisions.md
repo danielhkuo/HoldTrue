@@ -303,3 +303,38 @@ needs text comparison inside Diff, and rule 43 forbids it.
 
 **Not in the MVP.** The step needs a second provided model and new calls. `docs/proposals/`
 takes the design when the MVP ships.
+
+## 23. The MVP is declared
+
+**Decided 2026-08-27.** The owner ruled. The build as it stands is the MVP. The live phase held
+every guard in nine runs of nine. The review ran in eight of nine and named the planted step in
+five, on a mid-size provided model. The owner accepts that state and waives the two remaining
+gates from `docs/proposals/mvp.md`: the frontier-model runs and the three real sessions. The
+counts in `measurements/review/nine-runs.md` stay the record of what is measured and what is not.
+
+**Open under this decision.** Run 5 returned an empty findings list over a transcript with a
+planted gap. Decision 22 holds the remedy and stays deferred. The owner ships knowing this.
+
+## 24. Voice runs on the machine, inside the app
+
+**Decided 2026-09-01.** The owner ruled. The app takes spoken words, and it reads the child
+aloud. Both run inside the server process on sherpa-onnx, with model directories that the owner
+names. There is no default speech model. The ear returns words only. `docs/architecture.md` owns
+the speech layer.
+
+**Why.** The product asks the person to explain out loud, and decision 17 set a voice call as the
+model of the surface. A cloud speech service would send the voice of the person to a third party.
+The words already go to a provider at the end, and the voice does not need to go anywhere. A local
+engine keeps the audio inside one process, so the app can say where the audio goes.
+
+**The rejected alternatives.** The agent proposed these four on 2026-09-01, and the owner has
+not ruled on each one. The browser speech API is rejected. The browser sends the audio to
+its vendor, and the app could not name the destination. A cloud speech key is rejected for now.
+It adds a second consent and a second destination. A Python sidecar is rejected. The addon runs
+in the one process that already exists. The seam stays a plain function, and a test can fake it.
+A confidence gate on the transcript is rejected. Rule 18 forbids the signal, and
+`docs/research/stt-signals.md` shows that the fields cannot tell a misheard word from a heard one.
+
+**Open under this decision.** No real person has spoken to the app. The nine runs of decision 23
+typed every turn. The rate at which a speech model drops a filled pause on a real voice is not
+measured. Rule 10 binds the code and not the model.

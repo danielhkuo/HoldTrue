@@ -10,7 +10,8 @@ order: Check, Diff, Probe and Close. `docs/architecture.md` describes both phase
 ## What the code holds today
 
 Both phases run. `docs/architecture.md` lists every file in `src/` under "What exists today". The
-build takes typed input. The build does not accept voice. The app does not have a topic gate. The
+build takes typed input and spoken input. The speech models run on the machine of the person,
+and the owner names them. `docs/architecture.md` holds the speech layer. The app does not have a topic gate. The
 server holds one session in memory. The server writes nothing to disk. The findings appear once.
 The app loses them when the process stops. No eval measures what the end phase produces.
 
@@ -20,9 +21,10 @@ Every step in this list runs today.
 
 1. You pick a topic from the curated list. You cannot type your own topic.
 2. You give consent. The app names the destination: the provider of the provided model.
-3. You explain the mechanism from memory. The app shows you no source text.
+3. You explain the mechanism from memory. The app shows you no source text. You type the line,
+   or you press Talk and speak it.
 4. The child says one short line back. It asks about one step in what you just said. It can press
-   the same step again.
+   the same step again. The app reads the line aloud when the owner names a voice model.
 5. At the twelfth turn, the app shows one line that points at the End button. Decision 21.
 6. You press the end button.
 7. The review opens. It lists the links you did not say, and the claims you said wrong.
@@ -153,7 +155,7 @@ of three words.
 | 11 | Prevents | Close runs for every row, so no question stays open. |
 | 16 | Prevents | The review prints rows. Nothing computes a number. |
 | 17 | Prevents | Law 2 blocks the statement. No model can source a judgement with no ground truth. |
-| 18 | Prevents | Nothing measures delivery. The live phase passes your words in untouched. |
+| 18 | Prevents | Nothing measures delivery. The live phase passes your words in untouched. The ear returns words, and no pause. |
 | 19 | Neither | The topic gate is not built. The curated list and the warning are the only barriers. |
 | 44 | Neither | The child never stops on its own. You end the session with a button. |
 
@@ -186,4 +188,5 @@ you speak. That model destroys M3.
 measurement is a separate category. Each measurement carries its source where you use it.
 
 **A promise that your text stays on your device.** Your text leaves the device unless you run a
-local model.
+local model. The audio is a narrower case. The ear runs inside the app, and the app sends no
+audio anywhere. The words that the ear writes go where typed words go.

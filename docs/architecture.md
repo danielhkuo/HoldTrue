@@ -39,7 +39,8 @@ or plain code. The document says which one.
 The user explains a mechanism out loud, from memory. The child answers with one short line. One
 turn runs in four steps, and it makes one model call:
 
-1. The user says a line.
+1. The user says a line. The user types it, or the user speaks it and the ear writes it. The
+   speech layer below owns the ear.
 2. The server appends the line to the transcript as a user turn.
 3. The server makes one model call, and the model returns one line.
 4. The server appends that line to the transcript as a child turn.
@@ -244,11 +245,72 @@ attribution, and `ask` sends one system message and one user message. The child,
 Close call this interface, and they never call a provider API. `identify` reads the name from the
 thing that answers, because an attribution must name what actually ran.
 
+## The speech layer
+
+The app takes typed words, and it takes spoken words. `src/speech.ts` holds the ear and the
+voice. The ear turns one recording into words. The voice turns one line of the child into audio.
+Both run inside the server process, on the machine of the user, on the sherpa-onnx runtime. The
+package is `sherpa-onnx-node`. No audio leaves the machine. No audio reaches a disk. Cases V1,
+V2 and V3. Decision 24.
+
+There is no default speech model. Rule 50. The owner names two directories:
+
+- `HOLDTRUE_STT_DIR` holds a speech-to-text export for sherpa-onnx. The code knows two layouts.
+  The first is a NeMo transducer, which is the layout of NVIDIA Parakeet TDT. The second is
+  Qwen3-ASR.
+- `HOLDTRUE_TTS_DIR` holds a text-to-speech export for sherpa-onnx. The code knows two layouts,
+  Kokoro and Supertonic.
+- `HOLDTRUE_TTS_VOICE` picks the speaker id of the voice model. It defaults to zero. A speaker id
+  is a setting of one named model, and not a model choice.
+- `HOLDTRUE_SPEECH_THREADS` sets the thread count of the engine. It defaults to four.
+- `HOLDTRUE_TTS_LANG` sets the language of a Supertonic voice. It defaults to `en`. Kokoro does
+  not read it.
+
+A missing variable gives no ear or no voice. The page then hides the Talk button, or it plays no
+audio. A directory that the code does not know gives a stated reason, and `GET /api/boot` reports
+the reason. The code reads the directory listing to pick the layout. It opens no model file
+itself. The sherpa-onnx project publishes the exports on its GitHub releases page, under the tags
+`asr-models` and `tts-models`. The owner downloads one archive of each kind, unpacks it, and
+names the directory in the variable. `.claude/launch.json` holds a `voice` configuration that
+loads `.env.local` and starts the app. The unit tests and the end-to-end check need no model.
+
+One spoken turn runs in five steps:
+
+1. The page records the microphone at 16 kHz through an AudioWorklet.
+2. The page sends the samples as 16-bit PCM to `POST /api/hear`, with the rate in a header.
+3. The ear decodes the samples inside the process. It returns the words as the engine wrote them.
+4. The page sends those words to `POST /api/turn`, the way it sends typed words. Rule 10 holds
+   between the ear and the model. No code trims a filled pause, a repeat or a full stop.
+5. The page sends the line of the child to `POST /api/say`, and it plays the WAV that comes back.
+
+`POST /api/hear` makes no model call, so rule 1 holds for the turn. The ear returns words only.
+It returns no confidence, no timestamp and no pause. Rule 18. The attribution names the model
+directory that answered and the runtime. Rule 24. On the review screen the same Talk button
+fills the probe answer, and the user presses Answer.
+
+Every document must state one limit. The speech model decides which sounds become words.
+The code does not. In the round trip of 2026-09-01, Parakeet TDT v3 and Qwen3-ASR both wrote
+"um" and "uh" from a synthetic voice. No measurement says how often they do so on a real voice.
+Rule 10 binds the code. It cannot bind the model.
+
+Four models ran on 2026-09-01, on one Apple M5 Max, from the int8 exports of sherpa-onnx. The
+figures below are engineering measurements from one machine and one sentence of eight seconds.
+Rule 28. The licence column repeats the licence file in each archive.
+
+| Model | Kind | Licence | Time for the sentence |
+|---|---|---|---|
+| NVIDIA Parakeet TDT 0.6B v3 | ear | CC-BY-4.0 | 0.19 s |
+| Qwen3-ASR 0.6B | ear | Apache-2.0 | 0.71 s |
+| Kokoro v1.0 | voice | Apache-2.0 | 1.47 s |
+| Supertonic 3 | voice | MIT | 1.56 s |
+
 ## Consent and disclosure
 
 The app must disclose where the text of the user goes, and it must name the destination it
 actually uses. An API key sends the transcript to that provider during the conversation. A local
-Ollama backend sends nothing off the machine during the conversation. Every session sends the
+Ollama backend sends nothing off the machine during the conversation. The ear and the voice send
+no audio anywhere. The words that the ear writes go where typed words go, and the disclosure
+says so. Every session sends the
 whole transcript to the provider of the provided model at the end, because the end phase always
 runs there. Rule 53.
 
@@ -291,13 +353,14 @@ must name a configuration that it cannot support.
 
 ## What exists today
 
-Both phases run. Five files hold the live phase:
+Both phases run. Six files hold the live phase:
 
 - `src/child.ts` holds the child prompt and the one turn;
 - `src/model.ts` holds the Ollama backend and the Anthropic API key backend;
+- `src/speech.ts` holds the ear and the voice;
 - `src/server.ts` holds the routes and the one in-memory session;
 - `src/topics.ts` holds the curated topic list;
-- `src/page.html` holds the page and the End session button.
+- `src/page.html` holds the page, the Talk button and the End session button.
 
 Six files hold the end phase:
 
@@ -308,10 +371,12 @@ Six files hold the end phase:
 - `src/close.ts` holds Close;
 - `src/session.ts` holds the marked transcript and the order of the five steps.
 
-`src/server.ts` runs the end phase at `POST /api/end`.
+`src/server.ts` runs the end phase at `POST /api/end`. It runs the ear at `POST /api/hear` and
+the voice at `POST /api/say`.
 
-Four test files exist. They are `src/child.test.ts`, `src/diff.test.ts`, `src/model.test.ts` and
-`src/session.test.ts`. Check, Probe and Close hold no test file. No test can judge what a model
+Five test files exist. They are `src/child.test.ts`, `src/diff.test.ts`, `src/model.test.ts`,
+`src/session.test.ts` and `src/speech.test.ts`. The speech tests pass a fake engine, so no test
+loads the addon or a model. Rule 32. Check, Probe and Close hold no test file. No test can judge what a model
 writes. Rule 33 and rule 34 forbid such a test. `src/e2e.ts` runs the end-to-end check against a
 real service. Rule 31 asks for that check. `src/rig.ts` makes two models talk and counts
 repetition, and it judges nothing.
