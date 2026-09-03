@@ -220,6 +220,12 @@
           </label>
         </div>
 
+        <!-- Decision 25. Several provided models need one choice. The app picks none. Rule 50. -->
+        <div class="block" id="reviewer-block" hidden>
+          <p class="disclose">The model that runs the review at the end. The app picks none for you.</p>
+          <div id="reviewers"></div>
+        </div>
+
         <div id="cards"></div>
         <button class="card own" id="own">Something else — start with a blank box</button>
         <div id="pick-error"></div>
@@ -238,6 +244,7 @@
           <h1 id="topic">Explaining</h1>
           <span style="display:flex;gap:10px;align-items:center">
             <span class="meta" id="who"></span>
+            <span class="meta" id="review-who"></span>
             <span class="meta" id="speech-who"></span>
             <label class="meta voice" id="voice-wrap" hidden>
               <input type="checkbox" id="voice-on" checked /> read the child aloud
@@ -329,7 +336,7 @@
 
       // ---------------------------------------------------------------- state
 
-      const app = { who: null, sends: false, provided: false, destination: null, disclosure: null, speech: null }
+      const app = { who: null, sends: false, provided: false, destination: null, disclosure: null, speech: null, providedModels: [] }
 
       /** The attribution names the thing that answered. A setting can print a lie. Rule 24. */
       const name = who => (typeof who?.model_id === 'string' ? who.model_id : 'an unnamed model')
@@ -422,8 +429,13 @@
        * No topic starts until the user gives consent. The consent comes before the first send.
        * A session must not start when the app holds no provided model. Decision 20.
        */
+      /** The review model that the person picked. Null when the list needs a pick and has none. */
+      const reviewerPicked = () => {
+        if (app.providedModels.length <= 1) return app.providedModels[0] ?? null
+        return document.querySelector('input[name="reviewer"]:checked')?.value ?? null
+      }
       const gate = () => {
-        const ready = app.provided && $('consent').checked && app.who !== null
+        const ready = app.provided && $('consent').checked && app.who !== null && reviewerPicked() !== null
         for (const card of document.querySelectorAll('#cards .card')) card.disabled = !ready
         $('own').disabled = !ready
       }
@@ -432,13 +444,15 @@
 
       const begin = async title => {
         $('pick-error').replaceChildren()
+        const providedModel = reviewerPicked()
         try {
-          await call('/api/start', { topic: title, consent: true })
+          await call('/api/start', { topic: title, consent: true, providedModel })
         } catch (err) {
           alertInto($('pick-error'), `The app did not start the session. ${reason(err)}`)
           return
         }
         $('topic').textContent = title
+        $('review-who').textContent = providedModel ? `review: ${providedModel}` : ''
         $('log').replaceChildren()
         $('probe-answer').value = ''
         $('end').disabled = false
@@ -860,6 +874,19 @@
         alertInto($('setup-error'), 'The app cannot reach the server.', 'Start the server, then load this page again.')
       } else {
         app.provided = boot.provided === true
+        app.providedModels = Array.isArray(boot.providedModels) ? boot.providedModels : []
+        // Decision 25. Several names need one choice, and no radio starts checked. Rule 50.
+        $('reviewer-block').hidden = app.providedModels.length <= 1
+        for (const model of app.providedModels) {
+          const label = el('label', 'agree')
+          const radio = el('input')
+          radio.type = 'radio'
+          radio.name = 'reviewer'
+          radio.value = model
+          radio.addEventListener('change', gate)
+          label.append(radio, el('span', null, model))
+          $('reviewers').append(label)
+        }
         app.destination = typeof boot.destination === 'string' ? boot.destination : null
         app.disclosure = boot.disclosure ?? null
         // Cases V1 and V2. No ear means no Talk button. No voice means no playback and no box.
@@ -911,6 +938,7 @@
           $('running').append(el('p', 'sub', 'Load this page again to read the findings.'))
         } else if (state.topic !== '') {
           $('topic').textContent = state.topic
+          $('review-who').textContent = state.providedModel ? `review: ${state.providedModel}` : ''
           $('log').replaceChildren()
           for (const e of state.history ?? []) render(e)
           userTurns = (state.history ?? []).length

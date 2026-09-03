@@ -16,6 +16,8 @@
  * Every session sends the transcript to the provided model at the end, so POST /api/start
  * refuses every session without explicit consent in the request.
  * POST /api/start refuses to start a session when the app holds no provided model. Decision 20.
+ * The owner may name several provided models on one endpoint. The person picks one for each
+ * session, and the app picks none. Decision 25 and rule 50.
  * The end phase runs on the provided model only. Rule 53. The part never puts the startup model
  * in place of the provided model. Rule 45.
  *
@@ -53,6 +55,7 @@ import { fileURLToPath } from 'node:url'
 
 import { speak, type Exchange, type Said } from './child.js'
 import { open, type Attribution, type Backend, type ModelHandle } from './model.js'
+import { NO_PROVIDED_FIX, providedFrom } from './provided.js'
 import {
   addTurn,
   closeEnd,
@@ -153,48 +156,26 @@ let startupSends = false
 let childModel: ModelHandle | null = null
 
 /**
- * The provided model. It is separate from the startup choice, and rule 53 gives it the whole end
- * phase.
- *
- * The owner sets it one of two ways. The owner sets HOLDTRUE_PROVIDED_KEY and
- * HOLDTRUE_PROVIDED_MODEL, and the app opens Anthropic with that key. The owner sets
- * HOLDTRUE_PROVIDED_URL and HOLDTRUE_PROVIDED_MODEL instead, and the app opens that
- * OpenAI-compatible endpoint. A local proxy needs no key, so HOLDTRUE_PROVIDED_KEY stays optional
- * when the URL is set. The model name is required either way.
+ * The provided models. They are separate from the startup choice, and rule 53 gives one of them
+ * the whole end phase. `src/provided.ts` reads the variables. The owner names one model, or
+ * several with commas between them, on one endpoint. The person picks one at the start of each
+ * session. The app picks none. Rule 50. Decision 25.
  *
  * Rule 50 forbids a default model, and the end phase must not run on a model that nobody named.
- * A missing required variable gives no provided model, and POST /api/start then refuses to start
- * a session. Decision 20.
+ * No name gives no provided model, and POST /api/start then refuses to start a session.
+ * Decision 20.
  */
-const providedKey = process.env.HOLDTRUE_PROVIDED_KEY ?? ''
-const providedModel = process.env.HOLDTRUE_PROVIDED_MODEL ?? ''
-const providedUrl = process.env.HOLDTRUE_PROVIDED_URL ?? ''
-const provided: ModelHandle | null =
-  providedUrl.trim() !== ''
-    ? providedModel.trim() === ''
-      ? null
-      : open({ kind: 'openai', baseUrl: providedUrl.trim(), key: providedKey, model: providedModel })
-    : providedKey.trim() === '' || providedModel.trim() === ''
-      ? null
-      : open({ kind: 'apiKey', provider: 'anthropic', key: providedKey, model: providedModel })
-
+const provided = providedFrom(process.env)
+/** One handle for each named model, by name. Every handle answers from the one destination. */
+const reviewers: ReadonlyMap<string, ModelHandle> = new Map(
+  (provided?.backends ?? []).map(backend => [backend.model ?? '', open(backend)]),
+)
 /**
- * The host that the provided model answers from, and never the key. Decision 21 and rule 48 ask
- * the app to name the destination in the consent sentence. `null` means the app holds no provided
- * model, so it has no destination to name.
+ * The host that the provided models answer from, and never the key. Decision 21 and rule 48 ask
+ * the app to name the destination in the consent sentence. `null` means the app holds no
+ * provided model, so it has no destination to name.
  */
-const providedDestination: string | null =
-  provided === null
-    ? null
-    : providedUrl.trim() !== ''
-      ? (() => {
-          try {
-            return new URL(providedUrl.trim()).host
-          } catch {
-            return providedUrl.trim()
-          }
-        })()
-      : 'api.anthropic.com'
+const providedDestination: string | null = provided?.destination ?? null
 
 /**
  * The ear and the voice. Both run inside this process on the machine of the user. The owner names
@@ -203,12 +184,10 @@ const providedDestination: string | null =
  */
 const speech = await openSpeech(process.env)
 
-/** The fix for a missing provided model. Decision 20 asks the refusal to name it. Two ways work. */
-const NO_PROVIDED_FIX =
-  'Set HOLDTRUE_PROVIDED_KEY and HOLDTRUE_PROVIDED_MODEL. ' +
-  'Or set HOLDTRUE_PROVIDED_URL and HOLDTRUE_PROVIDED_MODEL, for an OpenAI-compatible endpoint.'
-
 let session: Session | null = null
+/** The provided model that this session picked for the review. Rule 53. */
+let reviewer: ModelHandle | null = null
+let reviewerName: string | null = null
 let beats: Beat[] = []
 let ended = false
 let pending: Pending | null = null
@@ -387,6 +366,23 @@ const handleStart = async (req: IncomingMessage, res: ServerResponse): Promise<v
     )
   }
 
+  // Rule 50 and decision 25. One name on the list needs no choice, because the owner made it.
+  // Several names need a choice from the person, and the app never picks for them.
+  const names = [...reviewers.keys()]
+  const wanted = str(body, 'providedModel')
+  const chosen = wanted === null && names.length === 1 ? (names[0] ?? null) : wanted
+  const handle = chosen === null ? undefined : reviewers.get(chosen)
+  if (chosen === null || handle === undefined) {
+    return fault(
+      res,
+      400,
+      'no_review_model',
+      `Choose the model that runs the review. Send providedModel as one of: ${names.join(', ')}.`,
+    )
+  }
+  reviewer = handle
+  reviewerName = chosen
+
   session = startSession(topic)
   beats = []
   ended = false
@@ -456,7 +452,7 @@ const handleEnd = async (req: IncomingMessage, res: ServerResponse): Promise<voi
   ended = true
 
   // Rule 53. The end phase runs on the provided model only, never on the startup model.
-  const model = provided
+  const model = reviewer
   if (model === null) {
     // POST /api/start already refuses a session when the app holds no provided model. Decision
     // 20. This check stays, because a session must never end with a silent gap. Rule 46.
@@ -548,7 +544,9 @@ const handleBoot = async (res: ServerResponse): Promise<void> =>
     who: startup === null ? null : await startup.identify(),
     setup: startup !== null,
     sends: startupSends,
-    provided: provided !== null,
+    provided: reviewers.size > 0,
+    // Decision 25. The names on the list. The page asks for one when the list holds several.
+    providedModels: [...reviewers.keys()],
     // Decision 21 and rule 48. The consent sentence names this host. It never carries the key.
     destination: providedDestination,
     topics: TOPICS,
@@ -569,6 +567,7 @@ const handleState = (res: ServerResponse): void => {
     history: live === null ? [] : exchanges(live),
     turns: live?.turns ?? [],
     ended,
+    providedModel: reviewerName,
     question: pending?.question ?? null,
     review,
     source,

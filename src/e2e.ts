@@ -4,6 +4,11 @@
  *     npm run e2e                        -- the model name comes from OLLAMA_MODEL
  *     npm run e2e -- qwen3-coder:30b     -- the model name comes from the first argument
  *     npm run e2e -- qwen3-coder:30b 6   -- the second argument sets the number of live turns
+ *     npm run e2e -- qwen3-coder:30b 6 moonshotai/kimi-k3
+ *                                        -- the third argument picks the provided model, when
+ *                                           HOLDTRUE_PROVIDED_MODEL names several. With no third
+ *                                           argument this part picks the first name, as the person
+ *                                           it plays. An empty first argument keeps OLLAMA_MODEL.
  *
  * This part starts the real server on a free port. It sets up the ollama backend. It starts one
  * session. A model then plays the user. The model explains a mechanism from memory, and it
@@ -93,7 +98,8 @@ const MARKS = ['expand', 'expansion', 'valve', 'throttl', 'nozzle', 'capillary',
 /* ── the arguments ───────────────────────────────────────────────────────────────────────────── */
 
 /** The model name. Rule 50 forbids a default, so this part picks no model for the caller. */
-const MODEL_NAME = (process.argv[2] ?? process.env.OLLAMA_MODEL ?? '').trim()
+// An empty argument counts as no argument, so a later argument can stand alone.
+const MODEL_NAME = (process.argv[2] || process.env.OLLAMA_MODEL || '').trim()
 
 /**
  * The number of live turns.
@@ -355,7 +361,25 @@ const run = async (base: string, model: ModelHandle): Promise<Run> => {
 
   // Every session sends the transcript to the provided model at the end. Decision 19. This part
   // gives consent, and it sends no omniscient field. POST /api/start no longer reads one.
-  const start = await call(base, 'POST', '/api/start', { topic: TOPIC, consent: true })
+  // Decision 25. The list may hold several provided models. This part plays the person and picks
+  // one: the third argument, or the first name on the list.
+  const boot = await call(base, 'GET', '/api/boot', undefined)
+  const listed = boot.ok && Array.isArray(boot.body['providedModels']) ? (boot.body['providedModels'] as string[]) : []
+  const providedModel = (process.argv[4] || listed[0] || '').trim()
+  if (providedModel !== '') console.log(dim(`  review  ${providedModel}`))
+  // Rule 50. With several names the server must refuse a start that picks none. This part sends
+  // that start first and reads the refusal. A start that goes through here is a finding.
+  if (listed.length > 1) {
+    const unpicked = await call(base, 'POST', '/api/start', { topic: TOPIC, consent: true })
+    const refusal = unpicked.ok ? faultOf(unpicked.body) : unpicked.reason
+    if (refusal === null) return { ...empty, stopped: 'POST /api/start took a session with no review model picked. Rule 50.' }
+    console.log(dim(`  refused ${refusal}`))
+  }
+  const start = await call(base, 'POST', '/api/start', {
+    topic: TOPIC,
+    consent: true,
+    ...(providedModel === '' ? {} : { providedModel }),
+  })
   if (!start.ok) return { ...empty, stopped: start.reason }
   const startFault = faultOf(start.body)
   // The refusal may name the topic, the consent or the provided model. Decision 20. This part
