@@ -338,3 +338,23 @@ A confidence gate on the transcript is rejected. Rule 18 forbids the signal, and
 **Open under this decision.** No real person has spoken to the app. The nine runs of decision 23
 typed every turn. The rate at which a speech model drops a filled pause on a real voice is not
 measured. Rule 10 binds the code and not the model.
+
+## 25. Several provided models, one choice for each session
+
+**Decided 2026-09-03.** The owner ruled. `HOLDTRUE_PROVIDED_MODEL` may name several models on
+one endpoint. The pick screen shows the names, and the person picks one for the session. No name
+starts picked. The chosen model runs the whole end phase. Rule 53 holds, and rule 50 holds.
+
+**Why.** A free endpoint offers several strong models, and a thinking model and a fast model
+answer differently. A comparison needs both in reach without a restart and without an edit to a
+file. The person who reads the review must know which model wrote it. The choice is theirs, and
+the talk screen names it.
+
+**The rejected alternatives.** A default first name is rejected. Rule 50 forbids it. The agent
+proposed the second rejection on 2026-09-03, and the owner has not ruled on it: a different model
+for each end-phase step. The owner asked for a thinking model on the final step. Rule 53 names
+one provided model. Decision 22 already reserves a second model for one job, the refutation of
+each finding. The owner rules on a per-step split separately.
+
+**Open under this decision.** No run compares two provided models on one transcript. The e2e
+check takes the model name as its third argument, so such a comparison costs two runs.

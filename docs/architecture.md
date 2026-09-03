@@ -240,6 +240,17 @@ OpenAI-compatible endpoint. A local proxy needs no key, so `HOLDTRUE_PROVIDED_KE
 when the URL is set. The model name is required either way. A missing required variable gives no
 provided model, and `POST /api/start` then refuses to start a session. Decision 20.
 
+`HOLDTRUE_PROVIDED_MODEL` may hold several names with commas between them. Every name opens on
+the one endpoint. The pick screen then shows the names, and the person picks one for the session.
+No name starts picked. Rule 50. `POST /api/start` takes the choice as `providedModel`, and it
+refuses a session with no choice when the list holds several names. The review runs on the
+chosen model for the whole end phase. Rule 53. The talk screen names the choice. Decision 25.
+`src/provided.ts` reads the variables and names one backend for each model.
+
+An OpenAI-compatible endpoint gets a token budget of 16384 for each call. A model that thinks
+spends tokens before its answer. A budget of 4096 gave such a model empty text on 2026-09-01. Anthropic keeps the budget of 4096, because thinking there is off unless a request
+asks for it.
+
 Every backend implements one interface. `ModelHandle` has two methods. `identify` returns the
 attribution, and `ask` sends one system message and one user message. The child, Check, Probe and
 Close call this interface, and they never call a provider API. `identify` reads the name from the
@@ -346,7 +357,8 @@ The app must give a distinct reason for each cause:
 - the local backend does not run;
 - the provider rejected the key;
 - the model name does not exist;
-- the request timed out.
+- the request timed out;
+- the model spent its token budget before the answer. A thinking model does this.
 
 The app must not render every failure as one sentence. The app must not show a stack trace. The app
 must name a configuration that it cannot support.
@@ -357,6 +369,7 @@ Both phases run. Six files hold the live phase:
 
 - `src/child.ts` holds the child prompt and the one turn;
 - `src/model.ts` holds the Ollama backend and the Anthropic API key backend;
+- `src/provided.ts` holds the list of provided models from the environment;
 - `src/speech.ts` holds the ear and the voice;
 - `src/server.ts` holds the routes and the one in-memory session;
 - `src/topics.ts` holds the curated topic list;
@@ -374,8 +387,8 @@ Six files hold the end phase:
 `src/server.ts` runs the end phase at `POST /api/end`. It runs the ear at `POST /api/hear` and
 the voice at `POST /api/say`.
 
-Five test files exist. They are `src/child.test.ts`, `src/diff.test.ts`, `src/model.test.ts`,
-`src/session.test.ts` and `src/speech.test.ts`. The speech tests pass a fake engine, so no test
+Six test files exist. They are `src/child.test.ts`, `src/diff.test.ts`, `src/model.test.ts`,
+`src/provided.test.ts`, `src/session.test.ts` and `src/speech.test.ts`. The speech tests pass a fake engine, so no test
 loads the addon or a model. Rule 32. Check, Probe and Close hold no test file. No test can judge what a model
 writes. Rule 33 and rule 34 forbid such a test. `src/e2e.ts` runs the end-to-end check against a
 real service. Rule 31 asks for that check. `src/rig.ts` makes two models talk and counts

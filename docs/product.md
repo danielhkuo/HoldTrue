@@ -20,7 +20,8 @@ The app loses them when the process stops. No eval measures what the end phase p
 Every step in this list runs today.
 
 1. You pick a topic from the curated list. You cannot type your own topic.
-2. You give consent. The app names the destination: the provider of the provided model.
+2. You give consent. The app names the destination: the provider of the provided model. When
+   the owner names several provided models, you pick the one that runs the review. Decision 25.
 3. You explain the mechanism from memory. The app shows you no source text. You type the line,
    or you press Talk and speak it.
 4. The child says one short line back. It asks about one step in what you just said. It can press
