@@ -323,6 +323,14 @@ describe('the ollama request', () => {
 })
 
 describe('the anthropic request', () => {
+  test('empty text with a max_tokens stop gives the spent budget reason', async () => {
+    answers({ model: 'claude-opus-5', content: [], stop_reason: 'max_tokens' })
+    const handle = open(keyed)
+    expect(await handle.ask('s', 'u')).toBeNull()
+    expect(handle.lastReason?.()).toBe(REASON.BUDGET_SPENT)
+  })
+
+
   test('the request goes to the messages route', async () => {
     const calls = answers(anthropicBody('hi'))
     await open(keyed).ask('s', 'u')
@@ -384,6 +392,20 @@ describe('the anthropic request', () => {
 })
 
 describe('the openai request', () => {
+  test('empty text with a length finish gives the spent budget reason, not the empty reason', async () => {
+    answers({ model: 'kimi', choices: [{ message: { content: '' }, finish_reason: 'length' }] })
+    const handle = openai('http://localhost:8080/v1', 'k-test', 'kimi')
+    expect(await handle.ask('s', 'u')).toBeNull()
+    expect(handle.lastReason?.()).toBe(REASON.BUDGET_SPENT)
+  })
+
+  test('empty text with a stop finish keeps the empty reason', async () => {
+    answers({ model: 'kimi', choices: [{ message: { content: '' }, finish_reason: 'stop' }] })
+    const handle = openai('http://localhost:8080/v1', 'k-test', 'kimi')
+    expect(await handle.ask('s', 'u')).toBeNull()
+    expect(handle.lastReason?.()).toBe(REASON.EMPTY)
+  })
+
   test('the request goes to the chat completions route of the base url', async () => {
     const calls = answers(openaiBody('hi'))
     await openai('http://localhost:8080/v1', 'k-test', 'composer-2.5').ask('s', 'u')
@@ -398,14 +420,14 @@ describe('the openai request', () => {
     expect(calls[0]?.url).toBe('http://localhost:8080/v1/chat/completions')
   })
 
-  test('the request carries the model, the temperature, the token budget and the two messages', async () => {
+  test('the request carries the model, the temperature, a budget with room for thinking, and the two messages', async () => {
     const calls = answers(openaiBody('hi'))
     await openai('http://localhost:8080/v1', 'k-test', 'composer-2.5', 0.8).ask('SYSTEM', 'USER')
 
     expect(bodyOf(calls[0]!)).toEqual({
       model: 'composer-2.5',
       temperature: 0.8,
-      max_tokens: 4096,
+      max_tokens: 16384,
       messages: [
         { role: 'system', content: 'SYSTEM' },
         { role: 'user', content: 'USER' },
