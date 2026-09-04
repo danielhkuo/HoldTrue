@@ -29,6 +29,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@napi-rs/keyring": "^2.0.0",
     "sherpa-onnx-node": "^1.13.7"
   }
 }

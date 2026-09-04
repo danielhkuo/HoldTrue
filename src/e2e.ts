@@ -5,10 +5,14 @@
  *     npm run e2e -- qwen3-coder:30b     -- the model name comes from the first argument
  *     npm run e2e -- qwen3-coder:30b 6   -- the second argument sets the number of live turns
  *     npm run e2e -- qwen3-coder:30b 6 moonshotai/kimi-k3
- *                                        -- the third argument picks the provided model, when
- *                                           HOLDTRUE_PROVIDED_MODEL names several. With no third
- *                                           argument this part picks the first name, as the person
- *                                           it plays. An empty first argument keeps OLLAMA_MODEL.
+ *                                        -- the third argument names the review model. With no
+ *                                           third argument this part takes the first name in
+ *                                           HOLDTRUE_PROVIDED_MODEL, as the person it plays. An
+ *                                           empty first argument keeps OLLAMA_MODEL.
+ *
+ * The review model answers from HOLDTRUE_PROVIDED_URL with HOLDTRUE_PROVIDED_KEY, as a custom
+ * endpoint. This part sets HOLDTRUE_SETTINGS_DIR to a fresh directory for the server it starts,
+ * so the settings of the owner never change, and it asks the server to keep no key.
  *
  * This part starts the real server on a free port. It sets up the ollama backend. It starts one
  * session. A model then plays the user. The model explains a mechanism from memory, and it
@@ -45,6 +49,8 @@
  */
 
 import { spawn } from 'node:child_process'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { createServer } from 'node:net'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -164,9 +170,12 @@ const forward = (stream: NodeJS.ReadableStream | null, tag: string): void => {
 const startServer = async (): Promise<Running | string> => {
   const port = await freePort()
   const base = `http://${ADDRESS}:${port}`
+  // Decision 26. The server writes its settings to a file. This part points it at a fresh
+  // directory, so the settings of the owner never change under a check.
+  const settingsDir = mkdtempSync(join(tmpdir(), 'holdtrue-e2e-'))
   const child = spawn(process.execPath, [RUNNER, SERVER], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(port) },
+    env: { ...process.env, PORT: String(port), HOLDTRUE_SETTINGS_DIR: settingsDir },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   forward(child.stdout, 'server')
@@ -353,33 +362,28 @@ const run = async (base: string, model: ModelHandle): Promise<Run> => {
     stopped: null,
   }
 
-  const setup = await call(base, 'POST', '/api/setup', { kind: 'ollama', model: MODEL_NAME })
+  // Decision 26. This part plays the person on the setup screen. It names the child model on
+  // Ollama and the review model on the custom endpoint that the environment names. It asks the
+  // server to keep no key.
+  const reviewModel = (process.argv[4] || (process.env.HOLDTRUE_PROVIDED_MODEL ?? '').split(',')[0] || '').trim()
+  const reviewUrl = (process.env.HOLDTRUE_PROVIDED_URL ?? '').trim()
+  const reviewKey = (process.env.HOLDTRUE_PROVIDED_KEY ?? '').trim()
+  const setup = await call(base, 'POST', '/api/setup', {
+    child: { endpoint: 'ollama', model: MODEL_NAME },
+    review: { endpoint: 'openai', model: reviewModel },
+    openaiUrl: reviewUrl,
+    keys: reviewKey === '' ? {} : { openai: reviewKey },
+    remember: false,
+  })
   if (!setup.ok) return { ...empty, stopped: setup.reason }
   const setupFault = faultOf(setup.body)
-  if (setupFault !== null) return { ...empty, stopped: `POST /api/setup refused the model. ${setupFault}` }
+  if (setupFault !== null) return { ...empty, stopped: `POST /api/setup refused the models. ${setupFault}` }
   console.log(dim(`  setup   ${JSON.stringify(setup.body['who'])}`))
+  console.log(dim(`  review  ${JSON.stringify(setup.body['review'])}`))
 
-  // Every session sends the transcript to the provided model at the end. Decision 19. This part
+  // Every session sends the transcript to the review model at the end. Decision 19. This part
   // gives consent, and it sends no omniscient field. POST /api/start no longer reads one.
-  // Decision 25. The list may hold several provided models. This part plays the person and picks
-  // one: the third argument, or the first name on the list.
-  const boot = await call(base, 'GET', '/api/boot', undefined)
-  const listed = boot.ok && Array.isArray(boot.body['providedModels']) ? (boot.body['providedModels'] as string[]) : []
-  const providedModel = (process.argv[4] || listed[0] || '').trim()
-  if (providedModel !== '') console.log(dim(`  review  ${providedModel}`))
-  // Rule 50. With several names the server must refuse a start that picks none. This part sends
-  // that start first and reads the refusal. A start that goes through here is a finding.
-  if (listed.length > 1) {
-    const unpicked = await call(base, 'POST', '/api/start', { topic: TOPIC, consent: true })
-    const refusal = unpicked.ok ? faultOf(unpicked.body) : unpicked.reason
-    if (refusal === null) return { ...empty, stopped: 'POST /api/start took a session with no review model picked. Rule 50.' }
-    console.log(dim(`  refused ${refusal}`))
-  }
-  const start = await call(base, 'POST', '/api/start', {
-    topic: TOPIC,
-    consent: true,
-    ...(providedModel === '' ? {} : { providedModel }),
-  })
+  const start = await call(base, 'POST', '/api/start', { topic: TOPIC, consent: true })
   if (!start.ok) return { ...empty, stopped: start.reason }
   const startFault = faultOf(start.body)
   // The refusal may name the topic, the consent or the provided model. Decision 20. This part

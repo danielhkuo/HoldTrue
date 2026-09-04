@@ -1,7 +1,9 @@
 <!--
   The page. It holds the four screens of the app: setup, pick, talk and review.
 
-  Setup takes the one model choice. The app ships no default model. Rule 50.
+  Setup takes the two model choices, the child and the review, from lists that each endpoint
+  gave. The app ships no default model and picks none. Rule 50. Decision 26. The keys go to the
+  server in a request body and, on request, to the keychain. The settings file holds no key.
   Pick shows the curated topics and the consent checkbox. The checkbox names the provider of the
   provided model, because every session sends the transcript to it at the end. Rule 48.
   Talk shows the conversation, the soft cap note at turn twelve, and the End session button.
@@ -36,7 +38,9 @@
   The routes, as `src/server.ts` serves them:
     GET  /api/boot   -> { who, setup, sends, provided, destination, topics, disclosure }
     GET  /api/state  -> { setup, topic, history, turns, ended, question, review, source }
-    POST /api/setup  -> { kind, model } | { kind, provider, key, model? }  -> { who, sends }
+    POST /api/models -> { endpoint, url?, key? }        -> { endpoint, models: [{ id, thinks }] }
+    POST /api/setup  -> { child, review, ollamaHost?, openaiUrl?, keys?, remember? }
+                                                        -> { who, review, sends, destination }
     POST /api/start  -> { topic, consent }                                -> { topic }
     POST /api/turn   -> { said }                    -> { kind: "turn", you, child, seconds }
     POST /api/end    -> {} | { answer }             -> { kind: "probe" | "review", … }
@@ -104,6 +108,13 @@
       .opt .panel { margin: 12px 0 2px 24px; display: none; }
       .opt.picked .panel { display: block; }
       .panel label { display: block; font-size: 12.5px; color: var(--muted); margin: 10px 0 4px; }
+      .row-in { display: flex; gap: 8px; align-items: center; }
+      .row-in input { flex: 1; }
+      .saved { font-weight: 400; }
+      button.forget { padding: 2px 8px; font-size: 11.5px; margin-left: 6px; }
+      .pickrow { display: flex; gap: 12px; align-items: center; margin: 10px 0; font-size: 14px; font-weight: 500; }
+      .pickrow span { width: 84px; }
+      .pickrow select { flex: 1; font: inherit; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--fg); }
 
       /* the consent block on pick */
       .block { border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 22px; }
@@ -159,37 +170,74 @@
     <!-- 1. SETUP. One choice, and no default. Rule 50. -->
     <section id="setup" class="screen on">
       <div class="wrap">
-        <p class="lede">Choose the model that answers.</p>
+        <p class="lede">Set up the two models.</p>
         <p class="sub">
-          The app has no default. You make one choice now. That model plays the child. The
-          provided model runs the review at the end.
+          One model plays the child. One model runs the review at the end. The app lists what each
+          endpoint offers, and it picks none for you. Load one endpoint or more, then choose.
         </p>
 
-        <div class="opt picked" id="opt-ollama">
-          <label class="head"><input type="radio" name="backend" value="ollama" checked /> Run Ollama on this machine</label>
-          <p class="where">Ollama answers from this machine. A local session does not send your words to a provider.</p>
+        <div class="opt picked" id="ep-ollama">
+          <div class="head">Ollama on this machine</div>
+          <p class="where">Ollama answers from this host. With the local address the words stay on this machine during the conversation. A remote host receives them.</p>
           <div class="panel">
-            <label for="ollama-model">The model name, as Ollama lists it</label>
-            <input type="text" id="ollama-model" placeholder="llama3.1:8b" autocomplete="off" spellcheck="false" />
+            <label for="ollama-host">The host</label>
+            <div class="row-in">
+              <input type="text" id="ollama-host" value="http://127.0.0.1:11434" autocomplete="off" spellcheck="false" />
+              <button type="button" class="quiet load" data-endpoint="ollama">Load models</button>
+            </div>
           </div>
         </div>
 
-        <div class="opt" id="opt-key">
-          <label class="head"><input type="radio" name="backend" value="apiKey" /> Use an API key</label>
-          <p class="where">The provider answers. Your words go to Anthropic. Read the terms of that provider first.</p>
+        <div class="opt picked" id="ep-nvidia">
+          <div class="head">NVIDIA</div>
+          <p class="where">integrate.api.nvidia.com answers. Your words go to NVIDIA. Read the terms of NVIDIA first.</p>
           <div class="panel">
-            <label for="key">The API key</label>
-            <input type="password" id="key" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" />
-            <label for="key-model">The model name, as the provider lists it. The app chooses no model for you.</label>
-            <input type="text" id="key-model" placeholder="claude-opus-5" autocomplete="off" spellcheck="false" />
-            <p class="where" style="margin-left:0">
-              The app holds the key in memory for this session only. It writes no key to the disk,
-              to a log or to a web address.
-            </p>
+            <label for="nvidia-key">The API key <span class="saved" id="nvidia-saved" hidden></span> <button type="button" class="quiet forget" id="nvidia-forget" data-endpoint="nvidia" hidden>Forget it</button></label>
+            <div class="row-in">
+              <input type="password" id="nvidia-key" placeholder="nvapi-…" autocomplete="off" spellcheck="false" />
+              <button type="button" class="quiet load" data-endpoint="nvidia">Load models</button>
+            </div>
           </div>
         </div>
 
-        <p style="margin-top:18px"><button class="go" id="use">Use this model</button></p>
+        <div class="opt picked" id="ep-anthropic">
+          <div class="head">Anthropic</div>
+          <p class="where">api.anthropic.com answers. Your words go to Anthropic. Read the terms of Anthropic first.</p>
+          <div class="panel">
+            <label for="anthropic-key">The API key <span class="saved" id="anthropic-saved" hidden></span> <button type="button" class="quiet forget" id="anthropic-forget" data-endpoint="anthropic" hidden>Forget it</button></label>
+            <div class="row-in">
+              <input type="password" id="anthropic-key" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" />
+              <button type="button" class="quiet load" data-endpoint="anthropic">Load models</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="opt picked" id="ep-openai">
+          <div class="head">Another OpenAI-compatible endpoint</div>
+          <p class="where">That endpoint answers. Your words go to its host. A local proxy needs no key.</p>
+          <div class="panel">
+            <label for="openai-url">The base url, with its version segment</label>
+            <input type="text" id="openai-url" placeholder="http://127.0.0.1:8080/v1" autocomplete="off" spellcheck="false" />
+            <label for="openai-key">The API key, if the endpoint needs one <span class="saved" id="openai-saved" hidden></span> <button type="button" class="quiet forget" id="openai-forget" data-endpoint="openai" hidden>Forget it</button></label>
+            <div class="row-in">
+              <input type="password" id="openai-key" autocomplete="off" spellcheck="false" />
+              <button type="button" class="quiet load" data-endpoint="openai">Load models</button>
+            </div>
+          </div>
+        </div>
+
+        <label class="agree" for="remember" style="margin:4px 0 18px">
+          <input type="checkbox" id="remember" />
+          <span>Keep the keys in the keychain of this computer, so the next start needs none. The app writes no key to a file.</span>
+        </label>
+
+        <div class="block">
+          <label class="pickrow" for="child-model"><span>The child</span><select id="child-model"><option value="">choose a model…</option></select></label>
+          <label class="pickrow" for="review-model"><span>The review</span><select id="review-model"><option value="">choose a model…</option></select></label>
+          <p class="disclose">A model marked “thinks” spends tokens before it answers. The review can use one. The child does not need one.</p>
+        </div>
+
+        <p style="margin-top:18px"><button class="go" id="use">Use these models</button></p>
         <div id="setup-error"></div>
 
         <div class="caveat" id="storage"></div>
@@ -210,9 +258,7 @@
           <p class="disclose" id="send-destination"></p>
           <ul class="where-list" id="destinations"></ul>
           <p class="disclose" id="no-provided" hidden>
-            The app holds no provided model. Set HOLDTRUE_PROVIDED_KEY and HOLDTRUE_PROVIDED_MODEL.
-            Or set HOLDTRUE_PROVIDED_URL and HOLDTRUE_PROVIDED_MODEL, for an OpenAI-compatible
-            endpoint. Then reload this page.
+            The app holds no review model. Choose one on the setup screen.
           </p>
           <label class="agree" for="consent">
             <input type="checkbox" id="consent" />
@@ -220,14 +266,9 @@
           </label>
         </div>
 
-        <!-- Decision 25. Several provided models need one choice. The app picks none. Rule 50. -->
-        <div class="block" id="reviewer-block" hidden>
-          <p class="disclose">The model that runs the review at the end. The app picks none for you.</p>
-          <div id="reviewers"></div>
-        </div>
-
         <div id="cards"></div>
         <button class="card own" id="own">Something else — start with a blank box</button>
+        <p style="margin-top:14px"><button class="quiet" id="settings">Change the models</button></p>
         <div id="pick-error"></div>
 
         <p class="caveat">
@@ -336,7 +377,7 @@
 
       // ---------------------------------------------------------------- state
 
-      const app = { who: null, sends: false, provided: false, destination: null, disclosure: null, speech: null, providedModels: [] }
+      const app = { who: null, sends: false, provided: false, destination: null, childDestination: null, disclosure: null, speech: null }
 
       /** The attribution names the thing that answered. A setting can print a lie. Rule 24. */
       const name = who => (typeof who?.model_id === 'string' ? who.model_id : 'an unnamed model')
@@ -350,46 +391,152 @@
 
       // ------------------------------------------------------------- 1. setup
 
-      const backendPicked = () => document.querySelector('input[name="backend"]:checked')?.value ?? 'ollama'
-      const paintOptions = () => {
-        $('opt-ollama').classList.toggle('picked', backendPicked() === 'ollama')
-        $('opt-key').classList.toggle('picked', backendPicked() === 'apiKey')
+      /** The models that each endpoint listed. The app shows them. It picks none. Rule 50. */
+      const listed = { ollama: [], nvidia: [], anthropic: [], openai: [] }
+      const LABEL = { ollama: 'Ollama', nvidia: 'NVIDIA', anthropic: 'Anthropic', openai: 'Custom endpoint' }
+      const KEYED = ['nvidia', 'anthropic', 'openai']
+      const keyOf = kind => (kind === 'ollama' ? '' : $(`${kind}-key`).value.trim())
+      const urlOf = kind => (kind === 'ollama' ? $('ollama-host').value.trim() : kind === 'openai' ? $('openai-url').value.trim() : '')
+      const valueOf = choice => (choice ? `${choice.endpoint}|${choice.model}` : '')
+
+      /** Fill one select from the listed models. The choice the person made stays selected. */
+      const paintSelect = (select, chosen) => {
+        const current = chosen ?? select.value
+        const blank = el('option', null, 'choose a model…')
+        blank.value = ''
+        select.replaceChildren(blank)
+        for (const kind of Object.keys(listed)) {
+          if (listed[kind].length === 0) continue
+          const group = document.createElement('optgroup')
+          group.label = LABEL[kind]
+          for (const m of listed[kind]) {
+            const option = el('option', null, m.thinks ? `${m.id} · thinks` : m.id)
+            option.value = `${kind}|${m.id}`
+            group.append(option)
+          }
+          select.append(group)
+        }
+        select.value = current
+        if (select.value !== current) select.value = ''
       }
-      for (const radio of document.querySelectorAll('input[name="backend"]')) {
-        radio.addEventListener('change', paintOptions)
+      const paintSelects = () => {
+        paintSelect($('child-model'))
+        paintSelect($('review-model'))
+      }
+
+      /** A saved choice shows on the list before its endpoint loads, so the person sees it. */
+      const seed = choice => {
+        if (!choice || !listed[choice.endpoint]) return
+        if (!listed[choice.endpoint].some(m => m.id === choice.model)) listed[choice.endpoint].push({ id: choice.model, thinks: false })
+      }
+
+      const loadModels = async kind => {
+        $('setup-error').replaceChildren()
+        const button = document.querySelector(`.load[data-endpoint="${kind}"]`)
+        button.disabled = true
+        try {
+          // The key sits in this body and nowhere else. No console line ever holds it.
+          const body = { endpoint: kind }
+          if (urlOf(kind) !== '') body.url = urlOf(kind)
+          if (keyOf(kind) !== '') body.key = keyOf(kind)
+          const data = await call('/api/models', body)
+          listed[kind] = Array.isArray(data.models) ? data.models : []
+          if (listed[kind].length === 0) alertInto($('setup-error'), `${LABEL[kind]} listed no chat model.`)
+          paintSelects()
+        } catch (err) {
+          alertInto($('setup-error'), `${LABEL[kind]} did not list its models. ${reason(err)}`)
+        } finally {
+          button.disabled = false
+        }
+      }
+      for (const button of document.querySelectorAll('.load')) {
+        button.addEventListener('click', () => loadModels(button.dataset.endpoint))
+      }
+
+      const choiceOf = select => {
+        if (select.value === '') return null
+        const at = select.value.indexOf('|')
+        return { endpoint: select.value.slice(0, at), model: select.value.slice(at + 1) }
+      }
+
+      /** The review attribution and its two destinations, for the header and the consent line. */
+      const adoptReview = (who, destination, childDestination) => {
+        app.provided = who !== null && who !== undefined
+        app.destination = typeof destination === 'string' ? destination : null
+        app.childDestination = typeof childDestination === 'string' ? childDestination : null
+        $('review-who').textContent = who ? `review: ${name(who)}` : ''
+      }
+
+      /**
+       * The state of each key, as words and never as the key. A key in the keychain is saved. A
+       * key in memory for this run is held. The Forget button shows for a saved key. Rule 54.
+       */
+      const paintKeys = s => {
+        for (const kind of KEYED) {
+          const saved = Boolean(s?.saved?.[kind])
+          const held = Boolean(s?.held?.[kind])
+          const label = $(`${kind}-saved`)
+          label.hidden = !saved && !held
+          label.textContent = saved
+            ? '· a key is saved in the keychain, and this box may stay empty'
+            : '· a key is held for this run only, and this box may stay empty'
+          $(`${kind}-forget`).hidden = !saved
+        }
+      }
+
+      /** Forget one saved key. The server drops it from the keychain and from this run. */
+      const forgetKey = async kind => {
+        $('setup-error').replaceChildren()
+        try {
+          const data = await call('/api/forget', { endpoint: kind })
+          paintKeys(data.settings)
+          showReasons(data.settings)
+        } catch (err) {
+          alertInto($('setup-error'), `The app did not forget the ${LABEL[kind]} key. ${reason(err)}`)
+        }
+      }
+      for (const button of document.querySelectorAll('.forget')) {
+        button.addEventListener('click', () => forgetKey(button.dataset.endpoint))
+      }
+
+      /**
+       * Why a saved choice did not open, on the setup screen. A first run has no choice and no
+       * reason. A later run with a missing key names the key. Rule 25 and rule 49.
+       */
+      const showReasons = s => {
+        const lines = []
+        if (s?.child && s?.reasons?.child) lines.push(`The child did not open: ${s.reasons.child}.`)
+        if (s?.review && s?.reasons?.review) lines.push(`The review did not open: ${s.reasons.review}.`)
+        if (lines.length > 0) alertInto($('setup-error'), ...lines)
       }
 
       $('use').addEventListener('click', async () => {
         $('setup-error').replaceChildren()
-        const kind = backendPicked()
-        const model = (kind === 'ollama' ? $('ollama-model') : $('key-model')).value.trim()
-
-        if (kind === 'ollama' && model === '') {
-          alertInto($('setup-error'), 'Name the model that Ollama runs. The app does not choose one for you.')
+        const child = choiceOf($('child-model'))
+        const review = choiceOf($('review-model'))
+        // Rule 50. The app ships no default model. Both lists need a choice from the person.
+        if (child === null || review === null) {
+          alertInto($('setup-error'), 'Choose the child model and the review model. The app chooses neither for you.')
           return
         }
-        const key = $('key').value
-        if (kind === 'apiKey' && key.trim() === '') {
-          alertInto($('setup-error'), 'Enter the API key. The app sends the key to the provider with every request.')
-          return
+        const keys = {}
+        for (const kind of KEYED) if (keyOf(kind) !== '') keys[kind] = keyOf(kind)
+        // The keys sit in this body and nowhere else. No console line ever holds them.
+        const body = {
+          child,
+          review,
+          ollamaHost: urlOf('ollama'),
+          openaiUrl: urlOf('openai'),
+          keys,
+          remember: $('remember').checked,
         }
-        // Rule 50. The app ships no default model. Both backends need a name from the user.
-        if (kind === 'apiKey' && model === '') {
-          alertInto($('setup-error'), 'Name the model that the provider runs. The app does not choose one for you.')
-          return
-        }
-
-        // The key sits in this body and nowhere else. No console line ever holds it.
-        const body =
-          kind === 'ollama'
-            ? { kind: 'ollama', model }
-            : { kind: 'apiKey', provider: 'anthropic', key, model }
-
         $('use').disabled = true
         try {
           const data = await call('/api/setup', body)
-          $('key').value = ''
+          for (const kind of KEYED) $(`${kind}-key`).value = ''
+          paintKeys(data.settings)
           adopt(data.who, data.sends)
+          adoptReview(data.review, data.destination, data.childDestination)
           disclose()
           show('pick')
         } catch (err) {
@@ -398,6 +545,20 @@
           $('use').disabled = false
         }
       })
+
+      /** The setup screen shows the saved settings, so the person changes one thing and not all. */
+      const paintSettings = s => {
+        if (!s) return
+        if (typeof s.ollamaHost === 'string' && s.ollamaHost !== '') $('ollama-host').value = s.ollamaHost
+        $('openai-url').value = typeof s.openaiUrl === 'string' ? s.openaiUrl : ''
+        paintKeys(s)
+        seed(s.child)
+        seed(s.review)
+        paintSelect($('child-model'), valueOf(s.child))
+        paintSelect($('review-model'), valueOf(s.review))
+      }
+
+      $('settings').addEventListener('click', () => show('setup'))
 
       // -------------------------------------------------------------- 2. pick
 
@@ -415,11 +576,14 @@
        * says that the words stay on this machine when a provider answers. Rule 22.
        */
       const consentLine = () =>
-        `Send the whole transcript to ${destinationName()}, at the end of the session.`
+        app.childDestination
+          ? `Send my words to ${app.childDestination} during the conversation, and the whole transcript to ${destinationName()} at the end.`
+          : `Send the whole transcript to ${destinationName()}, at the end of the session.`
 
       const disclose = () => {
-        $('send-destination').textContent =
-          `At the end, the review sends the whole transcript to ${destinationName()}.`
+        $('send-destination').textContent = app.childDestination
+          ? `During the conversation, the child sends your words to ${app.childDestination}. At the end, the review sends the whole transcript to ${destinationName()}.`
+          : `At the end, the review sends the whole transcript to ${destinationName()}.`
         $('consent-text').textContent = consentLine()
         $('no-provided').hidden = app.provided
         gate()
@@ -429,13 +593,8 @@
        * No topic starts until the user gives consent. The consent comes before the first send.
        * A session must not start when the app holds no provided model. Decision 20.
        */
-      /** The review model that the person picked. Null when the list needs a pick and has none. */
-      const reviewerPicked = () => {
-        if (app.providedModels.length <= 1) return app.providedModels[0] ?? null
-        return document.querySelector('input[name="reviewer"]:checked')?.value ?? null
-      }
       const gate = () => {
-        const ready = app.provided && $('consent').checked && app.who !== null && reviewerPicked() !== null
+        const ready = app.provided && $('consent').checked && app.who !== null
         for (const card of document.querySelectorAll('#cards .card')) card.disabled = !ready
         $('own').disabled = !ready
       }
@@ -444,15 +603,13 @@
 
       const begin = async title => {
         $('pick-error').replaceChildren()
-        const providedModel = reviewerPicked()
         try {
-          await call('/api/start', { topic: title, consent: true, providedModel })
+          await call('/api/start', { topic: title, consent: true })
         } catch (err) {
           alertInto($('pick-error'), `The app did not start the session. ${reason(err)}`)
           return
         }
         $('topic').textContent = title
-        $('review-who').textContent = providedModel ? `review: ${providedModel}` : ''
         $('log').replaceChildren()
         $('probe-answer').value = ''
         $('end').disabled = false
@@ -873,21 +1030,10 @@
         show('setup')
         alertInto($('setup-error'), 'The app cannot reach the server.', 'Start the server, then load this page again.')
       } else {
-        app.provided = boot.provided === true
-        app.providedModels = Array.isArray(boot.providedModels) ? boot.providedModels : []
-        // Decision 25. Several names need one choice, and no radio starts checked. Rule 50.
-        $('reviewer-block').hidden = app.providedModels.length <= 1
-        for (const model of app.providedModels) {
-          const label = el('label', 'agree')
-          const radio = el('input')
-          radio.type = 'radio'
-          radio.name = 'reviewer'
-          radio.value = model
-          radio.addEventListener('change', gate)
-          label.append(radio, el('span', null, model))
-          $('reviewers').append(label)
-        }
-        app.destination = typeof boot.destination === 'string' ? boot.destination : null
+        // Decision 26. The saved settings fill the setup screen. The review attribution fills the
+        // header. Neither carries a key.
+        paintSettings(boot.settings)
+        adoptReview(boot.review ?? null, boot.destination, boot.childDestination)
         app.disclosure = boot.disclosure ?? null
         // Cases V1 and V2. No ear means no Talk button. No voice means no playback and no box.
         app.speech = boot.speech ?? null
@@ -909,7 +1055,7 @@
         }
         $('own').addEventListener('click', () => begin('Explaining'))
 
-        // The server owns the disclosure text, so one file states where the words go. Rules 22, 47.
+        // The server owns the disclosure text, so one file states where the words go. Rules 22, 54.
         for (const line of app.disclosure?.destination ?? []) {
           $('destinations').append(el('li', null, line))
         }
@@ -925,7 +1071,9 @@
         disclose()
 
         if (!state.setup) {
+          // A saved choice that did not open names its reason here. A first run shows none.
           show('setup')
+          showReasons(boot.settings)
         } else if (state.review) {
           paintReview(state.review, state.source)
         } else if (state.question) {
@@ -938,7 +1086,6 @@
           $('running').append(el('p', 'sub', 'Load this page again to read the findings.'))
         } else if (state.topic !== '') {
           $('topic').textContent = state.topic
-          $('review-who').textContent = state.providedModel ? `review: ${state.providedModel}` : ''
           $('log').replaceChildren()
           for (const e of state.history ?? []) render(e)
           userTurns = (state.history ?? []).length

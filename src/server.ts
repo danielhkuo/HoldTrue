@@ -7,17 +7,18 @@
  * line of the child into audio.
  *
  * The part binds to 127.0.0.1 only. Case B12 requires this. The transcript never reaches the
- * network. The part holds one session in memory, and it writes nothing to disk. Rule 47.
+ * network. The part holds one session in memory, and it writes no session text to disk. It
+ * writes the settings to one file and, on request, a key to the keychain. Rule 54. Decision 26.
  *
- * The part ships no default model. Rule 50 requires this. The user calls POST /api/setup one
- * time. Before that call POST /api/turn returns a stated error. The part never picks a model.
+ * The part ships no default model. Rule 50 requires this. The user sets up the app one time on
+ * the setup screen: two endpoints, two models, both from a list that the endpoint gave. The part
+ * saves the choices, so a later start lands on the pick screen. Before a setup POST /api/turn
+ * returns a stated error. The part never picks a model.
  *
  * The part takes the consent of the user before the first send. Rule 48 requires this.
  * Every session sends the transcript to the provided model at the end, so POST /api/start
  * refuses every session without explicit consent in the request.
- * POST /api/start refuses to start a session when the app holds no provided model. Decision 20.
- * The owner may name several provided models on one endpoint. The person picks one for each
- * session, and the app picks none. Decision 25 and rule 50.
+ * POST /api/start refuses to start a session when the app holds no review model. Decision 20.
  * The end phase runs on the provided model only. Rule 53. The part never puts the startup model
  * in place of the provided model. Rule 45.
  *
@@ -28,7 +29,7 @@
  * `src/speech.ts` turns it into words inside this process. The words go back to the page, and
  * the page sends them to `POST /api/turn` the way it sends typed words. Rule 10 holds: this part
  * never edits them. `POST /api/say` takes one line and returns a WAV. Neither route makes a model
- * call, so rule 1 holds for the turn. Neither route writes to disk. Rule 47.
+ * call, so rule 1 holds for the turn. Neither route writes to disk. Rule 54.
  *
  * The cases: B5, B7, B11, B12, B13, V1, V2 and V3. The rules: 1, 10, 11, 13, 22, 23, 41, 42, 45,
  * 46, 47, 48, 50 and 53.
@@ -40,7 +41,8 @@
  * - It must not render a fault as a line of the child. Every fault returns a shaped error object.
  * - It must not read, judge or edit the words of the user. Rule 10.
  * - It must not show a score, a rating or a grade. Rule 16.
- * - It must not write to disk. Audio stays in memory for one request.
+ * - It must not write session text or audio to disk. Audio stays in memory for one request.
+ * - It must not write a key to the settings file, a log or a web address.
  * - It must not send audio off this machine. The ear and the voice run inside this process.
  *
  * ONE NOTE ON src/session.ts. That file owns the marked transcript and the end phase. This part
@@ -54,8 +56,26 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { speak, type Exchange, type Said } from './child.js'
-import { open, type Attribution, type Backend, type ModelHandle } from './model.js'
-import { NO_PROVIDED_FIX, providedFrom } from './provided.js'
+import { listModels } from './catalog.js'
+import { open, type Attribution, type ModelHandle } from './model.js'
+import {
+  KINDS,
+  backendFor,
+  choiceOf,
+  destinationOf,
+  fileStore,
+  isKind,
+  isLocalHost,
+  keychain,
+  loadSettings,
+  memorySecrets,
+  needsKey,
+  saveSettings,
+  type Choice,
+  type EndpointKind,
+  type Secrets,
+  type Settings,
+} from './settings.js'
 import {
   addTurn,
   closeEnd,
@@ -93,6 +113,31 @@ const MAX_BODY_BYTES = 1_000_000
 /** A recording larger than this is a fault. At 16 kHz and 16 bits this is about twenty minutes. */
 const MAX_AUDIO_BYTES = 40_000_000
 
+/* ── the settings ────────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * The settings file and the keychain. Decision 26. The file holds the endpoints and the two model
+ * choices. The keychain holds a key that the person asked the app to keep. The keys for this run
+ * sit in memory, seeded from the keychain at boot. HOLDTRUE_SETTINGS_DIR moves the file, so the
+ * end-to-end check never touches the settings of the owner.
+ */
+const store = fileStore(process.env.HOLDTRUE_SETTINGS_DIR?.trim() || undefined)
+const vault: Secrets = keychain()
+const keys: Secrets = memorySecrets()
+let settings: Settings = loadSettings(store)
+/** The kinds with a key in the keychain. The page shows this, and never the key. */
+const saved = new Set<EndpointKind>()
+for (const kind of KINDS) {
+  const key = vault.get(kind)
+  if (key !== null && key !== '') {
+    keys.set(kind, key)
+    saved.add(kind)
+  }
+}
+/** The kinds with a key in memory for this run, saved or typed. */
+const held = (): Record<string, boolean> =>
+  Object.fromEntries(KINDS.map(kind => [kind, keys.get(kind) !== null]))
+
 /* ── the disclosure ──────────────────────────────────────────────────────────────────────────── */
 
 /**
@@ -112,10 +157,10 @@ const DISCLOSURE = {
     'The app does not promise that your words stay on this machine.',
   ],
   storage: [
-    'The app holds one session in memory.',
-    'The app writes nothing to disk.',
-    'The findings appear one time.',
-    'The app loses the findings when the process stops.',
+    'The app holds one session in memory. The app writes no session text to disk.',
+    `The app saves your settings, and no key, in ${store.path}.`,
+    'The app saves an API key in the keychain of this computer only when you ask it to.',
+    'The findings appear one time. The app loses the findings when the process stops.',
   ],
   failure: [
     'The review can fail to run.',
@@ -155,27 +200,77 @@ let startupSends = false
  */
 let childModel: ModelHandle | null = null
 
+/** The review handle. It answers from the review choice in the settings. Rule 53. */
+let reviewer: ModelHandle | null = null
+
 /**
- * The provided models. They are separate from the startup choice, and rule 53 gives one of them
- * the whole end phase. `src/provided.ts` reads the variables. The owner names one model, or
- * several with commas between them, on one endpoint. The person picks one at the start of each
- * session. The app picks none. Rule 50. Decision 25.
- *
- * Rule 50 forbids a default model, and the end phase must not run on a model that nobody named.
- * No name gives no provided model, and POST /api/start then refuses to start a session.
- * Decision 20.
+ * What one choice cannot open. The text names the missing key or the missing url. A keychain
+ * that refused the read is a different failure from a key that was never saved. Rule 25.
  */
-const provided = providedFrom(process.env)
-/** One handle for each named model, by name. Every handle answers from the one destination. */
-const reviewers: ReadonlyMap<string, ModelHandle> = new Map(
-  (provided?.backends ?? []).map(backend => [backend.model ?? '', open(backend)]),
-)
+const missing = (choice: Choice): string => {
+  if (!needsKey(choice.endpoint)) return 'no url is given for the custom endpoint'
+  const refused = vault.failure(choice.endpoint)
+  return refused === null
+    ? `no key is given for ${choice.endpoint}`
+    : `the keychain did not give the ${choice.endpoint} key: ${refused}`
+}
+
 /**
- * The host that the provided models answer from, and never the key. Decision 21 and rule 48 ask
- * the app to name the destination in the consent sentence. `null` means the app holds no
- * provided model, so it has no destination to name.
+ * Open the child and the review from the settings. A choice that cannot open leaves its handle
+ * null and gives a reason, and the page then shows the setup screen. No choice means no handle.
+ * Rule 50. The end phase never gets the child handle. Rule 53.
  */
-const providedDestination: string | null = provided?.destination ?? null
+const applySettings = (): { readonly child: string | null; readonly review: string | null } => {
+  startup = null
+  childModel = null
+  startupSends = false
+  reviewer = null
+  let child: string | null = null
+  let review: string | null = null
+  if (settings.child === null) child = 'no child model is chosen'
+  else {
+    const backend = backendFor(settings.child, settings, keys.get(settings.child.endpoint))
+    if (backend === null) child = missing(settings.child)
+    else {
+      startup = open(backend)
+      childModel = TEMPERATURE === 0 ? startup : open(backend, TEMPERATURE)
+      // Rule 22. A remote Ollama host sends the words off this machine as a provider does.
+      startupSends =
+        settings.child.endpoint !== 'ollama' || !isLocalHost(settings.ollamaHost)
+    }
+  }
+  if (settings.review === null) review = 'no review model is chosen'
+  else {
+    const backend = backendFor(settings.review, settings, keys.get(settings.review.endpoint))
+    if (backend === null) review = missing(settings.review)
+    else reviewer = open(backend)
+  }
+  return { child, review }
+}
+let setupReasons = applySettings()
+
+/**
+ * The host that the review answers from, and never the key. Decision 21 and rule 48 ask the app
+ * to name the destination in the consent sentence. `null` means no review model is chosen.
+ */
+const reviewDestination = (): string | null =>
+  settings.review === null ? null : destinationOf(settings.review, settings)
+
+/** The host that the child answers from, when the child sends the words off this machine. */
+const childDestination = (): string | null =>
+  settings.child === null || !startupSends ? null : destinationOf(settings.child, settings)
+
+/** What the page needs to paint the setup screen. No key travels here. Decision 26. */
+const settingsView = () => ({
+  ollamaHost: settings.ollamaHost,
+  openaiUrl: settings.openaiUrl,
+  child: settings.child,
+  review: settings.review,
+  held: held(),
+  saved: Object.fromEntries(KINDS.map(kind => [kind, saved.has(kind)])),
+  path: store.path,
+  reasons: setupReasons,
+})
 
 /**
  * The ear and the voice. Both run inside this process on the machine of the user. The owner names
@@ -185,9 +280,6 @@ const providedDestination: string | null = provided?.destination ?? null
 const speech = await openSpeech(process.env)
 
 let session: Session | null = null
-/** The provided model that this session picked for the review. Rule 53. */
-let reviewer: ModelHandle | null = null
-let reviewerName: string | null = null
 let beats: Beat[] = []
 let ended = false
 let pending: Pending | null = null
@@ -279,28 +371,52 @@ const exchanges = (live: Session): readonly Exchange[] => {
 
 /* ── the routes ──────────────────────────────────────────────────────────────────────────────── */
 
-/** The startup choice, read from one request body. It returns null for a body this code refuses. */
-const backendFrom = (body: Record<string, unknown>): Backend | null => {
-  const kind = str(body, 'kind')
-  if (kind === 'ollama') {
-    // Rule 50. The user names the model. This part never reads /api/tags. Case B5.
-    const model = str(body, 'model')
-    return model === null ? null : { kind: 'ollama', model }
+/** The keys in one request body, by endpoint kind. An absent or empty key is not there. */
+const keysFrom = (body: Record<string, unknown>): Partial<Record<(typeof KINDS)[number], string>> => {
+  const raw = body['keys']
+  if (typeof raw !== 'object' || raw === null) return {}
+  const out: Partial<Record<(typeof KINDS)[number], string>> = {}
+  for (const kind of KINDS) {
+    const value = (raw as Record<string, unknown>)[kind]
+    if (typeof value === 'string' && value.trim() !== '') out[kind] = value.trim()
   }
-  if (kind === 'apiKey') {
-    // Rule 50. The user names the model here as well. The app holds no default for a provider.
-    if (str(body, 'provider') !== 'anthropic') return null
-    const key = str(body, 'key')
-    const model = str(body, 'model')
-    return key === null || model === null
-      ? null
-      : { kind: 'apiKey', provider: 'anthropic', key, model }
-  }
-  return null
+  return out
 }
 
+/**
+ * The models that one endpoint offers. The page fills its two lists from this. The key of the
+ * request goes to that endpoint and to no other host. A key that the person typed wins over a
+ * saved one. This route saves nothing.
+ */
+const handleModels = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
+  const body = await readJson(req)
+  if (body === null) return fault(res, 400, 'bad_request', 'The request body is not an object.')
+  const endpoint = str(body, 'endpoint')
+  if (!isKind(endpoint)) {
+    return fault(res, 400, 'bad_request', `Name the endpoint. Send endpoint as one of: ${KINDS.join(', ')}.`)
+  }
+  const url =
+    str(body, 'url') ??
+    (endpoint === 'ollama' ? settings.ollamaHost : endpoint === 'openai' ? settings.openaiUrl : null)
+  const key = str(body, 'key') ?? keys.get(endpoint)
+  const listed = await listModels(endpoint, url, key)
+  if (!listed.ok) return fault(res, 502, 'list_failed', listed.reason)
+  json(res, 200, { endpoint, models: listed.models })
+}
+
+/**
+ * The setup. Two choices, the endpoint urls, and the keys. Decision 26.
+ *
+ * A typed key goes to memory for this run. Both handles then open from the new settings, or the
+ * route names what stops them, puts the old settings and the old keys back, and writes nothing.
+ * After a good open, `remember` true puts every key in memory into the keychain, typed now or
+ * earlier. The settings file takes the choices and the urls, and never a key.
+ *
+ * A session that holds turns and has not ended blocks a change. A model change then would name
+ * a model that did not answer. After the review the session is over, and a change is fine.
+ */
 const handleSetup = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
-  if (session !== null && session.turns.length > 0) {
+  if (session !== null && session.turns.length > 0 && !ended) {
     return fault(
       res,
       409,
@@ -312,22 +428,101 @@ const handleSetup = async (req: IncomingMessage, res: ServerResponse): Promise<v
   const body = await readJson(req)
   if (body === null) return fault(res, 400, 'bad_request', 'The request body is not an object.')
 
-  const backend = backendFrom(body)
-  if (backend === null) {
+  const child = choiceOf(body['child'])
+  const review = choiceOf(body['review'])
+  if (child === null || review === null) {
     return fault(
       res,
       400,
       'bad_request',
-      'Choose one backend, and name the model. Send kind "ollama" with a model name. ' +
-        'Send kind "apiKey" with provider "anthropic", a key and a model name. ' +
-        'The app ships no default model.',
+      'Choose the child model and the review model. Send child and review, each with an ' +
+        'endpoint and a model. The app ships no default model.',
     )
   }
 
-  startup = open(backend)
-  childModel = TEMPERATURE === 0 ? startup : open(backend, TEMPERATURE)
-  startupSends = backend.kind === 'apiKey'
-  json(res, 200, { who: await startup.identify(), sends: startupSends })
+  const typed = keysFrom(body)
+  const remember = body['remember'] === true
+  const before = { settings, keys: Object.fromEntries(KINDS.map(kind => [kind, keys.get(kind)])) }
+  const restore = (): void => {
+    settings = before.settings
+    for (const kind of KINDS) {
+      const key = before.keys[kind]
+      if (key === null || key === undefined) keys.forget(kind)
+      else keys.set(kind, key)
+    }
+    setupReasons = applySettings()
+  }
+  for (const kind of KINDS) {
+    const key = typed[kind]
+    if (key !== undefined) keys.set(kind, key)
+  }
+  settings = {
+    ollamaHost: str(body, 'ollamaHost') ?? settings.ollamaHost,
+    openaiUrl: str(body, 'openaiUrl') ?? settings.openaiUrl,
+    child,
+    review,
+  }
+  setupReasons = applySettings()
+  if (startup === null || reviewer === null) {
+    const why = [setupReasons.child, setupReasons.review].filter(r => r !== null).join(', and ')
+    restore()
+    return fault(res, 400, 'cannot_open', `The models did not open: ${why}.`)
+  }
+  try {
+    saveSettings(store, settings)
+  } catch (error) {
+    restore()
+    return fault(
+      res,
+      500,
+      'settings_failed',
+      `The app could not write ${store.path}: ${error instanceof Error ? error.message : String(error)}.`,
+    )
+  }
+  if (remember) {
+    for (const kind of KINDS) {
+      const key = keys.get(kind)
+      if (key === null) continue
+      try {
+        vault.set(kind, key)
+        saved.add(kind)
+      } catch (error) {
+        return fault(
+          res,
+          500,
+          'keychain_failed',
+          `The models opened and the settings are saved, but the keychain did not take the ${kind} key: ` +
+            `${error instanceof Error ? error.message : String(error)}.`,
+        )
+      }
+    }
+  }
+  json(res, 200, {
+    who: await startup.identify(),
+    review: await reviewer.identify(),
+    sends: startupSends,
+    destination: reviewDestination(),
+    childDestination: childDestination(),
+    settings: settingsView(),
+  })
+}
+
+/**
+ * Forget one key. Rule 54. The key leaves the keychain and the memory of this run. A choice that
+ * needed it then cannot open, and the reply says so.
+ */
+const handleForget = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
+  const body = await readJson(req)
+  if (body === null) return fault(res, 400, 'bad_request', 'The request body is not an object.')
+  const endpoint = str(body, 'endpoint')
+  if (!isKind(endpoint)) {
+    return fault(res, 400, 'bad_request', `Name the endpoint. Send endpoint as one of: ${KINDS.join(', ')}.`)
+  }
+  vault.forget(endpoint)
+  keys.forget(endpoint)
+  saved.delete(endpoint)
+  setupReasons = applySettings()
+  json(res, 200, { endpoint, setup: startup !== null && reviewer !== null, settings: settingsView() })
 }
 
 const handleStart = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
@@ -346,12 +541,13 @@ const handleStart = async (req: IncomingMessage, res: ServerResponse): Promise<v
   if (topic === null) return fault(res, 400, 'bad_request', 'The request holds no topic.')
 
   // Decision 20. A session that cannot end with a review must not begin. Law 1.
-  if (provided === null) {
+  if (reviewer === null) {
     return fault(
       res,
       409,
       'no_provided_model',
-      `The app holds no provided model. The review cannot run, so the session cannot start. ${NO_PROVIDED_FIX}`,
+      `The app holds no review model. The review cannot run, so the session cannot start. ` +
+        `${setupReasons.review ?? 'Choose one on the setup screen'}.`,
     )
   }
 
@@ -365,23 +561,6 @@ const handleStart = async (req: IncomingMessage, res: ServerResponse): Promise<v
       'This session sends your words to the provider at the end. Send consent true to start it.',
     )
   }
-
-  // Rule 50 and decision 25. One name on the list needs no choice, because the owner made it.
-  // Several names need a choice from the person, and the app never picks for them.
-  const names = [...reviewers.keys()]
-  const wanted = str(body, 'providedModel')
-  const chosen = wanted === null && names.length === 1 ? (names[0] ?? null) : wanted
-  const handle = chosen === null ? undefined : reviewers.get(chosen)
-  if (chosen === null || handle === undefined) {
-    return fault(
-      res,
-      400,
-      'no_review_model',
-      `Choose the model that runs the review. Send providedModel as one of: ${names.join(', ')}.`,
-    )
-  }
-  reviewer = handle
-  reviewerName = chosen
 
   session = startSession(topic)
   beats = []
@@ -456,7 +635,7 @@ const handleEnd = async (req: IncomingMessage, res: ServerResponse): Promise<voi
   if (model === null) {
     // POST /api/start already refuses a session when the app holds no provided model. Decision
     // 20. This check stays, because a session must never end with a silent gap. Rule 46.
-    review = unavailable(`The app holds no provided model. ${NO_PROVIDED_FIX}`)
+    review = unavailable('The app holds no review model. Choose one on the setup screen.')
     return json(res, 200, { kind: 'review', review, source: null })
   }
 
@@ -542,13 +721,15 @@ const handleBoot = async (res: ServerResponse): Promise<void> =>
   json(res, 200, {
     // Rule 50. The app names no model before the user chooses one.
     who: startup === null ? null : await startup.identify(),
-    setup: startup !== null,
+    setup: startup !== null && reviewer !== null,
     sends: startupSends,
-    provided: reviewers.size > 0,
-    // Decision 25. The names on the list. The page asks for one when the list holds several.
-    providedModels: [...reviewers.keys()],
-    // Decision 21 and rule 48. The consent sentence names this host. It never carries the key.
-    destination: providedDestination,
+    provided: reviewer !== null,
+    review: reviewer === null ? null : await reviewer.identify(),
+    // Decision 21 and rule 48. The consent sentence names these hosts. Neither carries the key.
+    destination: reviewDestination(),
+    childDestination: childDestination(),
+    // Decision 26. The saved settings, so the setup screen shows them. No key travels here.
+    settings: settingsView(),
     topics: TOPICS,
     disclosure: DISCLOSURE,
     // Cases V1 and V2. The page shows the Talk button and plays the child only when these exist.
@@ -562,12 +743,12 @@ const handleBoot = async (res: ServerResponse): Promise<void> =>
 const handleState = (res: ServerResponse): void => {
   const live = session
   json(res, 200, {
-    setup: startup !== null,
+    // One meaning of setup: both models open. The page routes on this field after a reload.
+    setup: startup !== null && reviewer !== null,
     topic: live?.topic ?? '',
     history: live === null ? [] : exchanges(live),
     turns: live?.turns ?? [],
     ended,
-    providedModel: reviewerName,
     question: pending?.question ?? null,
     review,
     source,
@@ -588,7 +769,9 @@ createServer(async (req, res) => {
     }
     if (method === 'GET' && url === '/api/boot') return await handleBoot(res)
     if (method === 'GET' && url === '/api/state') return handleState(res)
+    if (method === 'POST' && url === '/api/models') return await handleModels(req, res)
     if (method === 'POST' && url === '/api/setup') return await handleSetup(req, res)
+    if (method === 'POST' && url === '/api/forget') return await handleForget(req, res)
     if (method === 'POST' && url === '/api/start') return await handleStart(req, res)
     if (method === 'POST' && url === '/api/turn') return await handleTurn(req, res)
     if (method === 'POST' && url === '/api/end') return await handleEnd(req, res)
@@ -605,7 +788,7 @@ createServer(async (req, res) => {
   console.log(`\n  http://${ADDRESS}:${PORT}\n`)
   console.log('  This server answers 127.0.0.1 only. The transcript does not reach the network.')
   console.log('  There is no default model. Choose one model at startup.')
-  console.log('  One session in memory. Nothing on disk. The findings appear one time.')
+  console.log(`  One session in memory. The settings are in ${store.path}. The findings appear one time.`)
   console.log(
     speech.ear === null
       ? `  No ear: ${speech.reasons.ear}. Set HOLDTRUE_STT_DIR to a sherpa-onnx model directory.`

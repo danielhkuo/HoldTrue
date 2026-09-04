@@ -91,7 +91,7 @@ export type ModelHandle = {
 
 /** The startup choice of the user. The user picks one backend and one model name. */
 export type Backend =
-  | { readonly kind: 'ollama'; readonly model?: string }
+  | { readonly kind: 'ollama'; readonly host?: string; readonly model?: string }
   | {
       readonly kind: 'apiKey'
       readonly provider: 'anthropic'
@@ -113,7 +113,9 @@ export type AskResult =
 /** A body that this code could not read is a failure, not an empty answer. */
 type Body = { readonly ok: true; readonly json: unknown } | { readonly ok: false; readonly reason: string }
 
-const host = (): string => (process.env.OLLAMA_HOST ?? OLLAMA_FALLBACK_HOST).replace(/\/+$/, '')
+/** The Ollama host: the backend names it, or OLLAMA_HOST does, or the fallback address. */
+const host = (named?: string): string =>
+  (named ?? process.env.OLLAMA_HOST ?? OLLAMA_FALLBACK_HOST).replace(/\/+$/, '')
 
 /** Drop a trailing slash so a url join never doubles one up. */
 const stripSlash = (url: string): string => url.replace(/\/+$/, '')
@@ -225,7 +227,7 @@ const readOpenai = (json: unknown): AskResult => {
 export const open = (backend: Backend, temperature = 0): ModelHandle => {
   const runtime =
     backend.kind === 'ollama'
-      ? `ollama @ ${host()}`
+      ? `ollama @ ${host(backend.host)}`
       : backend.kind === 'openai'
         ? `openai @ ${stripSlash(backend.baseUrl)}`
         : `anthropic @ ${ANTHROPIC_URL}`
@@ -241,7 +243,7 @@ export const open = (backend: Backend, temperature = 0): ModelHandle => {
 
     if (backend.kind === 'ollama') {
       const body = await post(
-        `${host()}/api/chat`,
+        `${host(backend.host)}/api/chat`,
         { 'content-type': 'application/json' },
         {
           model: configured,
