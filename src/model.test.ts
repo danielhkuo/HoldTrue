@@ -261,6 +261,17 @@ describe('ask never throws', () => {
 })
 
 describe('the ollama request', () => {
+  test('a backend with a host sends the chat request to that host, and never to the fallback', async () => {
+    const calls = answers(ollamaBody('hi'))
+    await open({ kind: 'ollama', host: 'http://10.0.0.5:11434/', model: 'a-model' }).ask('s', 'u')
+    expect(calls[0]?.url).toBe('http://10.0.0.5:11434/api/chat')
+  })
+
+  test('the attribution of a hosted backend names that host', async () => {
+    const who = await open({ kind: 'ollama', host: 'http://10.0.0.5:11434', model: 'a-model' }).identify()
+    expect(who.runtime).toBe('ollama @ http://10.0.0.5:11434')
+  })
+
   test('the request goes to the chat route of the configured host', async () => {
     vi.stubEnv('OLLAMA_HOST', 'http://10.0.0.2:9999/')
     const calls = answers(ollamaBody('hi'))
