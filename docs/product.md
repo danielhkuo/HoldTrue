@@ -12,25 +12,28 @@ order: Check, Diff, Probe and Close. `docs/architecture.md` describes both phase
 Both phases run. `docs/architecture.md` lists every file in `src/` under "What exists today". The
 build takes typed input and spoken input. The speech models run on the machine of the person,
 and the owner names them. `docs/architecture.md` holds the speech layer. The app does not have a topic gate. The
-server holds one session in memory. The server writes nothing to disk. The findings appear once.
-The app loses them when the process stops. No eval measures what the end phase produces.
+server holds one session in memory. The server writes no session text to disk. It saves the
+settings in one file, and a key in the keychain when you ask. Decision 26. The findings appear
+once. The app loses them when the process stops. No eval measures what the end phase produces.
 
 ## A session
 
 Every step in this list runs today.
 
-1. You pick a topic from the curated list. You cannot type your own topic.
-2. You give consent. The app names the destination: the provider of the provided model. When
-   the owner names several provided models, you pick the one that runs the review. Decision 25.
-3. You explain the mechanism from memory. The app shows you no source text. You type the line,
+1. You set up the app one time. You load the models that each endpoint offers. You pick the
+   model that plays the child and the model that runs the review. The app picks neither. The
+   app saves the choices, so a later start skips this step. Decision 26.
+2. You pick a topic from the curated list. You cannot type your own topic.
+3. You give consent. The app names the destination: the host of the review model.
+4. You explain the mechanism from memory. The app shows you no source text. You type the line,
    or you press Talk and speak it.
-4. The child says one short line back. It asks about one step in what you just said. It can press
+5. The child says one short line back. It asks about one step in what you just said. It can press
    the same step again. The app reads the line aloud when the owner names a voice model.
-5. At the twelfth turn, the app shows one line that points at the End button. Decision 21.
-6. You press the end button.
-7. The review opens. It lists the links you did not say, and the claims you said wrong.
-8. The product asks you one question about the first row of that list.
-9. The product states your claim, then states the missing mechanism. This runs for every row.
+6. At the twelfth turn, the app shows one line that points at the End button. Decision 21.
+7. You press the end button.
+8. The review opens. It lists the links you did not say, and the claims you said wrong.
+9. The product asks you one question about the first row of that list.
+10. The product states your claim, then states the missing mechanism. This runs for every row.
 
 ## The four mechanisms
 

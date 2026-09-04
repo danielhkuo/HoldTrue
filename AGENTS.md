@@ -67,7 +67,7 @@ evidence and marks it CANDIDATE. Rule 27 keeps a CANDIDATE claim out of the prod
 45. The app must not use the startup model in place of the provided model without telling the user.
 46. The end phase can fail to run. Then the app must state on the screen that no review ran and
     that the questions stay open.
-47. The app must tell the user that it holds one session in memory and writes nothing to disk.
+47. WITHDRAWN 2026-09-03. Decision 26 removes the ban on the disk. Rule 54 replaces this rule.
 48. The app must disclose where the text goes. The app must take the user's consent before the
     first send. Do not invent a retention policy, a training policy or a deletion policy.
 49. Every document must describe a part as built only when `src/` holds it. A document must name
@@ -87,6 +87,12 @@ evidence and marks it CANDIDATE. Rule 27 keeps a CANDIDATE claim out of the prod
 53. The end phase must run on the provided model only. The startup model must never run the end
     phase. An end phase that cannot run is a stated failure. Rule 46 owns the statement. The app
     must still disclose where the text goes and take consent before the first send. Rule 48 holds.
+
+### Added by decision 26
+
+54. The app must tell the user what it writes to disk and where. It writes the settings to one
+    file. It writes a key to the keychain of the operating system only when the user asks. It
+    must not write session text, audio or a key to a file, a log or a web address.
 
 ## The evidence rule
 

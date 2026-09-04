@@ -217,8 +217,7 @@ provided model, for every session. The startup model never runs the end phase.
 Decision 20 sets the guard. The app refuses to start a session when it holds no provided model.
 Law 1 gives the reason: a session must not end with a question open, and only the review closes
 that question. A session that cannot end with a review must not begin. The refusal names the fix:
-set `HOLDTRUE_PROVIDED_KEY` and `HOLDTRUE_PROVIDED_MODEL`, or set `HOLDTRUE_PROVIDED_URL` and
-`HOLDTRUE_PROVIDED_MODEL`.
+choose a review model on the setup screen.
 
 There is no silent fall back. If the provided model fails, the app must not use the startup model
 in its place without telling the user. The app states the failure on the screen. Rule 45 and rule
@@ -226,26 +225,56 @@ in its place without telling the user. The app states the failure on the screen.
 
 ## The model layer
 
-There is no default model. At startup the user makes one choice. The user sets up Ollama, and the
-model runs on the machine of the user. The user enters an API key for a supported provider
-instead. That one model runs the child, and only the child. Rule 53 keeps it out of the end phase.
+There is no default model. On the setup screen the person makes two choices: the model that
+plays the child, and the model that runs the review. Decision 26. Each choice names an endpoint
+and a model on it. The child model runs the child, and only the child. The review model runs the
+whole end phase, for every session. Rule 53 keeps the child model out of the end phase.
 
-The provided model is separate from the startup choice. It serves the whole end phase, for every
-session that starts. Rule 53.
+The app knows four endpoint kinds:
 
-The owner sets the provided model one of two ways. The owner sets `HOLDTRUE_PROVIDED_KEY` and
-`HOLDTRUE_PROVIDED_MODEL`, and the app opens Anthropic with that key. The owner sets
-`HOLDTRUE_PROVIDED_URL` and `HOLDTRUE_PROVIDED_MODEL` instead, and the app opens that
-OpenAI-compatible endpoint. A local proxy needs no key, so `HOLDTRUE_PROVIDED_KEY` stays optional
-when the URL is set. The model name is required either way. A missing required variable gives no
-provided model, and `POST /api/start` then refuses to start a session. Decision 20.
+- Ollama, on a host that the person can change, with `http://127.0.0.1:11434` as the default
+  address. A host is an address and not a model, so rule 50 allows the default.
+- NVIDIA, at `https://integrate.api.nvidia.com/v1`, with a key. It speaks the OpenAI shape.
+- Anthropic, with a key.
+- Another OpenAI-compatible endpoint, at a url the person gives, with a key when the endpoint
+  needs one.
 
-`HOLDTRUE_PROVIDED_MODEL` may hold several names with commas between them. Every name opens on
-the one endpoint. The pick screen then shows the names, and the person picks one for the session.
-No name starts picked. Rule 50. `POST /api/start` takes the choice as `providedModel`, and it
-refuses a session with no choice when the list holds several names. The review runs on the
-chosen model for the whole end phase. Rule 53. The talk screen names the choice. Decision 25.
-`src/provided.ts` reads the variables and names one backend for each model.
+The person types no model name. `src/catalog.ts` asks each endpoint for its list. The page
+shows the list in two dropdowns with nothing selected. Ollama and Anthropic state what each
+model can do. The catalog reads those fields. It keeps a completion model and drops an embedding
+model. NVIDIA and a custom endpoint give ids only. There the catalog drops an id that names one
+of these:
+
+- an embedding or a reranker;
+- a reward model, a guard or a safety model;
+- a parser or a vision-only model;
+- a code-only base model.
+
+That id filter has known misses. A domain chat model with an odd name may go. A vision model
+that also chats stays. A code model with chat training stays. The catalog marks a model that
+thinks. It reads the capability field where the endpoint gives one. It reads the id where the
+endpoint does not. The page labels such a model. The catalog lists. It never picks. Case B5.
+
+`src/settings.ts` saves the two choices and the two urls in one file, `settings.json`, under
+the settings directory of the platform. On macOS that is `~/Library/Application Support/holdtrue`.
+`HOLDTRUE_SETTINGS_DIR` moves it. The end-to-end check uses that to keep the settings of the
+owner untouched. The file holds no key. A key goes to the keychain of the operating system only
+when the person ticks the box that asks for it. The package is `@napi-rs/keyring`. Otherwise the
+key lives in memory for one run. The setup screen states each key as saved or as held for this
+run, and a saved key has a Forget button. `POST /api/forget` removes it from the keychain and
+from the run. Rule 54 and decision 26.
+
+The next start reads the file and the keychain, opens both models, and lands on the pick screen.
+A choice that cannot open sends the person to the setup screen. The screen names the reason:
+a missing key, a missing url, or a keychain that refused the read. Rule 25. The app does not test
+a key at setup. A wrong key fails at the first call, and the child or the review states it then.
+Rule 46.
+
+The consent line names the host of the review. When the child sends the words off this machine,
+the line names that host as well. A remote Ollama host counts as such a host. Rules 22 and 48.
+
+A model that cannot open gives no review model, and `POST /api/start` then refuses to start a
+session. Decision 20.
 
 An OpenAI-compatible endpoint gets a token budget of 16384 for each call. A model that thinks
 spends tokens before its answer. A budget of 4096 gave such a model empty text on 2026-09-01. Anthropic keeps the budget of 4096, because thinking there is off unless a request
@@ -333,8 +362,10 @@ records them as an open decision. The owner must answer it before release. Do no
 
 ## Persistence
 
-The server holds one session in memory. The server writes nothing to disk. Two browser tabs share
-the one session. The findings appear once, and the app loses them when the process stops.
+The server holds one session in memory. The server writes no session text and no audio to disk.
+It writes the settings file and, on request, a key to the keychain. Rule 54 and decision 26. Two
+browser tabs share the one session. The findings appear once, and the app loses them when the
+process stops.
 
 ## The failure rule
 
@@ -368,8 +399,9 @@ must name a configuration that it cannot support.
 Both phases run. Six files hold the live phase:
 
 - `src/child.ts` holds the child prompt and the one turn;
-- `src/model.ts` holds the Ollama backend and the Anthropic API key backend;
-- `src/provided.ts` holds the list of provided models from the environment;
+- `src/model.ts` holds the Ollama backend, the Anthropic backend and the OpenAI-compatible backend;
+- `src/settings.ts` holds the settings file, the keychain and the backend for each choice;
+- `src/catalog.ts` holds the model list of each endpoint;
 - `src/speech.ts` holds the ear and the voice;
 - `src/server.ts` holds the routes and the one in-memory session;
 - `src/topics.ts` holds the curated topic list;
@@ -385,18 +417,19 @@ Six files hold the end phase:
 - `src/session.ts` holds the marked transcript and the order of the five steps.
 
 `src/server.ts` runs the end phase at `POST /api/end`. It runs the ear at `POST /api/hear` and
-the voice at `POST /api/say`.
+the voice at `POST /api/say`. It lists models at `POST /api/models` and takes the setup at
+`POST /api/setup`.
 
-Six test files exist. They are `src/child.test.ts`, `src/diff.test.ts`, `src/model.test.ts`,
-`src/provided.test.ts`, `src/session.test.ts` and `src/speech.test.ts`. The speech tests pass a fake engine, so no test
+Seven test files exist. They are `src/catalog.test.ts`, `src/child.test.ts`, `src/diff.test.ts`,
+`src/model.test.ts`, `src/session.test.ts`, `src/settings.test.ts` and `src/speech.test.ts`. The speech tests pass a fake engine, so no test
 loads the addon or a model. Rule 32. Check, Probe and Close hold no test file. No test can judge what a model
 writes. Rule 33 and rule 34 forbid such a test. `src/e2e.ts` runs the end-to-end check against a
 real service. Rule 31 asks for that check. `src/rig.ts` makes two models talk and counts
 repetition, and it judges nothing.
 
-`src/model.ts` obeys rule 50 today. It reads no tag list. It holds no default model name. The user
-names the model at startup, for both backends. `src/model.ts` reports the model that answered, and
-never the model in the setting. Rule 24 holds there.
+`src/model.ts` obeys rule 50 today. It holds no default model name. `src/catalog.ts` reads the
+tag list, and it shows the list. The person picks. `src/model.ts` reports the model that
+answered, and never the model in the setting. Rule 24 holds there.
 
 The topic gate does not exist. The topic list in `src/topics.ts` is curated. The page also offers a
 button named "Something else". That button does not open a text box. It starts a session with the

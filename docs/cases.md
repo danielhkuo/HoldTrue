@@ -123,11 +123,21 @@ model. It does not bind the engine. `architecture.md` states the limit.
 
 ---
 
+## The settings
+
+| # | The behaviour | Verdict | Owner |
+|---|---|---|---|
+| **S1** | You pick the child model and the review model from lists that each endpoint gave, and the app picks neither. | Feature | Code |
+| **S2** | The app saves the choices, and the next start lands on the pick screen. | Feature | Code |
+| **S3** | The app writes a key to a file, a log or a web address. | Guard | Code |
+
+---
+
 ## The count
 
-- Seven features that the product produces today.
+- Nine features that the product produces today.
 - Five features that the product does not produce yet.
-- Twenty-seven guards.
+- Twenty-eight guards.
 
 Every feature that the product does not produce yet needs the end phase, except E13b. E13b needs a
 change to the child.

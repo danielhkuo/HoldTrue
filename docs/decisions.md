@@ -358,3 +358,34 @@ each finding. The owner rules on a per-step split separately.
 
 **Open under this decision.** No run compares two provided models on one transcript. The e2e
 check takes the model name as its third argument, so such a comparison costs two runs.
+
+## 26. The app saves the settings and the keys, and the person picks both models from a list
+
+**Decided 2026-09-03.** The owner ruled. Rule 47 is withdrawn, and rule 54 replaces it. The app
+saves the settings in one file. The app saves an API key in the keychain of the operating system
+when the person asks. The app never writes session text, audio or a key to a file. Decision 12
+stays for the session only. Decision 25 is closed: the review model is a setup choice now, not a
+choice for each session.
+
+The setup screen shows four endpoints: Ollama, NVIDIA, Anthropic and another OpenAI-compatible
+endpoint. The person loads the models of an endpoint, and the app shows them in two dropdowns,
+one for the child and one for the review, with nothing selected. The person picks both. The app
+saves the choices, and the next start lands on the pick screen. A "Change the models" button
+returns to the setup screen.
+
+**Why.** A person who types a key at every start, and edits a file to change a model, does not
+use the app. The owner said so. The environment variables were a tool for the agent and not a
+product. Rule 50 and case B5 still hold: the app lists, and it never picks.
+
+**The rejected alternatives.** The owner rejects the `security` command of macOS. Any script on
+the machine reads such an item without a prompt. The key also shows in the process list for a
+moment. The owner rejects `keytar`, because the project is archived. The owner defers Electron
+`safeStorage`. The app has no Electron process today, and `@napi-rs/keyring` moves to it with
+one migration. The owner rejects a plain file with owner-only permission for the key. The
+settings file holds no secret.
+
+**Open under this decision.** The keychain shows one prompt when the `node` binary changes, and
+the person must choose "Always Allow". The Electron build must migrate the item. The id filter
+of the NVIDIA list has known misses, and nobody has measured it against the full catalog. The
+app sends no thinking control to a review model. A model thinks or not as its endpoint decides.
+The app does not test a key at setup, and a wrong key shows at the first call.
