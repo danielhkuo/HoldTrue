@@ -36,6 +36,7 @@
  * This part must not show a score, a rating or a grade. It must not write to disk.
  */
 
+import { log } from './log.js'
 import { check } from './check.js'
 import { close } from './close.js'
 import { diff } from './diff.js'
@@ -124,8 +125,10 @@ export const openEnd = async (
   live: Session,
   model: ModelHandle,
 ): Promise<{ readonly review: Review } | { readonly pending: Pending }> => {
+  const started = Date.now()
   const first = await check(live.turns, model)
   if (first.kind === 'failed') {
+    log.warn('review', 'check failed', { turns: live.turns.length, ms: Date.now() - started, reason: first.reason })
     return {
       review: unavailable(
         `${PROVIDED_ROLE} failed the Check step. The reason: ${first.reason}.`,
@@ -144,8 +147,18 @@ export const openEnd = async (
     }
   }
 
+  log.info('review', 'check', {
+    turns: live.turns.length,
+    links: first.mechanism.length,
+    covered: first.mechanism.filter(link => link.covered).length,
+    claims: first.claims.length,
+    wrong: first.claims.filter(claim => !claim.correct).length,
+    intrusions: first.intrusions.length,
+    ms: Date.now() - started,
+  })
   const rows = diff(first)
   const head = firstRow(rows)
+  log.info('review', 'diff', { rows: rows.length, first: head?.kind ?? null })
   if (head === null) {
     // Check gave a chain, and Diff found no row. No question stays open, so this empty list is
     // honest. The check above already refused the case where Check gave nothing at all.
@@ -154,9 +167,12 @@ export const openEnd = async (
 
   const asked = await probe(head, first, live.turns, model)
   if (asked.kind === 'failed') {
+    log.warn('review', 'probe failed', { row: head.kind, reason: asked.reason })
     const findings = await close(rows, first, null, model)
+    log.info('review', 'close', { findings: findings.length, blank: findings.filter(f => f.stated === false).length })
     return { review: reviewOf(findings) }
   }
+  log.info('review', 'probe', { row: head.kind, question: asked.question.length })
 
   return { pending: { checked: first, rows, question: asked.question, rowId: head.id } }
 }
@@ -184,5 +200,10 @@ export const closeEnd = async (
     verdict = again.kind === 'checked' ? again.verdict : null
   }
   const findings = await close(wait.rows, wait.checked, verdict, model)
+  log.info('review', 'close', {
+    verdict: verdict === null ? null : verdict.supplied,
+    findings: findings.length,
+    blank: findings.filter(f => f.stated === false).length,
+  })
   return reviewOf(findings)
 }

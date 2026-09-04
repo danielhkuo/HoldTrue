@@ -36,6 +36,8 @@
  * `Bearer <key>`. The apiKey backend keeps its key as required; only the openai backend bends.
  */
 
+import { chars, log } from './log.js'
+
 /** The address of the local backend. The code reads the variable when the caller opens a handle. */
 const OLLAMA_FALLBACK_HOST = 'http://127.0.0.1:11434'
 
@@ -321,10 +323,24 @@ export const open = (backend: Backend, temperature = 0): ModelHandle => {
     },
 
     ask: async (system, user) => {
+      const started = Date.now()
       const result = await attempt(system, user)
+      const ms = Date.now() - started
       last = result.ok ? null : result.reason
-      if (!result.ok) return null
+      // One line for each call. The lengths go to the line, and never the words. Rule 54.
+      if (!result.ok) {
+        log.warn('model', 'failed', { backend: backend.kind, model: configured, ms, reason: result.reason })
+        return null
+      }
       if (result.modelId !== null) answered = result.modelId
+      log.info('model', 'answered', {
+        backend: backend.kind,
+        model: result.modelId ?? configured,
+        ms,
+        system: chars(system),
+        user: chars(user),
+        text: chars(result.text),
+      })
       return result.text
     },
 

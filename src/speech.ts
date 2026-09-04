@@ -40,6 +40,7 @@ import { readdirSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { basename, join } from 'node:path'
 
+import { chars, log } from './log.js'
 import type { Attribution } from './model.js'
 
 /* ── the contract ────────────────────────────────────────────────────────────────────────────── */
@@ -390,6 +391,8 @@ const openEar = async (
   const inOrder = queue()
   const hear = async (wave: Wave): Promise<HearResult> => {
     if (wave.samples.length === 0) return { ok: false, reason: REASON.NO_AUDIO }
+    const started = Date.now()
+    const seconds = (wave.samples.length / wave.sampleRate).toFixed(1)
     try {
       return await inOrder(async () => {
         const stream = recognizer.createStream()
@@ -397,10 +400,16 @@ const openEar = async (
         const result = await recognizer.decodeAsync(stream)
         // Rule 10. The text goes out as the engine wrote it. The trim below decides emptiness only.
         const text = typeof result.text === 'string' ? result.text : ''
-        if (text.trim() === '') return { ok: false, reason: REASON.NOTHING_HEARD }
+        const ms = Date.now() - started
+        if (text.trim() === '') {
+          log.warn('ear', 'nothing heard', { audio: `${seconds}s`, rate: wave.sampleRate, ms })
+          return { ok: false, reason: REASON.NOTHING_HEARD }
+        }
+        log.info('ear', 'heard', { audio: `${seconds}s`, rate: wave.sampleRate, text: chars(text), ms })
         return { ok: true, text }
       })
     } catch (error) {
+      log.warn('ear', 'failed', { audio: `${seconds}s`, ms: Date.now() - started, reason: message(error) })
       return { ok: false, reason: `${REASON.EAR_FAILED}: ${message(error)}` }
     }
   }
@@ -453,6 +462,7 @@ const openVoice = async (
   const inOrder = queue()
   const say = async (text: string): Promise<SayResult> => {
     if (text.trim() === '') return { ok: false, reason: REASON.NO_TEXT }
+    const started = Date.now()
     try {
       return await inOrder(async () => {
         const audio = await synthesizer.generateAsync({
@@ -461,9 +471,12 @@ const openVoice = async (
           speed: 1.0,
           generationConfig: generation(plan, sid, lang),
         })
+        const seconds = (audio.samples.length / audio.sampleRate).toFixed(1)
+        log.info('voice', 'said', { text: chars(text), audio: `${seconds}s`, ms: Date.now() - started })
         return { ok: true, wave: { samples: audio.samples, sampleRate: audio.sampleRate } }
       })
     } catch (error) {
+      log.warn('voice', 'failed', { text: chars(text), ms: Date.now() - started, reason: message(error) })
       return { ok: false, reason: `${REASON.VOICE_FAILED}: ${message(error)}` }
     }
   }

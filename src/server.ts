@@ -57,6 +57,7 @@ import { fileURLToPath } from 'node:url'
 
 import { speak, type Exchange, type Said } from './child.js'
 import { listModels } from './catalog.js'
+import { chars, log } from './log.js'
 import { open, type Attribution, type ModelHandle } from './model.js'
 import {
   KINDS,
@@ -466,8 +467,15 @@ const handleSetup = async (req: IncomingMessage, res: ServerResponse): Promise<v
   if (startup === null || reviewer === null) {
     const why = [setupReasons.child, setupReasons.review].filter(r => r !== null).join(', and ')
     restore()
+    log.warn('setup', 'refused', { reason: why })
     return fault(res, 400, 'cannot_open', `The models did not open: ${why}.`)
   }
+  log.info('setup', 'applied', {
+    child: `${child.endpoint}/${child.model}`,
+    review: `${review.endpoint}/${review.model}`,
+    typed: Object.keys(typed).join(',') || '-',
+    remember,
+  })
   try {
     saveSettings(store, settings)
   } catch (error) {
@@ -607,9 +615,12 @@ const handleTurn = async (req: IncomingMessage, res: ServerResponse): Promise<vo
   // seconds into a five second call showed an empty transcript. Case B13.
   session = withUser
   const started = Date.now()
+  log.info('turn', 'start', { index: userIndex, said: chars(said), turns: withUser.turns.length })
   // Rule 1. One model call for each turn. Case B7. The topic goes to the model.
   const child = await speak(history, said, childModel, live.topic, CHILD_OPTIONS)
   const seconds = (Date.now() - started) / 1000
+  if (child.kind === 'said') log.info('turn', 'child said', { index: userIndex, line: chars(child.line) })
+  else log.warn('turn', 'child silent', { index: userIndex, reason: child.reason })
 
   // A silent child turn carries no text, so the marked transcript holds spoken turns only. The
   // beat holds the reason, and the state route reports it. Case B13.
@@ -628,6 +639,7 @@ const handleEnd = async (req: IncomingMessage, res: ServerResponse): Promise<voi
   if (body === null) return fault(res, 400, 'bad_request', 'The request body is not an object.')
 
   // The live phase stops here. The end phase must never run beside it.
+  if (!ended) log.info('review', 'end pressed', { turns: live.turns.length })
   ended = true
 
   // Rule 53. The end phase runs on the provided model only, never on the startup model.
@@ -757,11 +769,45 @@ const handleState = (res: ServerResponse): void => {
 
 /* ── the server ──────────────────────────────────────────────────────────────────────────────── */
 
-createServer(async (req, res) => {
-  try {
-    const url = req.url ?? ''
-    const method = req.method ?? 'GET'
+/**
+ * The log stream. One line for each event, as it happens, for the page and for `curl -N`. The
+ * recent lines come first. The stream holds no words of the user and no key. Rule 54.
+ */
+const handleLogs = (req: IncomingMessage, res: ServerResponse): void => {
+  res.writeHead(200, {
+    'content-type': 'text/event-stream',
+    'cache-control': 'no-cache',
+    connection: 'keep-alive',
+  })
+  const send = (line: string): void => void res.write(`data: ${line}\n\n`)
+  for (const line of log.recent()) send(line)
+  const stop = log.subscribe(send)
+  req.on('close', stop)
+}
 
+createServer(async (req, res) => {
+  const url = req.url ?? ''
+  const method = req.method ?? 'GET'
+  if (method === 'GET' && url === '/api/logs') return handleLogs(req, res)
+
+  // One trace id for each request. Every line below, down to the model call, carries it.
+  const trace = log.newTrace()
+  const started = Date.now()
+  res.on('finish', () => {
+    const line = { method, url, status: res.statusCode, ms: Date.now() - started }
+    if (res.statusCode >= 500) log.error('server', 'request', line)
+    else if (res.statusCode >= 400) log.warn('server', 'request', line)
+    else log.info('server', 'request', line)
+  })
+  await log.trace(trace, async () => {
+  try {
+
+    // A browser asks for these on every load. They are not faults, so they get no warning line.
+    if (url === '/favicon.ico' || (method === 'HEAD' && url === '/')) {
+      res.writeHead(204)
+      res.end()
+      return
+    }
     if (method === 'GET' && (url === '/' || url === '/index.html')) {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
       res.end(readFileSync(join(HERE, 'page.html'), 'utf8'))
@@ -782,8 +828,10 @@ createServer(async (req, res) => {
   } catch (error) {
     // A fault of the server keeps the shape of every other fault. The page can tell a fault from a
     // turn, so a broken server never reaches the screen as a line of the child.
+    log.error('server', 'fault', { reason: error instanceof Error ? error.message : String(error) })
     fault(res, 500, 'server_fault', error instanceof Error ? error.message : String(error))
   }
+  })
 }).listen(PORT, ADDRESS, () => {
   console.log(`\n  http://${ADDRESS}:${PORT}\n`)
   console.log('  This server answers 127.0.0.1 only. The transcript does not reach the network.')
@@ -799,4 +847,16 @@ createServer(async (req, res) => {
       ? `  No voice: ${speech.reasons.voice}. Set HOLDTRUE_TTS_DIR to a sherpa-onnx model directory.\n`
       : `  The voice is ${speech.voice.identify().model_id}.\n`,
   )
+  log.info('boot', 'ready', {
+    port: PORT,
+    settings: store.path,
+    child: settings.child === null ? null : `${settings.child.endpoint}/${settings.child.model}`,
+    review: settings.review === null ? null : `${settings.review.endpoint}/${settings.review.model}`,
+    childOpen: startup !== null,
+    reviewOpen: reviewer !== null,
+    held: KINDS.filter(kind => keys.get(kind) !== null).join(',') || '-',
+    saved: [...saved].join(',') || '-',
+    ear: speech.ear?.identify().model_id ?? null,
+    voice: speech.voice?.identify().model_id ?? null,
+  })
 })
