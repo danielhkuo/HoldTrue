@@ -344,6 +344,30 @@ Rule 28. The licence column repeats the licence file in each archive.
 | Kokoro v1.0 | voice | Apache-2.0 | 1.47 s |
 | Supertonic 3 | voice | MIT | 1.56 s |
 
+## The log
+
+`src/log.ts` writes one line for each event, as it happens, in the glog form:
+
+```
+I0903 14:22:01.123 ab12cd34 model] answered backend=ollama model=qwen3.5:9b ms=4118 text=71ch
+```
+
+The first letter is the severity: D, I, W or E. Then the date and the time in UTC. Then the trace
+id, or dashes outside a request. Then the component, the message and the fields. The server sets
+one trace id for each request, and `AsyncLocalStorage` carries it down the async chain. One turn
+then reads as one trace: the request, the model call, the child line, the reply.
+
+The lines go to stderr, so the terminal that runs `npm run app` shows them live. `GET /api/logs`
+streams the recent lines and every new line as server-sent events, for `curl -N` and for the
+page. The page has a "logs" button at the bottom right that opens a drawer on that stream.
+`HOLDTRUE_LOG` sets the level: debug, info, warn or error.
+
+A line never holds the words of the user, a line of the child, a key or a token. Rule 54. A
+part logs a length with `chars`, never the text. A field named key, token, authorization,
+password or secret prints redacted, whatever a caller passed. The parts that log: the server,
+one line for each request; the setup; each model call; each end-phase step; the ear and the
+voice; the boot.
+
 ## Consent and disclosure
 
 The app must disclose where the text of the user goes, and it must name the destination it
@@ -399,6 +423,7 @@ must name a configuration that it cannot support.
 Both phases run. Six files hold the live phase:
 
 - `src/child.ts` holds the child prompt and the one turn;
+- `src/log.ts` holds the log, the trace id and the stream;
 - `src/model.ts` holds the Ollama backend, the Anthropic backend and the OpenAI-compatible backend;
 - `src/settings.ts` holds the settings file, the keychain and the backend for each choice;
 - `src/catalog.ts` holds the model list of each endpoint;
@@ -418,10 +443,11 @@ Six files hold the end phase:
 
 `src/server.ts` runs the end phase at `POST /api/end`. It runs the ear at `POST /api/hear` and
 the voice at `POST /api/say`. It lists models at `POST /api/models` and takes the setup at
-`POST /api/setup`.
+`POST /api/setup`. It streams the log at `GET /api/logs`.
 
-Seven test files exist. They are `src/catalog.test.ts`, `src/child.test.ts`, `src/diff.test.ts`,
-`src/model.test.ts`, `src/session.test.ts`, `src/settings.test.ts` and `src/speech.test.ts`. The speech tests pass a fake engine, so no test
+Eight test files exist. They are `src/catalog.test.ts`, `src/child.test.ts`, `src/diff.test.ts`,
+`src/log.test.ts`, `src/model.test.ts`, `src/session.test.ts`, `src/settings.test.ts` and
+`src/speech.test.ts`. The speech tests pass a fake engine, so no test
 loads the addon or a model. Rule 32. Check, Probe and Close hold no test file. No test can judge what a model
 writes. Rule 33 and rule 34 forbid such a test. `src/e2e.ts` runs the end-to-end check against a
 real service. Rule 31 asks for that check. `src/rig.ts` makes two models talk and counts
