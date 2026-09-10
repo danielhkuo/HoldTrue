@@ -39,7 +39,8 @@ or plain code. The document says which one.
 The user explains a mechanism out loud, from memory. The child answers with one short line. One
 turn runs in four steps, and it makes one model call:
 
-1. The user says a line.
+1. The user says a line. The user types it, or the user speaks it and the ear writes it. The
+   speech layer below owns the ear.
 2. The server appends the line to the transcript as a user turn.
 3. The server makes one model call, and the model returns one line.
 4. The server appends that line to the transcript as a child turn.
@@ -88,6 +89,10 @@ signal. `src/page.html` holds the button, and the button calls `POST /api/end`.
 A child that goes quiet is a feature for a later build. No code implements quiet. No document may say that
 quiet ends a session today. The session end starts the end phase. A session must not end with a
 question open. The last child question stays open until Close answers it.
+
+Decision 21 adds a soft cap at turn twelve. At the twelfth user turn, `src/page.html` shows one
+line: "This is a good place to end and see the review." The line is a nudge, not a signal. The
+button stays the only end signal. Rule 44.
 
 ## The end phase
 
@@ -199,51 +204,192 @@ the user does not know the link. The app asked no question about those rows, so 
 evidence about them. Close must not show a score, a rating, a grade or a progress bar. Close must
 not say that an explanation was unclear.
 
-## The omniscient toggle
+## The provided model, and the removed toggle
 
-The user sets the toggle for each session.
+Decision 19 removed the omniscient toggle. The app showed two kinds of review, verified and
+unverified, and the owner ruled that a wrong finding from a model that may not know the mechanism
+is a risk the app must not take. One review remains. No code and no document may print the word
+`verified` or the word `unverified`.
 
-**Toggle ON.** HoldTrue provides a frontier model. That model runs the whole end phase: Check, Probe
-and Close. The user pays for the feature. The user configures nothing and supplies no key. The session sends
-the transcript to a remote service that HoldTrue operates. The app must label the findings of the
-session `verified`.
+The end phase always runs on the provided model. Rule 53. Check, Probe and Close all run on the
+provided model, for every session. The startup model never runs the end phase.
 
-**Toggle OFF.** The startup model runs the whole end phase: Check, Probe and Close. The app must
-label the findings of the session `unverified`. The app must give the reason with the label. The
-model of the user checked the explanation of the user.
+Decision 20 sets the guard. The app refuses to start a session when it holds no provided model.
+Law 1 gives the reason: a session must not end with a question open, and only the review closes
+that question. A session that cannot end with a review must not begin. The refusal names the fix:
+choose a review model on the setup screen.
 
-There is no silent fall back. If the provided model fails, the app must not use the startup model in
-its place without telling the user. The app must state the failure on the screen, and the app must
-label the session `unverified`.
+There is no silent fall back. If the provided model fails, the app must not use the startup model
+in its place without telling the user. The app states the failure on the screen. Rule 45 and rule
+46 hold.
 
 ## The model layer
 
-There is no default model. At startup the user makes one choice. The user sets up Ollama, and the
-model runs on the machine of the user. The user enters an API key for a supported provider instead.
-That one model runs the child, and it runs the end phase when the toggle is off.
+There is no default model. On the setup screen the person makes two choices: the model that
+plays the child, and the model that runs the review. Decision 26. Each choice names an endpoint
+and a model on it. The child model runs the child, and only the child. The review model runs the
+whole end phase, for every session. Rule 53 keeps the child model out of the end phase.
 
-The provided frontier model is separate. It serves the end phase when the toggle is on, and it is
-not part of the startup choice.
+The app knows four endpoint kinds:
+
+- Ollama, on a host that the person can change, with `http://127.0.0.1:11434` as the default
+  address. A host is an address and not a model, so rule 50 allows the default.
+- NVIDIA, at `https://integrate.api.nvidia.com/v1`, with a key. It speaks the OpenAI shape.
+- Anthropic, with a key.
+- Another OpenAI-compatible endpoint, at a url the person gives, with a key when the endpoint
+  needs one.
+
+The person types no model name. `src/catalog.ts` asks each endpoint for its list. The page
+shows the list in two dropdowns with nothing selected. Ollama and Anthropic state what each
+model can do. The catalog reads those fields. It keeps a completion model and drops an embedding
+model. NVIDIA and a custom endpoint give ids only. There the catalog drops an id that names one
+of these:
+
+- an embedding or a reranker;
+- a reward model, a guard or a safety model;
+- a parser or a vision-only model;
+- a code-only base model.
+
+That id filter has known misses. A domain chat model with an odd name may go. A vision model
+that also chats stays. A code model with chat training stays. The catalog marks a model that
+thinks. It reads the capability field where the endpoint gives one. It reads the id where the
+endpoint does not. The page labels such a model. The catalog lists. It never picks. Case B5.
+
+`src/settings.ts` saves the two choices and the two urls in one file, `settings.json`, under
+the settings directory of the platform. On macOS that is `~/Library/Application Support/holdtrue`.
+`HOLDTRUE_SETTINGS_DIR` moves it. The end-to-end check uses that to keep the settings of the
+owner untouched. The file holds no key. A key goes to the keychain of the operating system only
+when the person ticks the box that asks for it. The package is `@napi-rs/keyring`. Otherwise the
+key lives in memory for one run. The setup screen states each key as saved or as held for this
+run, and a saved key has a Forget button. `POST /api/forget` removes it from the keychain and
+from the run. Rule 54 and decision 26.
+
+The next start reads the file and the keychain, opens both models, and lands on the pick screen.
+A choice that cannot open sends the person to the setup screen. The screen names the reason:
+a missing key, a missing url, or a keychain that refused the read. Rule 25. The app does not test
+a key at setup. A wrong key fails at the first call, and the child or the review states it then.
+Rule 46.
+
+The consent line names the host of the review. When the child sends the words off this machine,
+the line names that host as well. A remote Ollama host counts as such a host. Rules 22 and 48.
+
+A model that cannot open gives no review model, and `POST /api/start` then refuses to start a
+session. Decision 20.
+
+An OpenAI-compatible endpoint gets a token budget of 16384 for each call. A model that thinks
+spends tokens before its answer. A budget of 4096 gave such a model empty text on 2026-09-01. Anthropic keeps the budget of 4096, because thinking there is off unless a request
+asks for it.
 
 Every backend implements one interface. `ModelHandle` has two methods. `identify` returns the
 attribution, and `ask` sends one system message and one user message. The child, Check, Probe and
 Close call this interface, and they never call a provider API. `identify` reads the name from the
 thing that answers, because an attribution must name what actually ran.
 
+## The speech layer
+
+The app takes typed words, and it takes spoken words. `src/speech.ts` holds the ear and the
+voice. The ear turns one recording into words. The voice turns one line of the child into audio.
+Both run inside the server process, on the machine of the user, on the sherpa-onnx runtime. The
+package is `sherpa-onnx-node`. No audio leaves the machine. No audio reaches a disk. Cases V1,
+V2 and V3. Decision 24.
+
+There is no default speech model. Rule 50. The owner names two directories:
+
+- `HOLDTRUE_STT_DIR` holds a speech-to-text export for sherpa-onnx. The code knows two layouts.
+  The first is a NeMo transducer, which is the layout of NVIDIA Parakeet TDT. The second is
+  Qwen3-ASR.
+- `HOLDTRUE_TTS_DIR` holds a text-to-speech export for sherpa-onnx. The code knows two layouts,
+  Kokoro and Supertonic.
+- `HOLDTRUE_TTS_VOICE` picks the speaker id of the voice model. It defaults to zero. A speaker id
+  is a setting of one named model, and not a model choice.
+- `HOLDTRUE_SPEECH_THREADS` sets the thread count of the engine. It defaults to four.
+- `HOLDTRUE_TTS_LANG` sets the language of a Supertonic voice. It defaults to `en`. Kokoro does
+  not read it.
+
+A missing variable gives no ear or no voice. The page then hides the Talk button, or it plays no
+audio. A directory that the code does not know gives a stated reason, and `GET /api/boot` reports
+the reason. The code reads the directory listing to pick the layout. It opens no model file
+itself. The sherpa-onnx project publishes the exports on its GitHub releases page, under the tags
+`asr-models` and `tts-models`. The owner downloads one archive of each kind, unpacks it, and
+names the directory in the variable. `.claude/launch.json` holds a `voice` configuration that
+loads `.env.local` and starts the app. The unit tests and the end-to-end check need no model.
+
+One spoken turn runs in five steps:
+
+1. The page records the microphone at 16 kHz through an AudioWorklet.
+2. The page sends the samples as 16-bit PCM to `POST /api/hear`, with the rate in a header.
+3. The ear decodes the samples inside the process. It returns the words as the engine wrote them.
+4. The page sends those words to `POST /api/turn`, the way it sends typed words. Rule 10 holds
+   between the ear and the model. No code trims a filled pause, a repeat or a full stop.
+5. The page sends the line of the child to `POST /api/say`, and it plays the WAV that comes back.
+
+`POST /api/hear` makes no model call, so rule 1 holds for the turn. The ear returns words only.
+It returns no confidence, no timestamp and no pause. Rule 18. The attribution names the model
+directory that answered and the runtime. Rule 24. On the review screen the same Talk button
+fills the probe answer, and the user presses Answer.
+
+Every document must state one limit. The speech model decides which sounds become words.
+The code does not. In the round trip of 2026-09-01, Parakeet TDT v3 and Qwen3-ASR both wrote
+"um" and "uh" from a synthetic voice. No measurement says how often they do so on a real voice.
+Rule 10 binds the code. It cannot bind the model.
+
+Four models ran on 2026-09-01, on one Apple M5 Max, from the int8 exports of sherpa-onnx. The
+figures below are engineering measurements from one machine and one sentence of eight seconds.
+Rule 28. The licence column repeats the licence file in each archive.
+
+| Model | Kind | Licence | Time for the sentence |
+|---|---|---|---|
+| NVIDIA Parakeet TDT 0.6B v3 | ear | CC-BY-4.0 | 0.19 s |
+| Qwen3-ASR 0.6B | ear | Apache-2.0 | 0.71 s |
+| Kokoro v1.0 | voice | Apache-2.0 | 1.47 s |
+| Supertonic 3 | voice | MIT | 1.56 s |
+
+## The log
+
+`src/log.ts` writes one line for each event, as it happens, in the glog form:
+
+```
+I0903 14:22:01.123 ab12cd34 model] answered backend=ollama model=qwen3.5:9b ms=4118 text=71ch
+```
+
+The first letter is the severity: D, I, W or E. Then the date and the time in UTC. Then the trace
+id, or dashes outside a request. Then the component, the message and the fields. The server sets
+one trace id for each request, and `AsyncLocalStorage` carries it down the async chain. One turn
+then reads as one trace: the request, the model call, the child line, the reply.
+
+The lines go to stderr, so the terminal that runs `npm run app` shows them live. `GET /api/logs`
+streams the recent lines and every new line as server-sent events, for `curl -N` and for the
+page. The page has a "logs" button at the bottom right that opens a drawer on that stream.
+`HOLDTRUE_LOG` sets the level: debug, info, warn or error.
+
+A line never holds the words of the user, a line of the child, a key or a token. Rule 54. A
+part logs a length with `chars`, never the text. A field named key, token, authorization,
+password or secret prints redacted, whatever a caller passed. The parts that log: the server,
+one line for each request; the setup; each model call; each end-phase step; the ear and the
+voice; the boot.
+
 ## Consent and disclosure
 
-The app must disclose where the text of the user goes, and it must name the destination it actually
-uses. An API key sends the transcript to that provider. A local Ollama backend sends nothing off the
-machine. The omniscient toggle sends the transcript to a service that HoldTrue operates. The app
-must take the consent of the user before the first send.
+The app must disclose where the text of the user goes, and it must name the destination it
+actually uses. An API key sends the transcript to that provider during the conversation. A local
+Ollama backend sends nothing off the machine during the conversation. The ear and the voice send
+no audio anywhere. The words that the ear writes go where typed words go, and the disclosure
+says so. Every session sends the
+whole transcript to the provider of the provided model at the end, because the end phase always
+runs there. Rule 53.
+
+The app must take the consent of the user before the first send. Decision 21 moves that consent to
+the start screen, one checkbox, because every session now sends text at the end.
 
 The owner has not decided the retention terms, the training terms and the deletion terms. `docs/decisions.md`
 records them as an open decision. The owner must answer it before release. Do not invent a policy.
 
 ## Persistence
 
-The server holds one session in memory. The server writes nothing to disk. Two browser tabs share
-the one session. The findings appear once, and the app loses them when the process stops.
+The server holds one session in memory. The server writes no session text and no audio to disk.
+It writes the settings file and, on request, a key to the keychain. Rule 54 and decision 26. Two
+browser tabs share the one session. The findings appear once, and the app loses them when the
+process stops.
 
 ## The failure rule
 
@@ -266,20 +412,25 @@ The app must give a distinct reason for each cause:
 - the local backend does not run;
 - the provider rejected the key;
 - the model name does not exist;
-- the request timed out.
+- the request timed out;
+- the model spent its token budget before the answer. A thinking model does this.
 
 The app must not render every failure as one sentence. The app must not show a stack trace. The app
 must name a configuration that it cannot support.
 
 ## What exists today
 
-Both phases run. Five files hold the live phase:
+Both phases run. Six files hold the live phase:
 
 - `src/child.ts` holds the child prompt and the one turn;
-- `src/model.ts` holds the Ollama backend and the Anthropic API key backend;
+- `src/log.ts` holds the log, the trace id and the stream;
+- `src/model.ts` holds the Ollama backend, the Anthropic backend and the OpenAI-compatible backend;
+- `src/settings.ts` holds the settings file, the keychain and the backend for each choice;
+- `src/catalog.ts` holds the model list of each endpoint;
+- `src/speech.ts` holds the ear and the voice;
 - `src/server.ts` holds the routes and the one in-memory session;
 - `src/topics.ts` holds the curated topic list;
-- `src/page.html` holds the page and the End session button.
+- `src/page.html` holds the page, the Talk button and the End session button.
 
 Six files hold the end phase:
 
@@ -290,17 +441,21 @@ Six files hold the end phase:
 - `src/close.ts` holds Close;
 - `src/session.ts` holds the marked transcript and the order of the five steps.
 
-`src/server.ts` runs the end phase at `POST /api/end`.
+`src/server.ts` runs the end phase at `POST /api/end`. It runs the ear at `POST /api/hear` and
+the voice at `POST /api/say`. It lists models at `POST /api/models` and takes the setup at
+`POST /api/setup`. It streams the log at `GET /api/logs`.
 
-Four test files exist. They are `src/child.test.ts`, `src/diff.test.ts`, `src/model.test.ts` and
-`src/session.test.ts`. Check, Probe and Close hold no test file. No test can judge what a model
+Eight test files exist. They are `src/catalog.test.ts`, `src/child.test.ts`, `src/diff.test.ts`,
+`src/log.test.ts`, `src/model.test.ts`, `src/session.test.ts`, `src/settings.test.ts` and
+`src/speech.test.ts`. The speech tests pass a fake engine, so no test
+loads the addon or a model. Rule 32. Check, Probe and Close hold no test file. No test can judge what a model
 writes. Rule 33 and rule 34 forbid such a test. `src/e2e.ts` runs the end-to-end check against a
 real service. Rule 31 asks for that check. `src/rig.ts` makes two models talk and counts
 repetition, and it judges nothing.
 
-`src/model.ts` obeys rule 50 today. It reads no tag list. It holds no default model name. The user
-names the model at startup, for both backends. `src/model.ts` reports the model that answered, and
-never the model in the setting. Rule 24 holds there.
+`src/model.ts` obeys rule 50 today. It holds no default model name. `src/catalog.ts` reads the
+tag list, and it shows the list. The person picks. `src/model.ts` reports the model that
+answered, and never the model in the setting. Rule 24 holds there.
 
 The topic gate does not exist. The topic list in `src/topics.ts` is curated. The page also offers a
 button named "Something else". That button does not open a text box. It starts a session with the

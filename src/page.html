@@ -1,17 +1,28 @@
 <!--
   The page. It holds the four screens of the app: setup, pick, talk and review.
 
-  Setup takes the one model choice. The app ships no default model. Rule 50.
-  Pick shows the curated topics, the omniscient toggle and the consent checkbox. Rules 19, 20, 48.
-  Talk shows the conversation and the End session button. Case E13a and rule 44.
-  Review prints the findings as text. It names the model and the verified label. Rules 16 and 21.
+  Setup takes the two model choices, the child and the review, from lists that each endpoint
+  gave. The app ships no default model and picks none. Rule 50. Decision 26. The keys go to the
+  server in a request body and, on request, to the keychain. The settings file holds no key.
+  Pick shows the curated topics and the consent checkbox. The checkbox names the provider of the
+  provided model, because every session sends the transcript to it at the end. Rule 48.
+  Talk shows the conversation, the soft cap note at turn twelve, and the End session button.
+  Case E13a, rule 44 and decision 21. Talk also holds the Talk button when the app holds an ear.
+  The page records the microphone, sends the PCM to POST /api/hear, and sends the words it gets
+  back to POST /api/turn the way it sends typed words. Rule 10. When the app holds a voice, the
+  page plays each line of the child from POST /api/say. Cases V1 and V2.
+  Review prints the findings as text. It names the model that answered. Rule 16.
   The page reads GET /api/state on load, so a reload recovers the transcript. Case B13.
+
+  ONE REVIEW, NO LABEL. Decision 19 removed the omniscient toggle and the verified and unverified
+  labels. The end phase always runs on the provided model. Rule 53. This page must never print
+  the word "verified" or the word "unverified".
 
   THE STATED FLAG. A finding with the stated flag false carries no words of a model. Close wrote
   that text itself when the row got no statement. The page prints such a row as a blank row. It
   states that the model wrote no statement, and it gives the reason that the row carries. The
-  label above the list must hold for every row below it, so the label changes when the list holds
-  a blank row. See rules 21, 24 and 46 and `src/close.ts`.
+  text above the list must hold for every row below it, so that text changes when the list holds
+  a blank row. See rules 24 and 46 and `src/close.ts`.
 
   The page must not do these things:
   - It must not log the API key. It must not put the key in a web address. It must not store it.
@@ -20,14 +31,21 @@
   - It must not show an empty findings list when no review ran. It must state the failure.
   - It must not print a row with the stated flag false as a finding that a model wrote.
   - It must not promise that the words of the user stay on this machine. Rule 22.
+  - It must not print the word "verified" or the word "unverified". Decision 19.
+  - It must not edit the words that the ear returns. It must not show a confidence. Rules 10, 18.
+  - It must not send audio anywhere but POST /api/hear on this server.
 
   The routes, as `src/server.ts` serves them:
-    GET  /api/boot   -> { who, setup, sends, provided, topics, disclosure }
-    GET  /api/state  -> { setup, topic, omniscient, history, turns, ended, question, review, source }
-    POST /api/setup  -> { kind, model } | { kind, provider, key, model? }  -> { who, sends }
-    POST /api/start  -> { topic, omniscient, consent }                     -> { topic, label }
+    GET  /api/boot   -> { who, setup, sends, provided, destination, topics, disclosure }
+    GET  /api/state  -> { setup, topic, history, turns, ended, question, review, source }
+    POST /api/models -> { endpoint, url?, key? }        -> { endpoint, models: [{ id, thinks }] }
+    POST /api/setup  -> { child, review, ollamaHost?, openaiUrl?, keys?, remember? }
+                                                        -> { who, review, sends, destination }
+    POST /api/start  -> { topic, consent }                                -> { topic }
     POST /api/turn   -> { said }                    -> { kind: "turn", you, child, seconds }
     POST /api/end    -> {} | { answer }             -> { kind: "probe" | "review", … }
+    POST /api/hear   -> PCM 16-bit, x-sample-rate   -> { kind: "heard", said, seconds, who }
+    POST /api/say    -> { text }                    -> audio/wav
   A fault carries the field `error`, and a good reply does not. The page reads that field.
 -->
 <!doctype html>
@@ -90,12 +108,17 @@
       .opt .panel { margin: 12px 0 2px 24px; display: none; }
       .opt.picked .panel { display: block; }
       .panel label { display: block; font-size: 12.5px; color: var(--muted); margin: 10px 0 4px; }
+      .row-in { display: flex; gap: 8px; align-items: center; }
+      .row-in input { flex: 1; }
+      .saved { font-weight: 400; }
+      button.forget { padding: 2px 8px; font-size: 11.5px; margin-left: 6px; }
+      .pickrow { display: flex; gap: 12px; align-items: center; margin: 10px 0; font-size: 14px; font-weight: 500; }
+      .pickrow span { width: 84px; }
+      .pickrow select { flex: 1; font: inherit; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--fg); }
 
-      /* the toggle block on pick */
+      /* the consent block on pick */
       .block { border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 22px; }
-      .switch { display: flex; gap: 10px; align-items: baseline; font-weight: 500; cursor: pointer; }
-      .switch input:disabled { cursor: default; }
-      .disclose { font-size: 12.5px; color: var(--muted); margin: 8px 0 0 24px; line-height: 1.6; }
+      .disclose { font-size: 12.5px; color: var(--muted); margin: 0; line-height: 1.6; }
       .agree { display: flex; gap: 10px; align-items: baseline; margin: 15px 0 0; font-size: 13px; cursor: pointer; }
       .where-list { font-size: 12px; color: var(--muted); margin: 8px 0 0 24px; padding: 0; list-style: none; line-height: 1.6; }
 
@@ -115,8 +138,23 @@
       .silent { color: var(--muted); font-style: italic; }
       form { border-top: 1px solid var(--border); padding: 12px 24px; display: flex; gap: 8px; align-items: flex-end; }
       form textarea { flex: 1; resize: none; min-height: 40px; max-height: 180px; }
+      /* The Talk button while it records. Red means the microphone is open. */
+      button.live { background: #b91c1c; border-color: #b91c1c; }
+      button.live:hover:not(:disabled) { background: #991b1b; }
+      .voice { display: flex; gap: 6px; align-items: center; cursor: pointer; white-space: nowrap; }
       .dots::after { content: '·'; animation: d 1.2s steps(3, end) infinite; }
       @keyframes d { 0% { content: '·'; } 33% { content: '· ·'; } 66% { content: '· · ·'; } }
+      /* The soft cap note. Decision 21. The End button stays the only end signal. Rule 44. */
+      .cap { padding: 8px 24px; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--border); }
+
+      /* The log drawer. The lines of the server, as they happen. Rule 54: no words, no key. */
+      #log-toggle { position: fixed; right: 12px; bottom: 12px; z-index: 5; font-size: 12px; padding: 4px 10px; }
+      #logs { position: fixed; left: 0; right: 0; bottom: 0; height: 38vh; background: #0b0b0d; color: #d4d4d8; z-index: 4; display: flex; flex-direction: column; border-top: 1px solid #27272a; }
+      #logs[hidden] { display: none; }
+      #logs pre { flex: 1; margin: 0; padding: 10px 14px 44px; overflow: auto; font: 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
+      #logs .W { color: #fbbf24; }
+      #logs .E { color: #f87171; }
+      #logs .D { color: #71717a; }
 
       /* A fault is a fault. It never sits inside the child bubble. */
       .alert { max-width: 62ch; border: 1px solid var(--ring); border-radius: 8px; padding: 11px 13px; background: var(--subtle); }
@@ -126,7 +164,6 @@
 
       /* review */
       .label { font-size: 12.5px; color: var(--muted); line-height: 1.7; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
-      .label b { color: var(--fg); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; font-size: 11px; }
       .finding { margin-bottom: 24px; max-width: 62ch; }
       /* A row that no model wrote. It never looks like the text of a model. */
       .finding.blank { border-left: 2px solid var(--border); padding-left: 14px; }
@@ -142,44 +179,81 @@
     <!-- 1. SETUP. One choice, and no default. Rule 50. -->
     <section id="setup" class="screen on">
       <div class="wrap">
-        <p class="lede">Choose the model that answers.</p>
+        <p class="lede">Set up the two models.</p>
         <p class="sub">
-          The app has no default. You make one choice now. That model plays the child, and it
-          reviews the session when the omniscient toggle stays off.
+          One model plays the child. One model runs the review at the end. The app lists what each
+          endpoint offers, and it picks none for you. Load one endpoint or more, then choose.
         </p>
 
-        <div class="opt picked" id="opt-ollama">
-          <label class="head"><input type="radio" name="backend" value="ollama" checked /> Run Ollama on this machine</label>
-          <p class="where">Ollama answers from this machine. A local session does not send your words to a provider.</p>
+        <div class="opt picked" id="ep-ollama">
+          <div class="head">Ollama on this machine</div>
+          <p class="where">Ollama answers from this host. With the local address the words stay on this machine during the conversation. A remote host receives them.</p>
           <div class="panel">
-            <label for="ollama-model">The model name, as Ollama lists it</label>
-            <input type="text" id="ollama-model" placeholder="llama3.1:8b" autocomplete="off" spellcheck="false" />
+            <label for="ollama-host">The host</label>
+            <div class="row-in">
+              <input type="text" id="ollama-host" value="http://127.0.0.1:11434" autocomplete="off" spellcheck="false" />
+              <button type="button" class="quiet load" data-endpoint="ollama">Load models</button>
+            </div>
           </div>
         </div>
 
-        <div class="opt" id="opt-key">
-          <label class="head"><input type="radio" name="backend" value="apiKey" /> Use an API key</label>
-          <p class="where">The provider answers. Your words go to Anthropic. Read the terms of that provider first.</p>
+        <div class="opt picked" id="ep-nvidia">
+          <div class="head">NVIDIA</div>
+          <p class="where">integrate.api.nvidia.com answers. Your words go to NVIDIA. Read the terms of NVIDIA first.</p>
           <div class="panel">
-            <label for="key">The API key</label>
-            <input type="password" id="key" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" />
-            <label for="key-model">The model name, as the provider lists it. The app chooses no model for you.</label>
-            <input type="text" id="key-model" placeholder="claude-opus-5" autocomplete="off" spellcheck="false" />
-            <p class="where" style="margin-left:0">
-              The app holds the key in memory for this session only. It writes no key to the disk,
-              to a log or to a web address.
-            </p>
+            <label for="nvidia-key">The API key <span class="saved" id="nvidia-saved" hidden></span> <button type="button" class="quiet forget" id="nvidia-forget" data-endpoint="nvidia" hidden>Forget it</button></label>
+            <div class="row-in">
+              <input type="password" id="nvidia-key" placeholder="nvapi-…" autocomplete="off" spellcheck="false" />
+              <button type="button" class="quiet load" data-endpoint="nvidia">Load models</button>
+            </div>
           </div>
         </div>
 
-        <p style="margin-top:18px"><button class="go" id="use">Use this model</button></p>
+        <div class="opt picked" id="ep-anthropic">
+          <div class="head">Anthropic</div>
+          <p class="where">api.anthropic.com answers. Your words go to Anthropic. Read the terms of Anthropic first.</p>
+          <div class="panel">
+            <label for="anthropic-key">The API key <span class="saved" id="anthropic-saved" hidden></span> <button type="button" class="quiet forget" id="anthropic-forget" data-endpoint="anthropic" hidden>Forget it</button></label>
+            <div class="row-in">
+              <input type="password" id="anthropic-key" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" />
+              <button type="button" class="quiet load" data-endpoint="anthropic">Load models</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="opt picked" id="ep-openai">
+          <div class="head">Another OpenAI-compatible endpoint</div>
+          <p class="where">That endpoint answers. Your words go to its host. A local proxy needs no key.</p>
+          <div class="panel">
+            <label for="openai-url">The base url, with its version segment</label>
+            <input type="text" id="openai-url" placeholder="http://127.0.0.1:8080/v1" autocomplete="off" spellcheck="false" />
+            <label for="openai-key">The API key, if the endpoint needs one <span class="saved" id="openai-saved" hidden></span> <button type="button" class="quiet forget" id="openai-forget" data-endpoint="openai" hidden>Forget it</button></label>
+            <div class="row-in">
+              <input type="password" id="openai-key" autocomplete="off" spellcheck="false" />
+              <button type="button" class="quiet load" data-endpoint="openai">Load models</button>
+            </div>
+          </div>
+        </div>
+
+        <label class="agree" for="remember" style="margin:4px 0 18px">
+          <input type="checkbox" id="remember" />
+          <span>Keep the keys in the keychain of this computer, so the next start needs none. The app writes no key to a file.</span>
+        </label>
+
+        <div class="block">
+          <label class="pickrow" for="child-model"><span>The child</span><select id="child-model"><option value="">choose a model…</option></select></label>
+          <label class="pickrow" for="review-model"><span>The review</span><select id="review-model"><option value="">choose a model…</option></select></label>
+          <p class="disclose">A model marked “thinks” spends tokens before it answers. The review can use one. The child does not need one.</p>
+        </div>
+
+        <p style="margin-top:18px"><button class="go" id="use">Use these models</button></p>
         <div id="setup-error"></div>
 
         <div class="caveat" id="storage"></div>
       </div>
     </section>
 
-    <!-- 2. PICK. The topics, the omniscient toggle and the consent. Rules 19, 20, 48. -->
+    <!-- 2. PICK. The topics and the consent. Decision 19 removed the toggle. Rule 48. -->
     <section id="pick" class="screen">
       <div class="wrap">
         <p class="lede">Explain it to the child.</p>
@@ -190,12 +264,11 @@
         </p>
 
         <div class="block">
-          <label class="switch" for="omni">
-            <input type="checkbox" id="omni" />
-            <span>Let the model that HoldTrue provides review this session</span>
-          </label>
-          <p class="disclose" id="omni-disclose"></p>
+          <p class="disclose" id="send-destination"></p>
           <ul class="where-list" id="destinations"></ul>
+          <p class="disclose" id="no-provided" hidden>
+            The app holds no review model. Choose one on the setup screen.
+          </p>
           <label class="agree" for="consent">
             <input type="checkbox" id="consent" />
             <span id="consent-text"></span>
@@ -204,6 +277,7 @@
 
         <div id="cards"></div>
         <button class="card own" id="own">Something else — start with a blank box</button>
+        <p style="margin-top:14px"><button class="quiet" id="settings">Change the models</button></p>
         <div id="pick-error"></div>
 
         <p class="caveat">
@@ -220,18 +294,25 @@
           <h1 id="topic">Explaining</h1>
           <span style="display:flex;gap:10px;align-items:center">
             <span class="meta" id="who"></span>
+            <span class="meta" id="review-who"></span>
+            <span class="meta" id="speech-who"></span>
+            <label class="meta voice" id="voice-wrap" hidden>
+              <input type="checkbox" id="voice-on" checked /> read the child aloud
+            </label>
             <button class="quiet" id="end">End session</button>
           </span>
         </header>
         <div id="log"></div>
+        <p class="cap" id="cap-note" hidden>This is a good place to end and see the review.</p>
         <form id="f">
           <textarea id="t" rows="1" placeholder="say the next step…"></textarea>
+          <button type="button" class="go" id="mic" hidden>Talk</button>
           <button class="go" id="b">Say it</button>
         </form>
       </main>
     </section>
 
-    <!-- 4. REVIEW. The one question first, then the findings as text. Rules 14, 16, 21, 46. -->
+    <!-- 4. REVIEW. The one question first, then the findings as text. Rules 14, 16, 46. -->
     <section id="review" class="screen">
       <div class="wrap">
         <div id="running" hidden>
@@ -249,6 +330,7 @@
           <textarea id="probe-answer" rows="3" placeholder="your answer…"></textarea>
           <div class="actions">
             <button class="go" id="probe-send">Answer</button>
+            <button type="button" class="quiet" id="probe-talk" hidden>Talk</button>
             <button class="quiet" id="probe-skip">I cannot answer this</button>
           </div>
           <div id="probe-error"></div>
@@ -262,6 +344,10 @@
         </div>
       </div>
     </section>
+
+    <!-- The log drawer. GET /api/logs streams one line for each event. -->
+    <button class="quiet" id="log-toggle" type="button">logs</button>
+    <div id="logs" hidden><pre id="log-lines"></pre></div>
 
     <script type="module">
       const $ = id => document.getElementById(id)
@@ -304,7 +390,7 @@
 
       // ---------------------------------------------------------------- state
 
-      const app = { who: null, sends: false, provided: false, omniscient: false, disclosure: null }
+      const app = { who: null, sends: false, provided: false, destination: null, childDestination: null, disclosure: null, speech: null }
 
       /** The attribution names the thing that answered. A setting can print a lie. Rule 24. */
       const name = who => (typeof who?.model_id === 'string' ? who.model_id : 'an unnamed model')
@@ -318,46 +404,152 @@
 
       // ------------------------------------------------------------- 1. setup
 
-      const backendPicked = () => document.querySelector('input[name="backend"]:checked')?.value ?? 'ollama'
-      const paintOptions = () => {
-        $('opt-ollama').classList.toggle('picked', backendPicked() === 'ollama')
-        $('opt-key').classList.toggle('picked', backendPicked() === 'apiKey')
+      /** The models that each endpoint listed. The app shows them. It picks none. Rule 50. */
+      const listed = { ollama: [], nvidia: [], anthropic: [], openai: [] }
+      const LABEL = { ollama: 'Ollama', nvidia: 'NVIDIA', anthropic: 'Anthropic', openai: 'Custom endpoint' }
+      const KEYED = ['nvidia', 'anthropic', 'openai']
+      const keyOf = kind => (kind === 'ollama' ? '' : $(`${kind}-key`).value.trim())
+      const urlOf = kind => (kind === 'ollama' ? $('ollama-host').value.trim() : kind === 'openai' ? $('openai-url').value.trim() : '')
+      const valueOf = choice => (choice ? `${choice.endpoint}|${choice.model}` : '')
+
+      /** Fill one select from the listed models. The choice the person made stays selected. */
+      const paintSelect = (select, chosen) => {
+        const current = chosen ?? select.value
+        const blank = el('option', null, 'choose a model…')
+        blank.value = ''
+        select.replaceChildren(blank)
+        for (const kind of Object.keys(listed)) {
+          if (listed[kind].length === 0) continue
+          const group = document.createElement('optgroup')
+          group.label = LABEL[kind]
+          for (const m of listed[kind]) {
+            const option = el('option', null, m.thinks ? `${m.id} · thinks` : m.id)
+            option.value = `${kind}|${m.id}`
+            group.append(option)
+          }
+          select.append(group)
+        }
+        select.value = current
+        if (select.value !== current) select.value = ''
       }
-      for (const radio of document.querySelectorAll('input[name="backend"]')) {
-        radio.addEventListener('change', paintOptions)
+      const paintSelects = () => {
+        paintSelect($('child-model'))
+        paintSelect($('review-model'))
+      }
+
+      /** A saved choice shows on the list before its endpoint loads, so the person sees it. */
+      const seed = choice => {
+        if (!choice || !listed[choice.endpoint]) return
+        if (!listed[choice.endpoint].some(m => m.id === choice.model)) listed[choice.endpoint].push({ id: choice.model, thinks: false })
+      }
+
+      const loadModels = async kind => {
+        $('setup-error').replaceChildren()
+        const button = document.querySelector(`.load[data-endpoint="${kind}"]`)
+        button.disabled = true
+        try {
+          // The key sits in this body and nowhere else. No console line ever holds it.
+          const body = { endpoint: kind }
+          if (urlOf(kind) !== '') body.url = urlOf(kind)
+          if (keyOf(kind) !== '') body.key = keyOf(kind)
+          const data = await call('/api/models', body)
+          listed[kind] = Array.isArray(data.models) ? data.models : []
+          if (listed[kind].length === 0) alertInto($('setup-error'), `${LABEL[kind]} listed no chat model.`)
+          paintSelects()
+        } catch (err) {
+          alertInto($('setup-error'), `${LABEL[kind]} did not list its models. ${reason(err)}`)
+        } finally {
+          button.disabled = false
+        }
+      }
+      for (const button of document.querySelectorAll('.load')) {
+        button.addEventListener('click', () => loadModels(button.dataset.endpoint))
+      }
+
+      const choiceOf = select => {
+        if (select.value === '') return null
+        const at = select.value.indexOf('|')
+        return { endpoint: select.value.slice(0, at), model: select.value.slice(at + 1) }
+      }
+
+      /** The review attribution and its two destinations, for the header and the consent line. */
+      const adoptReview = (who, destination, childDestination) => {
+        app.provided = who !== null && who !== undefined
+        app.destination = typeof destination === 'string' ? destination : null
+        app.childDestination = typeof childDestination === 'string' ? childDestination : null
+        $('review-who').textContent = who ? `review: ${name(who)}` : ''
+      }
+
+      /**
+       * The state of each key, as words and never as the key. A key in the keychain is saved. A
+       * key in memory for this run is held. The Forget button shows for a saved key. Rule 54.
+       */
+      const paintKeys = s => {
+        for (const kind of KEYED) {
+          const saved = Boolean(s?.saved?.[kind])
+          const held = Boolean(s?.held?.[kind])
+          const label = $(`${kind}-saved`)
+          label.hidden = !saved && !held
+          label.textContent = saved
+            ? '· a key is saved in the keychain, and this box may stay empty'
+            : '· a key is held for this run only, and this box may stay empty'
+          $(`${kind}-forget`).hidden = !saved
+        }
+      }
+
+      /** Forget one saved key. The server drops it from the keychain and from this run. */
+      const forgetKey = async kind => {
+        $('setup-error').replaceChildren()
+        try {
+          const data = await call('/api/forget', { endpoint: kind })
+          paintKeys(data.settings)
+          showReasons(data.settings)
+        } catch (err) {
+          alertInto($('setup-error'), `The app did not forget the ${LABEL[kind]} key. ${reason(err)}`)
+        }
+      }
+      for (const button of document.querySelectorAll('.forget')) {
+        button.addEventListener('click', () => forgetKey(button.dataset.endpoint))
+      }
+
+      /**
+       * Why a saved choice did not open, on the setup screen. A first run has no choice and no
+       * reason. A later run with a missing key names the key. Rule 25 and rule 49.
+       */
+      const showReasons = s => {
+        const lines = []
+        if (s?.child && s?.reasons?.child) lines.push(`The child did not open: ${s.reasons.child}.`)
+        if (s?.review && s?.reasons?.review) lines.push(`The review did not open: ${s.reasons.review}.`)
+        if (lines.length > 0) alertInto($('setup-error'), ...lines)
       }
 
       $('use').addEventListener('click', async () => {
         $('setup-error').replaceChildren()
-        const kind = backendPicked()
-        const model = (kind === 'ollama' ? $('ollama-model') : $('key-model')).value.trim()
-
-        if (kind === 'ollama' && model === '') {
-          alertInto($('setup-error'), 'Name the model that Ollama runs. The app does not choose one for you.')
+        const child = choiceOf($('child-model'))
+        const review = choiceOf($('review-model'))
+        // Rule 50. The app ships no default model. Both lists need a choice from the person.
+        if (child === null || review === null) {
+          alertInto($('setup-error'), 'Choose the child model and the review model. The app chooses neither for you.')
           return
         }
-        const key = $('key').value
-        if (kind === 'apiKey' && key.trim() === '') {
-          alertInto($('setup-error'), 'Enter the API key. The app sends the key to the provider with every request.')
-          return
+        const keys = {}
+        for (const kind of KEYED) if (keyOf(kind) !== '') keys[kind] = keyOf(kind)
+        // The keys sit in this body and nowhere else. No console line ever holds them.
+        const body = {
+          child,
+          review,
+          ollamaHost: urlOf('ollama'),
+          openaiUrl: urlOf('openai'),
+          keys,
+          remember: $('remember').checked,
         }
-        // Rule 50. The app ships no default model. Both backends need a name from the user.
-        if (kind === 'apiKey' && model === '') {
-          alertInto($('setup-error'), 'Name the model that the provider runs. The app does not choose one for you.')
-          return
-        }
-
-        // The key sits in this body and nowhere else. No console line ever holds it.
-        const body =
-          kind === 'ollama'
-            ? { kind: 'ollama', model }
-            : { kind: 'apiKey', provider: 'anthropic', key, model }
-
         $('use').disabled = true
         try {
           const data = await call('/api/setup', body)
-          $('key').value = ''
+          for (const kind of KEYED) $(`${kind}-key`).value = ''
+          paintKeys(data.settings)
           adopt(data.who, data.sends)
+          adoptReview(data.review, data.destination, data.childDestination)
           disclose()
           show('pick')
         } catch (err) {
@@ -367,49 +559,65 @@
         }
       })
 
+      /** The setup screen shows the saved settings, so the person changes one thing and not all. */
+      const paintSettings = s => {
+        if (!s) return
+        if (typeof s.ollamaHost === 'string' && s.ollamaHost !== '') $('ollama-host').value = s.ollamaHost
+        $('openai-url').value = typeof s.openaiUrl === 'string' ? s.openaiUrl : ''
+        paintKeys(s)
+        seed(s.child)
+        seed(s.review)
+        paintSelect($('child-model'), valueOf(s.child))
+        paintSelect($('review-model'), valueOf(s.review))
+      }
+
+      $('settings').addEventListener('click', () => show('setup'))
+
       // -------------------------------------------------------------- 2. pick
 
       /**
-       * The consent line names the destination that this session uses. Rule 48.
-       * The page never says that the words stay on this machine when a provider answers. Rule 22.
+       * The name of the destination for the consent sentence. Decision 21 and rule 48 ask the
+       * app to name the destination, not a generic phrase. `boot.destination` names the host
+       * that the provided model answers from. This falls back to a plain phrase before boot
+       * answers, or when the app holds no provided model.
        */
-      const consentLine = () => {
-        const near = app.sends
-          ? `Send my words to the provider that runs ${name(app.who)}`
-          : `Send my words to ${name(app.who)} on this machine`
-        return app.omniscient
-          ? `${near}, and send this whole session to the service that HoldTrue operates.`
-          : `${near}.`
-      }
+      const destinationName = () => app.destination ?? 'the provider of the provided model'
+
+      /**
+       * The consent line names the destination. Rule 48. Every session sends the whole
+       * transcript there at the end, because decision 19 removed the toggle. The page never
+       * says that the words stay on this machine when a provider answers. Rule 22.
+       */
+      const consentLine = () =>
+        app.childDestination
+          ? `Send my words to ${app.childDestination} during the conversation, and the whole transcript to ${destinationName()} at the end.`
+          : `Send the whole transcript to ${destinationName()}, at the end of the session.`
 
       const disclose = () => {
-        app.omniscient = $('omni').checked && app.provided
-        if (!app.provided) $('omni').checked = false
-
-        $('omni-disclose').textContent = !app.provided
-          ? 'The app holds no provided model, so this toggle stays off. The app does not put your own model in its place. The app marks the findings unverified.'
-          : app.omniscient
-            ? 'A model that HoldTrue provides reads this session. The session goes to a remote service that HoldTrue operates. The app marks the findings verified.'
-            : `${name(app.who)} reads this session. The app marks the findings unverified, because your own model checks your own explanation.`
-
+        $('send-destination').textContent = app.childDestination
+          ? `During the conversation, the child sends your words to ${app.childDestination}. At the end, the review sends the whole transcript to ${destinationName()}.`
+          : `At the end, the review sends the whole transcript to ${destinationName()}.`
         $('consent-text').textContent = consentLine()
+        $('no-provided').hidden = app.provided
         gate()
       }
 
-      /** No topic starts until the user gives consent. The consent comes before the first send. */
+      /**
+       * No topic starts until the user gives consent. The consent comes before the first send.
+       * A session must not start when the app holds no provided model. Decision 20.
+       */
       const gate = () => {
-        const ready = $('consent').checked && app.who !== null
+        const ready = app.provided && $('consent').checked && app.who !== null
         for (const card of document.querySelectorAll('#cards .card')) card.disabled = !ready
         $('own').disabled = !ready
       }
 
-      $('omni').addEventListener('change', disclose)
       $('consent').addEventListener('change', gate)
 
       const begin = async title => {
         $('pick-error').replaceChildren()
         try {
-          await call('/api/start', { topic: title, omniscient: app.omniscient, consent: true })
+          await call('/api/start', { topic: title, consent: true })
         } catch (err) {
           alertInto($('pick-error'), `The app did not start the session. ${reason(err)}`)
           return
@@ -418,11 +626,23 @@
         $('log').replaceChildren()
         $('probe-answer').value = ''
         $('end').disabled = false
+        userTurns = 0
+        $('cap-note').hidden = true
         show('talk')
         $('t').focus()
       }
 
       // -------------------------------------------------------------- 3. talk
+
+      /**
+       * The soft cap. Decision 21. At turn twelve the page shows one line. The End button stays
+       * the only end signal. Rule 44. This part never ends the session on its own.
+       */
+      const CAP_TURNS = 12
+      let userTurns = 0
+      const checkCap = () => {
+        if (userTurns >= CAP_TURNS) $('cap-note').hidden = false
+      }
 
       const add = (cls, who, text) => {
         const node = el('div', `row ${cls}`)
@@ -465,6 +685,9 @@
         try {
           const turn = await call('/api/turn', { said })
           paintChild(pending.querySelector('.body'), turn.child)
+          userTurns++
+          checkCap()
+          if (turn.child?.kind === 'said') speakAloud(turn.child.line)
         } catch (err) {
           pending.remove()
           failInLog(`The app did not get that turn. ${reason(err)} Say it again.`)
@@ -482,6 +705,161 @@
       $('t').addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('f').requestSubmit() }
       })
+
+      // ------------------------------------------------------------- speech
+
+      /**
+       * The microphone. The page records floats from an AudioWorklet, and it sends them to the
+       * server as 16-bit PCM with the sample rate in a header. The ear runs on this machine, inside
+       * the server process. The audio goes to that one address and nowhere else. Case V3.
+       */
+      const WORKLET = URL.createObjectURL(new Blob([`
+        class Tap extends AudioWorkletProcessor {
+          process(inputs) {
+            const channel = inputs[0]?.[0]
+            if (channel) this.port.postMessage(channel.slice(0))
+            return true
+          }
+        }
+        registerProcessor('tap', Tap)
+      `], { type: 'application/javascript' }))
+
+      const recorder = (() => {
+        let ctx = null, stream = null, source = null, node = null, chunks = []
+        const start = async () => {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+          })
+          // 16 kHz is the rate of the model. A browser that refuses the rate keeps its own, and
+          // the server resamples. The header carries the rate that this page used.
+          try {
+            try { ctx = new AudioContext({ sampleRate: 16000 }) } catch { ctx = new AudioContext() }
+            await ctx.audioWorklet.addModule(WORKLET)
+            source = ctx.createMediaStreamSource(stream)
+            node = new AudioWorkletNode(ctx, 'tap')
+            chunks = []
+            node.port.onmessage = e => chunks.push(e.data)
+            source.connect(node)
+          } catch (err) {
+            // The microphone is open and nothing records it. Close it before the fault goes up.
+            for (const track of stream.getTracks()) track.stop()
+            if (ctx) await ctx.close().catch(() => undefined)
+            throw err
+          }
+        }
+        const stop = async () => {
+          const rate = ctx.sampleRate
+          source.disconnect()
+          node.disconnect()
+          for (const track of stream.getTracks()) track.stop()
+          await ctx.close()
+          const total = chunks.reduce((n, c) => n + c.length, 0)
+          const pcm = new Int16Array(total)
+          let at = 0
+          for (const chunk of chunks) {
+            for (let i = 0; i < chunk.length; i++) {
+              const v = Math.max(-1, Math.min(1, chunk[i]))
+              pcm[at++] = v < 0 ? v * 32768 : v * 32767
+            }
+          }
+          return { pcm, rate }
+        }
+        return { start, stop }
+      })()
+
+      /** One recording to words. The words come back as the engine wrote them. Rule 10. */
+      const hear = async ({ pcm, rate }) => {
+        const res = await fetch('/api/hear', {
+          method: 'POST',
+          headers: { 'content-type': 'application/octet-stream', 'x-sample-rate': String(rate) },
+          body: pcm.buffer,
+        })
+        const data = await res.json().catch(() => null)
+        if (data === null) throw new Error('The server returned a body this page cannot read.')
+        if (data.error) throw new Error(data.error.message ?? 'The server stated a fault with no message.')
+        return data.said
+      }
+
+      /**
+       * One Talk button. The first press opens the microphone. The second press closes it, sends
+       * the recording, and hands the words to `deliver`. A fault goes to `onFail` as a fault. The
+       * page never edits the words between the ear and `deliver`.
+       */
+      let recording = false
+      /** True while a line of the child plays. Both Talk buttons stay off for that time. */
+      let playing = false
+      const MIC_BUTTONS = ['mic', 'probe-talk']
+      const setMics = disabled => { for (const id of MIC_BUTTONS) $(id).disabled = disabled }
+      const talkInto = async (button, deliver, onFail) => {
+        if (!recording) {
+          try {
+            await recorder.start()
+            recording = true
+            button.textContent = 'Stop'
+            button.classList.add('live')
+          } catch (err) {
+            onFail(`The app cannot use the microphone. ${reason(err)}`)
+          }
+          return
+        }
+        recording = false
+        button.classList.remove('live')
+        button.disabled = true
+        button.textContent = 'hearing…'
+        try {
+          const said = await hear(await recorder.stop())
+          await deliver(said)
+        } catch (err) {
+          onFail(`The app did not hear that. ${reason(err)} Say it again, or type it.`)
+        } finally {
+          // The child may have started to speak during `deliver`. The button then stays off.
+          button.disabled = playing
+          button.textContent = 'Talk'
+        }
+      }
+      $('mic').addEventListener('click', () => talkInto($('mic'), send, failInLog))
+      $('probe-talk').addEventListener('click', () =>
+        talkInto($('probe-talk'), async said => { $('probe-answer').value = said }, text => alertInto($('probe-error'), text)),
+      )
+
+      /**
+       * The child speaks its line. The voice runs on this machine, inside the server process. Both
+       * Talk buttons stay off while the line plays, so the ear does not hear the child. A voice
+       * that fails is a fault on the screen that shows, and the line stays on the screen.
+       */
+      const voiceFault = text =>
+        $('review').classList.contains('on') ? alertInto($('probe-error'), text) : failInLog(text)
+      const speakAloud = async text => {
+        if (!app.speech?.voice || !$('voice-on').checked) return
+        playing = true
+        setMics(true)
+        try {
+          const res = await fetch('/api/say', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ text }),
+          })
+          if (!res.ok) {
+            const data = await res.json().catch(() => null)
+            voiceFault(`The voice did not read that line. ${data?.error?.message ?? `The server returned status ${res.status}.`}`)
+            return
+          }
+          const url = URL.createObjectURL(await res.blob())
+          const audio = new Audio(url)
+          await new Promise(done => {
+            audio.onended = done
+            audio.onerror = () => { voiceFault('The voice did not read that line. The browser could not play the audio.'); done() }
+            audio.play().catch(err => { voiceFault(`The voice did not read that line. ${reason(err)}`); done() })
+          })
+          URL.revokeObjectURL(url)
+        } catch (err) {
+          voiceFault(`The voice did not read that line. ${reason(err)}`)
+        } finally {
+          playing = false
+          // A button that records right now keeps its state. The others come back on.
+          if (!recording) setMics(false)
+        }
+      }
 
       // The user ends the session. The child never ends it. Case E13a and rule 44.
       $('end').addEventListener('click', () => {
@@ -517,6 +895,7 @@
         stage('probe')
         show('review')
         $('probe-answer').focus()
+        speakAloud(question)
       }
 
       const answer = async value => {
@@ -543,7 +922,7 @@
 
       /** No review ran. The app states that, and it states that the questions stay open. Rule 46. */
       const stateless = (...lines) => {
-        // No model answered, so the page names no model and prints no verified label. Rule 24.
+        // No model answered, so the page names no model. Rule 24.
         $('review-label').replaceChildren()
         $('review-label').hidden = true
         const list = $('finding-list')
@@ -603,10 +982,11 @@
       /**
        * The findings, as text.
        * This screen prints no score, no rating, no grade, no bar, no count and no percentage.
-       * The label gives the verified word, the reason for that word, and the model that answered.
+       * This screen prints no verified label and no unverified label. Decision 19 removed both.
+       * The text names the provided model, and it names the model that answered.
        *
-       * The label must hold for every row below it. A blank row carries no words of a model, so
-       * the label must not say that the model wrote the whole list. The label names the exception
+       * The text must hold for every row below it. A blank row carries no words of a model, so
+       * the text must not say that the model wrote the whole list. The text names the exception
        * instead, and each blank row states the same thing again in its own place.
        */
       const paintReview = (review, source) => {
@@ -620,15 +1000,10 @@
         const label = $('review-label')
         label.hidden = false
         label.replaceChildren()
-        label.append(el('b', null, review.verified ? 'verified' : 'unverified'))
         label.append(document.createTextNode(
-          review.verified
-            ? gaps
-              ? ' — a model that HoldTrue provides read this session. It wrote the findings below, except where a row states that it wrote no statement.'
-              : ' — a model that HoldTrue provides read this session and wrote the findings below.'
-            : gaps
-              ? ' — the model you chose read your own explanation. It wrote the findings below, except where a row states that it wrote no statement.'
-              : ' — the model you chose read your own explanation and wrote the findings below.',
+          gaps
+            ? 'The provided model read this session. It wrote the findings below, except where a row states that it wrote no statement.'
+            : 'The provided model read this session and wrote the findings below.',
         ))
         label.append(el('br'))
         label.append(document.createTextNode(
@@ -655,6 +1030,33 @@
         show('pick')
       })
 
+      // ------------------------------------------------------------- the logs
+
+      /**
+       * The log drawer. It opens one stream to the server and prints each line as it arrives.
+       * The stream starts on the first open and stays open, so a later open shows no gap.
+       */
+      let stream = null
+      const LOG_CAP = 2000
+      const printLine = line => {
+        const pre = $('log-lines')
+        const node = el('div', line[0], line)
+        pre.append(node)
+        while (pre.childElementCount > LOG_CAP) pre.firstElementChild.remove()
+        pre.scrollTop = pre.scrollHeight
+      }
+      const openStream = () => {
+        if (stream !== null) return
+        stream = new EventSource('/api/logs')
+        stream.onmessage = e => printLine(e.data)
+        stream.onerror = () => printLine('E---- --:--:--.--- -------- page] the log stream dropped, and the browser retries')
+      }
+      $('log-toggle').addEventListener('click', () => {
+        const drawer = $('logs')
+        drawer.hidden = !drawer.hidden
+        if (!drawer.hidden) openStream()
+      })
+
       // --------------------------------------------------- load, and recover
 
       // A reload recovers the session from the server. It never shows a blank screen to a user who
@@ -668,9 +1070,23 @@
         show('setup')
         alertInto($('setup-error'), 'The app cannot reach the server.', 'Start the server, then load this page again.')
       } else {
-        app.provided = boot.provided === true
+        // Decision 26. The saved settings fill the setup screen. The review attribution fills the
+        // header. Neither carries a key.
+        paintSettings(boot.settings)
+        adoptReview(boot.review ?? null, boot.destination, boot.childDestination)
         app.disclosure = boot.disclosure ?? null
-        $('omni').disabled = !app.provided
+        // Cases V1 and V2. No ear means no Talk button. No voice means no playback and no box.
+        app.speech = boot.speech ?? null
+        const hasEar = Boolean(app.speech?.ear)
+        const hasVoice = Boolean(app.speech?.voice)
+        $('mic').hidden = !hasEar
+        $('probe-talk').hidden = !hasEar
+        $('voice-wrap').hidden = !hasVoice
+        // Rule 24. The names are the directories that answer, and never a setting.
+        $('speech-who').textContent = [
+          hasEar ? `ear: ${name(app.speech.ear)}` : '',
+          hasVoice ? `voice: ${name(app.speech.voice)}` : '',
+        ].filter(Boolean).join(' · ')
 
         for (const topic of boot.topics ?? []) {
           const card = el('button', 'card', topic.title)
@@ -679,20 +1095,25 @@
         }
         $('own').addEventListener('click', () => begin('Explaining'))
 
-        // The server owns the disclosure text, so one file states where the words go. Rules 22, 47.
+        // The server owns the disclosure text, so one file states where the words go. Rules 22, 54.
         for (const line of app.disclosure?.destination ?? []) {
           $('destinations').append(el('li', null, line))
+        }
+        // The voice lines hold only when the app holds an ear or a voice. Rule 49.
+        if (hasEar || hasVoice) {
+          for (const line of app.disclosure?.voice ?? []) $('destinations').append(el('li', null, line))
         }
         for (const line of [...(app.disclosure?.storage ?? []), app.disclosure?.terms].filter(Boolean)) {
           $('storage').append(el('p', null, line))
         }
 
         adopt(boot.who, boot.sends)
-        if (state.omniscient) $('omni').checked = app.provided
         disclose()
 
         if (!state.setup) {
+          // A saved choice that did not open names its reason here. A first run shows none.
           show('setup')
+          showReasons(boot.settings)
         } else if (state.review) {
           paintReview(state.review, state.source)
         } else if (state.question) {
@@ -707,6 +1128,8 @@
           $('topic').textContent = state.topic
           $('log').replaceChildren()
           for (const e of state.history ?? []) render(e)
+          userTurns = (state.history ?? []).length
+          checkCap()
           show('talk')
         } else {
           show('pick')

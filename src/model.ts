@@ -36,6 +36,8 @@
  * `Bearer <key>`. The apiKey backend keeps its key as required; only the openai backend bends.
  */
 
+import { chars, log } from './log.js'
+
 /** The address of the local backend. The code reads the variable when the caller opens a handle. */
 const OLLAMA_FALLBACK_HOST = 'http://127.0.0.1:11434'
 
@@ -45,9 +47,14 @@ const ANTHROPIC_VERSION = '2023-06-01'
 /** The request stops after this many milliseconds. A stopped request is a stated failure. */
 export const TIMEOUT_MS = 120_000
 
-/** Anthropic and the openai backend both require a token budget. The end phase returns a list,
- * so the budget is not small. */
+/** Anthropic requires a token budget. The end phase returns a list, so the budget is not small. */
 const MAX_TOKENS = 4096
+/**
+ * The budget on an OpenAI-compatible endpoint. A model that thinks spends tokens before its
+ * answer. A budget of 4096 gave such a model empty text on 2026-09-01. A model that does not
+ * think never uses the room.
+ */
+const OPENAI_MAX_TOKENS = 16_384
 
 /**
  * Every reason that this part can give, except the reasons that carry a status code.
@@ -59,6 +66,7 @@ export const REASON = {
   UNREACHABLE: 'the backend does not answer',
   TIMEOUT: 'the request timed out',
   EMPTY: 'the model returned empty text',
+  BUDGET_SPENT: 'the model spent its token budget before the answer',
   UNREADABLE: 'the backend returned a body this code cannot read',
   NO_ANSWER_YET: 'no model has answered yet',
 } as const
@@ -85,7 +93,7 @@ export type ModelHandle = {
 
 /** The startup choice of the user. The user picks one backend and one model name. */
 export type Backend =
-  | { readonly kind: 'ollama'; readonly model?: string }
+  | { readonly kind: 'ollama'; readonly host?: string; readonly model?: string }
   | {
       readonly kind: 'apiKey'
       readonly provider: 'anthropic'
@@ -107,7 +115,9 @@ export type AskResult =
 /** A body that this code could not read is a failure, not an empty answer. */
 type Body = { readonly ok: true; readonly json: unknown } | { readonly ok: false; readonly reason: string }
 
-const host = (): string => (process.env.OLLAMA_HOST ?? OLLAMA_FALLBACK_HOST).replace(/\/+$/, '')
+/** The Ollama host: the backend names it, or OLLAMA_HOST does, or the fallback address. */
+const host = (named?: string): string =>
+  (named ?? process.env.OLLAMA_HOST ?? OLLAMA_FALLBACK_HOST).replace(/\/+$/, '')
 
 /** Drop a trailing slash so a url join never doubles one up. */
 const stripSlash = (url: string): string => url.replace(/\/+$/, '')
@@ -173,9 +183,13 @@ const readOllama = (json: unknown): AskResult => {
   return { ok: true, text, modelId: typeof body.model === 'string' ? body.model : null }
 }
 
-/** Read the text blocks from an Anthropic messages body. */
+/**
+ * Read the text blocks from an Anthropic messages body.
+ * A model that thinks can spend the whole budget before its answer. The body then holds no text
+ * and the stop reason names the budget. That is a distinct failure. Rule 25.
+ */
 const readAnthropic = (json: unknown): AskResult => {
-  const body = json as { content?: unknown; model?: unknown }
+  const body = json as { content?: unknown; model?: unknown; stop_reason?: unknown }
   const blocks = Array.isArray(body.content) ? body.content : []
   const text = blocks
     .map(block => {
@@ -183,17 +197,26 @@ const readAnthropic = (json: unknown): AskResult => {
       return part.type === 'text' && typeof part.text === 'string' ? part.text : ''
     })
     .join('')
-  if (text.trim() === '') return { ok: false, reason: REASON.EMPTY }
+  if (text.trim() === '') {
+    return { ok: false, reason: body.stop_reason === 'max_tokens' ? REASON.BUDGET_SPENT : REASON.EMPTY }
+  }
   return { ok: true, text, modelId: typeof body.model === 'string' ? body.model : null }
 }
 
-/** Read the first choice from an OpenAI-compatible chat completions body. */
+/**
+ * Read the first choice from an OpenAI-compatible chat completions body.
+ * A model that thinks puts its thought in a separate field, and it can spend the whole budget
+ * there. The content is then empty and the finish reason is `length`. That is a distinct
+ * failure. Rule 25.
+ */
 const readOpenai = (json: unknown): AskResult => {
   const body = json as { choices?: unknown; model?: unknown }
   const choices = Array.isArray(body.choices) ? body.choices : []
-  const first = choices[0] as { message?: { content?: unknown } } | undefined
+  const first = choices[0] as { message?: { content?: unknown }; finish_reason?: unknown } | undefined
   const text = typeof first?.message?.content === 'string' ? first.message.content : ''
-  if (text.trim() === '') return { ok: false, reason: REASON.EMPTY }
+  if (text.trim() === '') {
+    return { ok: false, reason: first?.finish_reason === 'length' ? REASON.BUDGET_SPENT : REASON.EMPTY }
+  }
   return { ok: true, text, modelId: typeof body.model === 'string' ? body.model : null }
 }
 
@@ -206,7 +229,7 @@ const readOpenai = (json: unknown): AskResult => {
 export const open = (backend: Backend, temperature = 0): ModelHandle => {
   const runtime =
     backend.kind === 'ollama'
-      ? `ollama @ ${host()}`
+      ? `ollama @ ${host(backend.host)}`
       : backend.kind === 'openai'
         ? `openai @ ${stripSlash(backend.baseUrl)}`
         : `anthropic @ ${ANTHROPIC_URL}`
@@ -222,7 +245,7 @@ export const open = (backend: Backend, temperature = 0): ModelHandle => {
 
     if (backend.kind === 'ollama') {
       const body = await post(
-        `${host()}/api/chat`,
+        `${host(backend.host)}/api/chat`,
         { 'content-type': 'application/json' },
         {
           model: configured,
@@ -248,7 +271,7 @@ export const open = (backend: Backend, temperature = 0): ModelHandle => {
         {
           model: configured,
           temperature,
-          max_tokens: MAX_TOKENS,
+          max_tokens: OPENAI_MAX_TOKENS,
           messages: [
             { role: 'system', content: system },
             { role: 'user', content: user },
@@ -300,10 +323,24 @@ export const open = (backend: Backend, temperature = 0): ModelHandle => {
     },
 
     ask: async (system, user) => {
+      const started = Date.now()
       const result = await attempt(system, user)
+      const ms = Date.now() - started
       last = result.ok ? null : result.reason
-      if (!result.ok) return null
+      // One line for each call. The lengths go to the line, and never the words. Rule 54.
+      if (!result.ok) {
+        log.warn('model', 'failed', { backend: backend.kind, model: configured, ms, reason: result.reason })
+        return null
+      }
       if (result.modelId !== null) answered = result.modelId
+      log.info('model', 'answered', {
+        backend: backend.kind,
+        model: result.modelId ?? configured,
+        ms,
+        system: chars(system),
+        user: chars(user),
+        text: chars(result.text),
+      })
       return result.text
     },
 

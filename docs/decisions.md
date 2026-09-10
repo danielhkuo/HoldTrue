@@ -273,3 +273,119 @@ reading their own gaps.
 session start at all, or start with a warning that no review will run? Rule 46 covers the stated
 failure either way. Second: the omniscient toggle loses its meaning and the code must lose it.
 `docs/proposals/one-review.md` holds the removal plan and both questions.
+
+## 20. No provided model, no session
+
+**Decided 2026-08-27.** The owner ruled. The app refuses to start a session when it holds no
+provided model. Law 1 gives the reason: a session must not end with a question open, and only the
+review closes questions. A session that cannot end with a review must not begin. The refusal
+screen names the fix: set the provided model.
+
+## 21. Consent at the start screen, and a soft cap at twelve turns
+
+**Decided 2026-08-27.** The owner ruled twice. Consent moves to the start screen: one checkbox,
+one sentence that names the provider, because every session now sends text at the end. Rule 48
+holds. The session gains a soft cap: at turn twelve the app shows one line that points at the End
+button. The button stays the only end signal. Rule 44 holds.
+
+## 22. A second model refutes the review before the person sees it
+
+**Decided 2026-08-27, deferred past the MVP.** The owner asked whether the review can use
+different models. The ruling: yes, as a refutation step and not as an ensemble. One provided
+model runs Check. A second, different model receives each finding with one task: refute it. A
+finding that survives reaches the screen. A finding that dies is dropped, silently, because
+decision 19 removed the labels. A wrongly killed true finding costs a quieter review. A false
+finding that survives costs a wrong claim about the person's mind. The design accepts the first
+cost to avoid the second.
+
+**The rejected alternative.** An ensemble that merges the link sets of two models. The merge
+needs text comparison inside Diff, and rule 43 forbids it.
+
+**Not in the MVP.** The step needs a second provided model and new calls. `docs/proposals/`
+takes the design when the MVP ships.
+
+## 23. The MVP is declared
+
+**Decided 2026-08-27.** The owner ruled. The build as it stands is the MVP. The live phase held
+every guard in nine runs of nine. The review ran in eight of nine and named the planted step in
+five, on a mid-size provided model. The owner accepts that state and waives the two remaining
+gates from `docs/proposals/mvp.md`: the frontier-model runs and the three real sessions. The
+counts in `measurements/review/nine-runs.md` stay the record of what is measured and what is not.
+
+**Open under this decision.** Run 5 returned an empty findings list over a transcript with a
+planted gap. Decision 22 holds the remedy and stays deferred. The owner ships knowing this.
+
+## 24. Voice runs on the machine, inside the app
+
+**Decided 2026-09-01.** The owner ruled. The app takes spoken words, and it reads the child
+aloud. Both run inside the server process on sherpa-onnx, with model directories that the owner
+names. There is no default speech model. The ear returns words only. `docs/architecture.md` owns
+the speech layer.
+
+**Why.** The product asks the person to explain out loud, and decision 17 set a voice call as the
+model of the surface. A cloud speech service would send the voice of the person to a third party.
+The words already go to a provider at the end, and the voice does not need to go anywhere. A local
+engine keeps the audio inside one process, so the app can say where the audio goes.
+
+**The rejected alternatives.** The agent proposed these four on 2026-09-01, and the owner has
+not ruled on each one. The browser speech API is rejected. The browser sends the audio to
+its vendor, and the app could not name the destination. A cloud speech key is rejected for now.
+It adds a second consent and a second destination. A Python sidecar is rejected. The addon runs
+in the one process that already exists. The seam stays a plain function, and a test can fake it.
+A confidence gate on the transcript is rejected. Rule 18 forbids the signal, and
+`docs/research/stt-signals.md` shows that the fields cannot tell a misheard word from a heard one.
+
+**Open under this decision.** No real person has spoken to the app. The nine runs of decision 23
+typed every turn. The rate at which a speech model drops a filled pause on a real voice is not
+measured. Rule 10 binds the code and not the model.
+
+## 25. Several provided models, one choice for each session
+
+**Decided 2026-09-03.** The owner ruled. `HOLDTRUE_PROVIDED_MODEL` may name several models on
+one endpoint. The pick screen shows the names, and the person picks one for the session. No name
+starts picked. The chosen model runs the whole end phase. Rule 53 holds, and rule 50 holds.
+
+**Why.** A free endpoint offers several strong models, and a thinking model and a fast model
+answer differently. A comparison needs both in reach without a restart and without an edit to a
+file. The person who reads the review must know which model wrote it. The choice is theirs, and
+the talk screen names it.
+
+**The rejected alternatives.** A default first name is rejected. Rule 50 forbids it. The agent
+proposed the second rejection on 2026-09-03, and the owner has not ruled on it: a different model
+for each end-phase step. The owner asked for a thinking model on the final step. Rule 53 names
+one provided model. Decision 22 already reserves a second model for one job, the refutation of
+each finding. The owner rules on a per-step split separately.
+
+**Open under this decision.** No run compares two provided models on one transcript. The e2e
+check takes the model name as its third argument, so such a comparison costs two runs.
+
+## 26. The app saves the settings and the keys, and the person picks both models from a list
+
+**Decided 2026-09-03.** The owner ruled. Rule 47 is withdrawn, and rule 54 replaces it. The app
+saves the settings in one file. The app saves an API key in the keychain of the operating system
+when the person asks. The app never writes session text, audio or a key to a file. Decision 12
+stays for the session only. Decision 25 is closed: the review model is a setup choice now, not a
+choice for each session.
+
+The setup screen shows four endpoints: Ollama, NVIDIA, Anthropic and another OpenAI-compatible
+endpoint. The person loads the models of an endpoint, and the app shows them in two dropdowns,
+one for the child and one for the review, with nothing selected. The person picks both. The app
+saves the choices, and the next start lands on the pick screen. A "Change the models" button
+returns to the setup screen.
+
+**Why.** A person who types a key at every start, and edits a file to change a model, does not
+use the app. The owner said so. The environment variables were a tool for the agent and not a
+product. Rule 50 and case B5 still hold: the app lists, and it never picks.
+
+**The rejected alternatives.** The owner rejects the `security` command of macOS. Any script on
+the machine reads such an item without a prompt. The key also shows in the process list for a
+moment. The owner rejects `keytar`, because the project is archived. The owner defers Electron
+`safeStorage`. The app has no Electron process today, and `@napi-rs/keyring` moves to it with
+one migration. The owner rejects a plain file with owner-only permission for the key. The
+settings file holds no secret.
+
+**Open under this decision.** The keychain shows one prompt when the `node` binary changes, and
+the person must choose "Always Allow". The Electron build must migrate the item. The id filter
+of the NVIDIA list has known misses, and nobody has measured it against the full catalog. The
+app sends no thinking control to a review model. A model thinks or not as its endpoint decides.
+The app does not test a key at setup, and a wrong key shows at the first call.

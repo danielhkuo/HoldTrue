@@ -10,23 +10,30 @@ order: Check, Diff, Probe and Close. `docs/architecture.md` describes both phase
 ## What the code holds today
 
 Both phases run. `docs/architecture.md` lists every file in `src/` under "What exists today". The
-build takes typed input. The build does not accept voice. The app does not have a topic gate. The
-server holds one session in memory. The server writes nothing to disk. The findings appear once.
-The app loses them when the process stops. No eval measures what the end phase produces.
+build takes typed input and spoken input. The speech models run on the machine of the person,
+and the owner names them. `docs/architecture.md` holds the speech layer. The app does not have a topic gate. The
+server holds one session in memory. The server writes no session text to disk. It saves the
+settings in one file, and a key in the keychain when you ask. Decision 26. The findings appear
+once. The app loses them when the process stops. No eval measures what the end phase produces.
 
 ## A session
 
 Every step in this list runs today.
 
-1. You pick a topic from the curated list. You cannot type your own topic.
-2. You set the omniscient toggle. The app names the destination. The app takes your consent.
-3. You explain the mechanism from memory. The app shows you no source text.
-4. The child says one short line back. It asks about one step in what you just said. It can press
-   the same step again.
-5. You press the end button.
-6. The review opens. It lists the links you did not say, and the claims you said wrong.
-7. The product asks you one question about the first row of that list.
-8. The product states your claim, then states the missing mechanism. This runs for every row.
+1. You set up the app one time. You load the models that each endpoint offers. You pick the
+   model that plays the child and the model that runs the review. The app picks neither. The
+   app saves the choices, so a later start skips this step. Decision 26.
+2. You pick a topic from the curated list. You cannot type your own topic.
+3. You give consent. The app names the destination: the host of the review model.
+4. You explain the mechanism from memory. The app shows you no source text. You type the line,
+   or you press Talk and speak it.
+5. The child says one short line back. It asks about one step in what you just said. It can press
+   the same step again. The app reads the line aloud when the owner names a voice model.
+6. At the twelfth turn, the app shows one line that points at the End button. Decision 21.
+7. You press the end button.
+8. The review opens. It lists the links you did not say, and the claims you said wrong.
+9. The product asks you one question about the first row of that list.
+10. The product states your claim, then states the missing mechanism. This runs for every row.
 
 ## The four mechanisms
 
@@ -74,12 +81,10 @@ Close must not present the correct mechanism on its own.
 
 ### Law 2. Every assertion names a source model
 
-Every finding on the screen names the model that produced it. The omniscient toggle sets that name
-and the label. With the toggle ON, HoldTrue provides a frontier model. HoldTrue labels the findings
-**verified**. With the toggle OFF, the model you chose at startup runs the review. The app then
-labels the findings **unverified**. `docs/architecture.md` owns the toggle and the model layer. If
-the provided model fails, the app must not use the startup model in its place. The app states the
-failure. The app labels the session unverified.
+Every finding on the screen names the model that produced it. The provided model runs the whole
+end phase, for every session. Rule 53. `docs/architecture.md` owns the provided model and the
+model layer. If the provided model fails, the app must not use the startup model in its place. The
+app states the failure. Decision 19 removed the two labels. One kind of review needs no label.
 
 The child asserts nothing. It may name a thing. It must not supply a cause. The law also blocks a
 statement that no model can source. "Your explanation was unclear" has no ground truth. No model can
@@ -87,10 +92,11 @@ produce that statement. The product must not print it.
 
 **The product retires one old promise. Do not repeat it.** Earlier documents said that nothing leaves your
 device unless you turn something on. There is no default model. You choose once at startup. You set
-up Ollama, or you enter an API key. An API key sends your text to that provider. The toggle ON sends
-your text to HoldTrue. The app must name the destination that it uses. The app must take your
-consent before the first send. The retention terms, the training terms and the deletion terms stay
-open. `docs/decisions.md` holds that open decision.
+up Ollama, or you enter an API key. An API key sends your text to that provider during the
+conversation. Every session sends the whole transcript to the provider of the provided model at
+the end. Rule 53. The app must name the destination that it uses. The app must take your consent
+before the first send. Decision 21 moves that consent to the start screen. The retention terms,
+the training terms and the deletion terms stay open. `docs/decisions.md` holds that open decision.
 
 ## The eligibility rule
 
@@ -153,7 +159,7 @@ of three words.
 | 11 | Prevents | Close runs for every row, so no question stays open. |
 | 16 | Prevents | The review prints rows. Nothing computes a number. |
 | 17 | Prevents | Law 2 blocks the statement. No model can source a judgement with no ground truth. |
-| 18 | Prevents | Nothing measures delivery. The live phase passes your words in untouched. |
+| 18 | Prevents | Nothing measures delivery. The live phase passes your words in untouched. The ear returns words, and no pause. |
 | 19 | Neither | The topic gate is not built. The curated list and the warning are the only barriers. |
 | 44 | Neither | The child never stops on its own. You end the session with a button. |
 
@@ -186,4 +192,5 @@ you speak. That model destroys M3.
 measurement is a separate category. Each measurement carries its source where you use it.
 
 **A promise that your text stays on your device.** Your text leaves the device unless you run a
-local model.
+local model. The audio is a narrower case. The ear runs inside the app, and the app sends no
+audio anywhere. The words that the ear writes go where typed words go.

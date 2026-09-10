@@ -4,6 +4,15 @@
  *     npm run e2e                        -- the model name comes from OLLAMA_MODEL
  *     npm run e2e -- qwen3-coder:30b     -- the model name comes from the first argument
  *     npm run e2e -- qwen3-coder:30b 6   -- the second argument sets the number of live turns
+ *     npm run e2e -- qwen3-coder:30b 6 moonshotai/kimi-k3
+ *                                        -- the third argument names the review model. With no
+ *                                           third argument this part takes the first name in
+ *                                           HOLDTRUE_PROVIDED_MODEL, as the person it plays. An
+ *                                           empty first argument keeps OLLAMA_MODEL.
+ *
+ * The review model answers from HOLDTRUE_PROVIDED_URL with HOLDTRUE_PROVIDED_KEY, as a custom
+ * endpoint. This part sets HOLDTRUE_SETTINGS_DIR to a fresh directory for the server it starts,
+ * so the settings of the owner never change, and it asks the server to keep no key.
  *
  * This part starts the real server on a free port. It sets up the ollama backend. It starts one
  * session. A model then plays the user. The model explains a mechanism from memory, and it
@@ -13,6 +22,15 @@
  * This part serves rule 31. Rule 31 asks for a test against the real service. It also watches the
  * cases E5, E8 and E12, the case C4 and the rules 16 and 46. A unit test cannot see these
  * failures, because a unit test holds a fake model.
+ *
+ * Decision 19 removed the omniscient toggle and the two labels. This part sets consent on every
+ * run, because every session now sends the transcript to the provided model at the end. It sends
+ * no omniscient field, because POST /api/start no longer reads one. It checks that no review
+ * output holds the word "verified" or the word "unverified".
+ *
+ * This check needs a provided model, or POST /api/start refuses every session. Decision 20.
+ * Setting HOLDTRUE_PROVIDED_URL and HOLDTRUE_PROVIDED_MODEL against a local endpoint satisfies
+ * that, with no key and no network call to a paid provider.
  *
  * THE CHECKS ARE HEURISTICS OVER TEXT. Each check reads the words and looks for a marker. A
  * marker is not a proof. A heuristic here costs a false warning, and it never costs a false
@@ -31,6 +49,8 @@
  */
 
 import { spawn } from 'node:child_process'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { createServer } from 'node:net'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -84,7 +104,8 @@ const MARKS = ['expand', 'expansion', 'valve', 'throttl', 'nozzle', 'capillary',
 /* ── the arguments ───────────────────────────────────────────────────────────────────────────── */
 
 /** The model name. Rule 50 forbids a default, so this part picks no model for the caller. */
-const MODEL_NAME = (process.argv[2] ?? process.env.OLLAMA_MODEL ?? '').trim()
+// An empty argument counts as no argument, so a later argument can stand alone.
+const MODEL_NAME = (process.argv[2] || process.env.OLLAMA_MODEL || '').trim()
 
 /**
  * The number of live turns.
@@ -149,9 +170,12 @@ const forward = (stream: NodeJS.ReadableStream | null, tag: string): void => {
 const startServer = async (): Promise<Running | string> => {
   const port = await freePort()
   const base = `http://${ADDRESS}:${port}`
+  // Decision 26. The server writes its settings to a file. This part points it at a fresh
+  // directory, so the settings of the owner never change under a check.
+  const settingsDir = mkdtempSync(join(tmpdir(), 'holdtrue-e2e-'))
   const child = spawn(process.execPath, [RUNNER, SERVER], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(port) },
+    env: { ...process.env, PORT: String(port), HOLDTRUE_SETTINGS_DIR: settingsDir },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   forward(child.stdout, 'server')
@@ -338,18 +362,34 @@ const run = async (base: string, model: ModelHandle): Promise<Run> => {
     stopped: null,
   }
 
-  const setup = await call(base, 'POST', '/api/setup', { kind: 'ollama', model: MODEL_NAME })
+  // Decision 26. This part plays the person on the setup screen. It names the child model on
+  // Ollama and the review model on the custom endpoint that the environment names. It asks the
+  // server to keep no key.
+  const reviewModel = (process.argv[4] || (process.env.HOLDTRUE_PROVIDED_MODEL ?? '').split(',')[0] || '').trim()
+  const reviewUrl = (process.env.HOLDTRUE_PROVIDED_URL ?? '').trim()
+  const reviewKey = (process.env.HOLDTRUE_PROVIDED_KEY ?? '').trim()
+  const setup = await call(base, 'POST', '/api/setup', {
+    child: { endpoint: 'ollama', model: MODEL_NAME },
+    review: { endpoint: 'openai', model: reviewModel },
+    openaiUrl: reviewUrl,
+    keys: reviewKey === '' ? {} : { openai: reviewKey },
+    remember: false,
+  })
   if (!setup.ok) return { ...empty, stopped: setup.reason }
   const setupFault = faultOf(setup.body)
-  if (setupFault !== null) return { ...empty, stopped: `POST /api/setup refused the model. ${setupFault}` }
+  if (setupFault !== null) return { ...empty, stopped: `POST /api/setup refused the models. ${setupFault}` }
   console.log(dim(`  setup   ${JSON.stringify(setup.body['who'])}`))
+  console.log(dim(`  review  ${JSON.stringify(setup.body['review'])}`))
 
-  // The toggle stays off. A local model sends nothing off this machine, so no consent is due.
-  const start = await call(base, 'POST', '/api/start', { topic: TOPIC, omniscient: false })
+  // Every session sends the transcript to the review model at the end. Decision 19. This part
+  // gives consent, and it sends no omniscient field. POST /api/start no longer reads one.
+  const start = await call(base, 'POST', '/api/start', { topic: TOPIC, consent: true })
   if (!start.ok) return { ...empty, stopped: start.reason }
   const startFault = faultOf(start.body)
-  if (startFault !== null) return { ...empty, stopped: `POST /api/start refused the topic. ${startFault}` }
-  console.log(dim(`  session ${TOPIC} · ${String(start.body['label'])}\n`))
+  // The refusal may name the topic, the consent or the provided model. Decision 20. This part
+  // prints the fault text and asserts no cause of its own.
+  if (startFault !== null) return { ...empty, stopped: `POST /api/start refused. ${startFault}` }
+  console.log(dim(`  session ${TOPIC}\n`))
 
   const live = await runTurns(base, model)
   if (live.stopped !== null) return { ...empty, beats: live.beats, stopped: live.stopped }
@@ -659,6 +699,29 @@ const checkFigures = (review: unknown): Check => {
   }
 }
 
+/** Decision 19 removed the toggle and the two labels. Neither label word may reach the screen. */
+const LABEL: readonly RegExp[] = [/\bverified\b/, /\bunverified\b/]
+
+const checkNoLabel = (review: unknown): Check => {
+  const findings = findingsOf(review) ?? []
+  const shape = (typeof review === 'object' && review !== null ? review : {}) as {
+    reason?: unknown
+  }
+  const reasonText = typeof shape.reason === 'string' ? shape.reason : ''
+  const notes: string[] = []
+  for (const text of [...findings, reasonText]) {
+    const mark = hits(text.toLowerCase(), LABEL)
+    if (mark !== null) notes.push(`"${mark}" in: ${text}`)
+  }
+  return {
+    tag: 'decision 19',
+    claim: 'No review output holds the word "verified" or the word "unverified".',
+    pass: notes.length === 0,
+    counts: [`findings: ${findings.length}`, `lines with a marker: ${notes.length}`],
+    notes,
+  }
+}
+
 const checkMissingStep = (review: unknown): Check => {
   const findings = findingsOf(review) ?? []
   const named = findings.filter(text => MARKS.some(mark => text.toLowerCase().includes(mark)))
@@ -702,12 +765,12 @@ const printReview = (out: Run): void => {
     console.log('  The end phase returned no Review.')
     return
   }
-  const shape = review as { kind?: unknown; reason?: unknown; verified?: unknown }
+  const shape = review as { kind?: unknown; reason?: unknown }
   if (shape.kind === 'unavailable') {
     console.log('  No review ran. The questions stay open.')
     console.log(wrap(typeof shape.reason === 'string' ? shape.reason : 'no reason', '  '))
   } else {
-    console.log(`  ${dim(shape.verified === true ? 'verified' : 'unverified')}\n`)
+    console.log(`  ${dim('reviewed')}\n`)
     const findings = findingsOf(review) ?? []
     const rows = (review as { findings?: unknown }).findings
     const kinds = Array.isArray(rows)
@@ -783,6 +846,7 @@ const main = async (): Promise<number> => {
     checkAnalogy(lines, userText),
     checkReview(out.review),
     checkFigures(out.review),
+    checkNoLabel(out.review),
     checkMissingStep(out.review),
   ])
 
