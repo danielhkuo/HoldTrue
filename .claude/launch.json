@@ -4,14 +4,34 @@
     {
       "name": "feynman",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "app"],
+      "runtimeArgs": [
+        "run",
+        "app"
+      ],
       "port": 4517
     },
     {
       "name": "voice",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "set -a; . ./.env.local; set +a; npm run app"],
+      "runtimeArgs": [
+        "-c",
+        "set -a; . ./.env.local; set +a; npm run app"
+      ],
       "port": 4517
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "site",
+        "--",
+        "--port",
+        "5178"
+      ],
+      "port": 5178
     }
   ]
 }
