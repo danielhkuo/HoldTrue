@@ -1,6 +1,7 @@
 # The teaser site
 
-A one-page teaser for HoldTrue. It lives at https://danielhkuo.github.io/HoldTrue/.
+A one-page teaser for HoldTrue. It is its own Netlify site, apart from the app and the repo owner's
+GitHub Pages.
 
 Vite, React, TypeScript and Tailwind, laid out the shadcn way: shared pieces go in
 `src/components/ui`, page sections in `src/components/site`, and `@/` points at `src/`.
@@ -9,10 +10,10 @@ ASCII particle canvas.
 
 ```
 npm install
-npm run dev       # http://localhost:5173/HoldTrue/
+npm run dev       # http://localhost:5173/
 npm run build
-npm run deploy    # builds, then pushes dist/ to the gh-pages branch
+npm run deploy    # builds, then pushes dist/ to the linked Netlify site
 ```
 
-The workflow in `.github/workflows/site.yml` runs the same deploy on every push to `main`
-that touches `site/`. GitHub Pages serves the `gh-pages` branch.
+`netlify.toml` holds the build settings. The Netlify CLI must be logged in and the folder
+linked (`netlify link`) before `npm run deploy` works.
